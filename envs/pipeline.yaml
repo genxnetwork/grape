@@ -1,0 +1,7 @@
+channels:
+    - bioconda
+    - soil
+dependencies:
+    - plink
+    - bcftools
+    - eagle
