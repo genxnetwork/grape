@@ -16,6 +16,7 @@ rule convert_23andme_to_plink:
     output:
         sorted(expand("plink/{{sample}}.{ext}", ext=PLINK_FORMATS))
     conda:
+        # TODO: separate for plink and bcftools
         "envs/pipeline.yaml"
     benchmark:
         "benchmarks/convert_23andme_to_plink_{sample}.txt"
@@ -47,7 +48,6 @@ rule merge_to_vcf:
         set +e
         plink --merge-list {input} --output-chr M --export vcf bgz --out merged
         exitcode=$?
-        echo $exitcode
 
         if [[ -f "merged.missnp" ]]; then
             for i in `cat {input}`;
@@ -88,17 +88,20 @@ rule plink_filter:
 rule pre_imputation_check:
     input: "plink/merged_filter.bim"
     output:
-        "plink/merged_filter.chr",
-        "plink/merged_filter.pos",
-        "plink/merged_filter.force_allele",
-        "plink/merged_filter.flip"
+        "plink/merged_filter.bim.chr",
+        "plink/merged_filter.bim.pos",
+        "plink/merged_filter.bim.force_allele",
+        "plink/merged_filter.bim.flip"
     script:
         "pre_imputation_check.py"
 
 
 rule plink_clean_up:
     input:
-        "plink/merged_filter.bim"
+        "plink/merged_filter.bim.chr",
+        "plink/merged_filter.bim.pos",
+        "plink/merged_filter.bim.force_allele",
+        "plink/merged_filter.bim.flip"
     output:
         expand("{i}.{ext}", i="plink/merged_mapped", ext=PLINK_FORMATS)
     params:
@@ -108,10 +111,10 @@ rule plink_clean_up:
         "envs/pipeline.yaml"
     shell:
         """
-        plink --bfile {params.input}                --extract       plink/merged_filter.chr     --make-bed --out plink/merged_mapped_extracted
-        plink --bfile plink/merged_mapped_extracted --flip          plink/merged_filter.flip    --make-bed --out plink/merged_mapped_flipped
-        plink --bfile plink/merged_mapped_flipped   --update-chr    plink/merged_filter.chr     --make-bed --out plink/merged_mapped_chroped
-        plink --bfile plink/merged_mapped_chroped   --update-map    plink/merged_filter.pos     --make-bed --out {params.out}
+        plink --bfile {params.input}                --extract       plink/merged_filter.bim.chr     --make-bed --out plink/merged_mapped_extracted
+        plink --bfile plink/merged_mapped_extracted --flip          plink/merged_filter.bim.flip    --make-bed --out plink/merged_mapped_flipped
+        plink --bfile plink/merged_mapped_flipped   --update-chr    plink/merged_filter.bim.chr     --make-bed --out plink/merged_mapped_chroped
+        plink --bfile plink/merged_mapped_chroped   --update-map    plink/merged_filter.bim.pos     --make-bed --out {params.out}
         """
 
 rule prepare_vcf:
@@ -126,7 +129,7 @@ rule prepare_vcf:
         """
         GRCh37_fasta=/media/human_g1k_v37.fasta
 
-        plink --bfile {params.input} --a1-allele plink/merged_filter.force_allele --make-bed --out plink/merged_mapped_alleled
+        plink --bfile {params.input} --a1-allele plink/merged_filter.bim.force_allele --make-bed --out plink/merged_mapped_alleled
         plink --bfile plink/merged_mapped_alleled --keep-allele-order --output-chr M --export vcf bgz --out vcf/merged_mapped_clean
         bcftools sort vcf/merged_mapped_clean.vcf.gz -O z -o vcf/merged_mapped_sorted.vcf.gz
         # need to check output for the potential issues
@@ -137,134 +140,150 @@ rule prepare_vcf:
 rule phase:
     input: "vcf/merged_mapped_sorted.vcf.gz"
     output: expand("phase/chr{i}.phased.vcf.gz", i=CHROMOSOMES)
-    # conda:
-    #     "envs/pipeline.yaml"
-    container:
-        "docker://indraniel/eagle-241"
+    threads: workflow.cores
+    singularity:
+        "docker://biocontainers/bio-eagle:v2.4.1-1-deb_cv1"
     shell:
         """
-        EAGLE=/bin/eagle
-        GENOTYPE_1000GENOME=/etc/genome
-        GENETIC_MAP=/etc/map
-        
-        echo parallel -k -j 100% \
-        eagle --vcfRef  $GENOTYPE_1000GENOME \
-        --vcfTarget {input}  \
-        --geneticMapFile $GENETIC_MAP \
-        --chrom {{1}} \
-        --vcfOutFormat z \
-        --outPrefix phase/chr{{1}}.phased \
-        ::: `seq 1 22`
+        GENOTYPE_1000GENOME=/media/1000genome/bcf/1000genome_chr\$i.bcf
+        # TODO: not sure what to do with that
+        GENETIC_MAP=/media/tables/genetic_map_hg19_withX.txt.gz
+
+        # TODO: do some check before because of ERROR: Target and ref have too few matching SNPs (M = 0)
+        for i in `seq 1 22`; do
+            if ! /usr/bin/bio-eagle --vcfRef  /media/1000genome/bcf/1000genome_chr$i.bcf \
+            --numThreads {threads} \
+            --vcfTarget {input}  \
+            --geneticMapFile $GENETIC_MAP \
+            --chrom $i \
+            --vcfOutFormat z \
+            --outPrefix phase/chr$i.phased
+            then
+                touch phase/chr$i.phased.vcf.gz
+                continue
+            fi
+        done
         """
     
 rule impute:
     input: rules.phase.output
-    output: expand("chr{i}.imputed.dose.vcf.gz", i=CHROMOSOMES)
+    output: expand("imputed/chr{i}.imputed.dose.vcf.gz", i=CHROMOSOMES)
+    threads: workflow.cores
+    singularity:
+        "docker://biocontainers/minimac4:v1.0.0-2-deb_cv1"
     shell:
         """
-        MINIMAC3=/bin/minimac
-        MINIMAC3_M3VCF=/etc/minimac
+        # TODO: hardcoded for now
+        MINIMAC3_M3VCF=/media/Minimac/\$i.1000g.Phase3.v5.With.Parameter.Estimates.m3vcf.gz
 
-        echo parallel -k -j 100% \
-        $MINIMAC3 --refHaps $MINIMAC3_M3VCF \
-        --haps {{1}}.chr{{1}}.phased.vcf.gz \
-        --format GT,GP \
-        --prefix chr{{1}}.imputed \
-        ::: `ls *.phased.vcf.gz* | awk -F'[_.]' '{{print $1}}'`
-
-        for i in {output}; do
-            touch $i;
+        for i in `seq 1 22`; do
+            if ! /usr/bin/minimac4 \
+            --refHaps /media/Minimac/$i.1000g.Phase3.v5.With.Parameter.Estimates.m3vcf.gz \
+            --haps phase/chr$i.phased.vcf.gz \
+            --format GT,GP \
+            --prefix imputed/chr$i.imputed \
+            --cpus {threads}
+            then
+                touch imputed/chr$i.imputed.dose.vcf.gz
+                continue
+            fi
         done
         """
 
 rule imputation_filter:
     input: rules.impute.output
-    output: expand("chr{i}.dose.pass.vcf.gz", i=CHROMOSOMES)
+    output: expand("imputed/chr{i}.imputed.dose.pass.vcf.gz", i=CHROMOSOMES)
+    threads: workflow.cores
+    conda:
+        "envs/pipeline.yaml"
     shell:
         """
-        BCFTOOLS=/bin/bcftools
-        
-        for i in `ls *imputed.dose.vcf.gz`;
-            do echo $BCFTOOLS view -i 'R2>0.3 & strlen(REF)=1 & strlen(ALT)=1' $i -v snps -m 2 -M 2 -O z -o ${{i%.*.*}}.pass.vcf.gz;
-        done
+        FILTER="'R2>0.3 & strlen(REF)=1 & strlen(ALT)=1'"
 
-        for i in {output}; do
-            touch $i;
-        done        
+        for i in `seq 1 22`; do
+            if ! bcftools view --threads {threads} -i 'R2>0.3 & strlen(REF)=1 & strlen(ALT)=1' imputed/chr$i.imputed.dose.vcf.gz -v snps -m 2 -M 2 -O z -o imputed/chr$i.imputed.dose.pass.vcf.gz
+            then
+                touch imputed/chr$i.imputed.dose.pass.vcf.gz
+                continue
+            fi
+        done
         """
 
 rule merge_imputation_filter:
-    input: rules.imputation_filter.output
-    output: "merged_imputed.vcf.gz"
+    input:
+        rules.imputation_filter.output
+    output:
+        "vcf/merged_imputed.vcf.gz"
+    params:
+        list="vcf/imputed.merge.list"
+    conda:
+        "envs/pipeline.yaml"
     shell:
         """
-        IMPUTELIST=impute.list
-        BCFTOOLS=/bin/bcftools
-
-        ls *dose.pass.vcf.gz > $IMPUTELIST
-        echo $BCFTOOLS concat -f $IMPUTELIST -O z -o merged_imputed.vcf.gz
-
-        touch merged_imputed.vcf.gz
+        # for now just skip empty files
+        true > {params.list} && \
+        for i in {input}; do
+            if [ -s $i ]
+            then
+                echo $i >> {params.list}
+            else
+                continue
+            fi
+        done
+        bcftools concat -f {params.list} -O z -o {output}
         """
 
 rule convert_imputed_to_plink:
     input: rules.merge_imputation_filter.output
-    output: expand("{i}.{ext}", i="merged_imputed", ext=PLINK_FORMATS)
+    output: expand("plink/{i}.{ext}", i="merged_imputed", ext=PLINK_FORMATS)
     params:
-        out = "merged_imputed"
+        out = "plink/merged_imputed"
+    conda:
+        "envs/pipeline.yaml"
     shell:
         """
-        PLINK=/bin/plink
-
-        echo $PLINK --vcf {input} --make-bed --out {params.out}
-        touch {params.out}.bed && touch {params.out}.bim && touch {params.out}.fam
+        plink --vcf {input} --make-bed --out {params.out}
         """
 
 rule run_king:
     input: rules.convert_imputed_to_plink.output
-    output: "merged_imputed_king"
+    output: "king/merged_imputed_king.seg"
     params:
-        input = "merged_imputed"
+        input = "plink/merged_imputed"
+    singularity:
+        "docker://lifebitai/king:latest"
     shell:
         """
-        KING=/bin/king
         KING_DEGREE=4
 
-        echo $KING -b {params.input}.bed --ibdseg --degree $KING_DEGREE --prefix {params.input}\_king
-        touch {params.input}\_king
+        king -b {params.input}.bed --ibdseg --degree $KING_DEGREE --prefix {output}
         """
 
 rule index_and_split:
     input: rules.merge_imputation_filter.output
-    output: expand("imputed_chr{i}.vcf.gz", i=CHROMOSOMES)
+    output: expand("vcf/imputed_chr{i}.vcf.gz", i=CHROMOSOMES)
+    conda:
+        "envs/pipeline.yaml"
+    threads: workflow.cores
     shell:
         """
-        BCFTOOLS=/bin/bcftools
-        
-        echo $BCFTOOLS index -f {input}
+        bcftools index -f {input}
 
-        echo parallel -k -j 100% \
-        $BCFTOOLS filter {input} -r {{1}} -O z -o imputed_chr{{1}}.vcf.gz \
-        ::: `seq 1 22`
-
-        for i in {output}; do
-            touch $i;
+        for i in `seq 1 22`; do
+            bcftools filter {input} -r $i --threads {threads} -O z -o vcf/imputed_chr$i.vcf.gz;
         done
         """
 
 rule convert_to_hap:
-    input: rules.merge_imputation_filter.output
-    output: expand("chr{i}.hap", i=CHROMOSOMES)
+    input: rules.index_and_split.output
+    output: expand("hap/imputed_chr{i}.hap", i=CHROMOSOMES)
+    conda:
+        "envs/pipeline.yaml"
+    threads: workflow.cores
     shell:
         """
-        BCFTOOLS=/bin/bcftools
-
-        echo parallel -k -j 100% \
-        $BCFTOOLS convert imputed_chr{{1}}.vcf.gz --hapsample imputed_chr{{1}} '&&' gunzip -f chr{{1}}.hap.gz \
-        ::: `seq 1 22`
-
-        for i in {output}; do
-            touch $i;
+        for i in `seq 1 22`; do
+            bcftools convert vcf/imputed_chr$i.vcf.gz --threads {threads} --hapsample hap/imputed_chr$i && gunzip -f hap/imputed_chr$i.hap.gz;
         done
         """
 

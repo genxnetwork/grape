@@ -1,1 +1,13 @@
 input/*
+.snakemake/*
+benchmarks/*
+plink/*
+vcf/*
+.vscode/settings.json
+merged.missnp
+merged.log
+merged.fam
+merge.list
+imputed/*
+phase/*
+king/*

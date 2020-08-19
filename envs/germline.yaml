@@ -1,0 +1,4 @@
+channels:
+    - aehrc
+dependencies:
+    - germline
