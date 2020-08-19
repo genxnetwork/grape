@@ -287,22 +287,22 @@ rule convert_to_hap:
         done
         """
 
+# TODO: does not work do not know why. Workaround as run from the console
 rule convert_to_ped:
     input: rules.convert_to_hap.output
-    output: expand("chr{i}.ped", i=CHROMOSOMES)
+    output: expand("ped/imputed_chr{i}.ped", i=CHROMOSOMES)
+    # TODO: find a package
+    # conda:
+    #     "envs/germline.yaml"
     shell:
         """
-        IMPUTE_2_PED=/bin/impute_to_ped
-
-        echo parallel -k -j 100% \
-        $IMPUTE_2_PED chr{{1}}.hap chr{{1}}.sample chr{{1}} \
-        ::: `seq 1 22`
-
-        for i in {output}; do
-            touch $i;
+        IMPUTE_2_PED=/media/pipeline/tools/binaries/impute_to_ped
+        for i in `seq 1 22`; do
+            $IMPUTE_2_PED hap/imputed_chr$i.hap hap/imputed_chr$i.sample ped/imputed_chr$i;
         done
         """
 
+# TODO: scip this step for now
 rule split_map:
     input: rules.convert_to_ped.output
     output: expand("chr{i}.map", i=CHROMOSOMES)
@@ -318,40 +318,42 @@ rule split_map:
         """
 
 rule interpolate:
-    input: rules.split_map.output
-    output: expand("chr{i}.cm", i=CHROMOSOMES)
+    input: rules.convert_to_hap.output
+    output: expand("cm/chr{i}.cm.ped", i=CHROMOSOMES)
+    conda:
+        "envs/pipeline.yaml"
     shell:
         """
-        PLINK=/bin/plink
-
-        echo parallel -k -j 100% \
-        $PLINK --file chr{{1}} --cm-map genetic_map_b37/genetic_map_chr{{1}}_combined_b37.txt {{1}} --recode --out chr{{1}}.cm \
-        ::: `seq 1 22`
-
-        for i in {output}; do
-            touch $i;
+        for i in `seq 1 22`; do
+            if ! plink --file ped/imputed_chr$i --cm-map /media/genetic_map_b37/genetic_map_chr$i\_combined_b37.txt $i --recode --out cm/chr$i.cm;
+            then
+                touch cm/chr$i.cm.ped
+                continue
+            fi
         done
         """
 
+# TODO: does not work do not know why
 rule germline:
     input: rules.interpolate.output
-    output: expand("chr{i}.germline", i=CHROMOSOMES)
+    output: expand("germline/chr{i}.germline", i=CHROMOSOMES)
+    conda:
+        "envs/germline.yaml"
     shell:
         """
-        GERMLINE=/bin/germline
+        GERMLINE=/media/pipeline/tools/binaries/germline
 
-        echo parallel -k -j 100% \
-        $GERMLINE -input chr{{}}.ped chr{{}}.cm.map -homoz -min_m 2.5 -err_hom 2 -err_het 1 -output chr{{}}.germline \
-        ::: `seq 1 22`
-
-        for i in {output}; do
-            touch $i;
+        for i in `seq 1 22`; do
+            if ! $GERMLINE -input ped/imputed_chr$i.ped cm/chr$i.cm.map -homoz -min_m 2.5 -err_hom 2 -err_het 1 -output germline/chr$i.germline;
+            then
+                touch germline/chr$i.germline
+            fi
         done
         """
 
 rule ersa:
     input: rules.germline.output
-    output: "ersa"
+    output: expand("ersa/ersa.chr{i}", i=CHROMOSOMES)
     shell:
         """
         ERSA_L=13.7
@@ -360,9 +362,7 @@ rule ersa:
 
         ERSA=/bin/ersa
 
-        echo parallel -k -j 100% \
-        $ERSA --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH chr{{}}.germline -o ersa{{}} \
-        ::: `seq 1 22`
-
-        touch {output}
+        for i in `seq 1 22`; do
+            ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH germline/chr$i.germline -o ersa/ersa.chr$i
+        done
         """

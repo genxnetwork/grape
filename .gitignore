@@ -11,3 +11,8 @@ merge.list
 imputed/*
 phase/*
 king/*
+cm/*
+germline/*
+hap/*
+ped/*
+ersa/*
