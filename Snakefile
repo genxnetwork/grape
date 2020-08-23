@@ -1,35 +1,38 @@
 #configfile: "config.yaml"
 
+# TODO: add config
+# TODO: add reporting https://github.com/tanaes/snarkmark/blob/master/rules/report.rule
+
 CHROMOSOMES     = [str(i) for i in range(1, 23)]
-DATASETS        = [i for i in range(1,40)]
+DATASETS        = [i for i in range(1, 41)] # include #40
 PLINK_FORMATS   = ['bed', 'bim', 'fam', 'log']
 PLINK_FORMATS_EXT   = ['bed', 'bim', 'fam', 'log', 'nosex']
 PLINK           = "plink/*.bed"
 
 rule all:
     input:
-        "vcf/merged.vcf.gz"
+        "ersa/ersa.chr1"
 
 rule convert_23andme_to_plink:
     input:
-        "input/{sample}.txt"
+        expand("input/{i}.txt", i=DATASETS)
     output:
-        sorted(expand("plink/{{sample}}.{ext}", ext=PLINK_FORMATS))
+        sorted(expand("plink/{i}.{ext}", i=DATASETS, ext=PLINK_FORMATS))
     conda:
         # TODO: separate for plink and bcftools
         "envs/pipeline.yaml"
-    benchmark:
-        "benchmarks/convert_23andme_to_plink_{sample}.txt"
     shell:
         """
-        plink --23file {input} {wildcards.sample} {wildcards.sample} i --output-chr M --make-bed --out plink/{wildcards.sample}
+        for i in {DATASETS}; do
+            plink --23file input/$i.txt $i $i i --output-chr M --make-bed --out plink/$i
+        done
         """
 
 rule merge_list:
     input:
-        sorted(expand("plink/{i}.{ext}", i=DATASETS, ext=PLINK_FORMATS))
+        rules.convert_23andme_to_plink.output
     output:
-        "merge.list"
+        "plink/merge.list"
     params:
     shell:
         """
@@ -46,12 +49,12 @@ rule merge_to_vcf:
     shell:
         """
         set +e
-        plink --merge-list {input} --output-chr M --export vcf bgz --out merged
+        plink --merge-list {input} --output-chr M --export vcf bgz --out vcf/merged
         exitcode=$?
 
-        if [[ -f "merged.missnp" ]]; then
+        if [[ -f "vcf/merged.missnp" ]]; then
             for i in `cat {input}`;
-                do plink --bfile $i --exclude merged.missnp --make-bed --out $i\_clean;
+                do plink --bfile $i --exclude vcf/merged.missnp --make-bed --out $i\_clean;
             done
             true > {input} && for i in {DATASETS}; do echo plink/$i\_clean >> {input}; done
             plink --merge-list {input} --output-chr M --export vcf bgz --out vcf/merged
@@ -60,6 +63,7 @@ rule merge_to_vcf:
         exit 1
         """
 
+# TODO: extra step bc we already have plink in vcf/merged
 rule convert_to_plink:
     input: rules.merge_to_vcf.output["vcf"]
     output: expand("plink/{i}.{ext}", i="merged", ext=PLINK_FORMATS_EXT)
@@ -82,7 +86,8 @@ rule plink_filter:
         out = "merged_filter"
     shell:
         """
-        plink --bfile plink/{params.input} --geno 0.1 --maf 1e-50 --hwe 0 --make-bed --keep-allele-order --out plink/{params.out}
+        # TODO: the old parameter --maf 1e-50 is too low, back to the "default" 0.05
+        plink --bfile plink/{params.input} --geno 0.1 --maf 0.05 --hwe 0 --make-bed --keep-allele-order --out plink/{params.out}
         """
 
 rule pre_imputation_check:
@@ -94,7 +99,6 @@ rule pre_imputation_check:
         "plink/merged_filter.bim.flip"
     script:
         "pre_imputation_check.py"
-
 
 rule plink_clean_up:
     input:
@@ -111,10 +115,10 @@ rule plink_clean_up:
         "envs/pipeline.yaml"
     shell:
         """
-        plink --bfile {params.input}                --extract       plink/merged_filter.bim.chr     --make-bed --out plink/merged_mapped_extracted
-        plink --bfile plink/merged_mapped_extracted --flip          plink/merged_filter.bim.flip    --make-bed --out plink/merged_mapped_flipped
-        plink --bfile plink/merged_mapped_flipped   --update-chr    plink/merged_filter.bim.chr     --make-bed --out plink/merged_mapped_chroped
-        plink --bfile plink/merged_mapped_chroped   --update-map    plink/merged_filter.bim.pos     --make-bed --out {params.out}
+        plink --bfile {params.input}         --extract       plink/merged_filter.bim.chr     --make-bed --out plink/merged_extracted
+        plink --bfile plink/merged_extracted --flip          plink/merged_filter.bim.flip    --make-bed --out plink/merged_flipped
+        plink --bfile plink/merged_flipped   --update-chr    plink/merged_filter.bim.chr     --make-bed --out plink/merged_chroped
+        plink --bfile plink/merged_chroped   --update-map    plink/merged_filter.bim.pos     --make-bed --out {params.out}
         """
 
 rule prepare_vcf:
@@ -249,14 +253,17 @@ rule run_king:
     input: rules.convert_imputed_to_plink.output
     output: "king/merged_imputed_king.seg"
     params:
-        input = "plink/merged_imputed"
+        input = "plink/merged_imputed",
+        out = "king/merged_imputed_king"
+    threads: workflow.cores
     singularity:
         "docker://lifebitai/king:latest"
     shell:
         """
+        # TODO: add cores
         KING_DEGREE=4
 
-        king -b {params.input}.bed --ibdseg --degree $KING_DEGREE --prefix {output}
+        king -b {params.input}.bed --cpus {threads} --ibdseg --degree $KING_DEGREE --prefix {params.out}
         """
 
 rule index_and_split:
@@ -302,7 +309,7 @@ rule convert_to_ped:
         done
         """
 
-# TODO: scip this step for now
+# TODO: skip this step for now
 rule split_map:
     input: rules.convert_to_ped.output
     output: expand("chr{i}.map", i=CHROMOSOMES)
@@ -333,7 +340,7 @@ rule interpolate:
         done
         """
 
-# TODO: does not work do not know why
+# TODO: does not work as conda do not know why
 rule germline:
     input: rules.interpolate.output
     output: expand("germline/chr{i}.germline", i=CHROMOSOMES)
@@ -352,6 +359,9 @@ rule germline:
         """
 
 rule ersa:
+    # TODO: look for conda/container/pip
+    # TODO: failed for chr8 bc of MB instead of Cm but why??? need to double check in interpolate
+    # TODO: grep -v MB germline/chr8.germline.match > germline/chr8.germline.match.clean
     input: rules.germline.output
     output: expand("ersa/ersa.chr{i}", i=CHROMOSOMES)
     shell:
@@ -360,9 +370,7 @@ rule ersa:
         ERSA_TH=3.197
         ERSA_T=2.5
 
-        ERSA=/bin/ersa
-
         for i in `seq 1 22`; do
-            ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH germline/chr$i.germline -o ersa/ersa.chr$i
+            ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH germline/chr$i.germline.match -o ersa/ersa.chr$i
         done
         """
