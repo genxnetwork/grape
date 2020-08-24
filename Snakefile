@@ -295,6 +295,7 @@ rule convert_to_hap:
         """
 
 # TODO: does not work do not know why. Workaround as run from the console
+# TODO: seems that i2p works fine but returns !=0 error code - mocked for now
 rule convert_to_ped:
     input: rules.convert_to_hap.output
     output: expand("ped/imputed_chr{i}.ped", i=CHROMOSOMES)
@@ -305,7 +306,10 @@ rule convert_to_ped:
         """
         IMPUTE_2_PED=/media/pipeline/tools/binaries/impute_to_ped
         for i in `seq 1 22`; do
-            $IMPUTE_2_PED hap/imputed_chr$i.hap hap/imputed_chr$i.sample ped/imputed_chr$i;
+            if ! $IMPUTE_2_PED hap/imputed_chr$i.hap hap/imputed_chr$i.sample ped/imputed_chr$i
+            then
+                continue
+            fi
         done
         """
 
@@ -355,6 +359,8 @@ rule germline:
             then
                 touch germline/chr$i.germline
             fi
+            # TODO: germline returns some length in BP instead of cM - clean up is needed
+            grep -v MB germline/chr$i.germline.match > germline/chr$i.germline.match.clean && mv germline/chr$i.germline.match.clean germline/chr$i.germline.match
         done
         """
 
