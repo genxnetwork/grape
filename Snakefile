@@ -1,4 +1,5 @@
 #configfile: "config.yaml"
+# run as snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media --singularity-args="-B /media:/media" -p all
 
 # TODO: add config
 # TODO: add reporting https://github.com/tanaes/snarkmark/blob/master/rules/report.rule
@@ -294,8 +295,6 @@ rule convert_to_hap:
         done
         """
 
-# TODO: does not work do not know why. Workaround as run from the console
-# TODO: seems that i2p works fine but returns !=0 error code - mocked for now
 rule convert_to_ped:
     input: rules.convert_to_hap.output
     output: expand("ped/imputed_chr{i}.ped", i=CHROMOSOMES)
@@ -306,10 +305,7 @@ rule convert_to_ped:
         """
         IMPUTE_2_PED=/media/pipeline/tools/binaries/impute_to_ped
         for i in `seq 1 22`; do
-            if ! $IMPUTE_2_PED hap/imputed_chr$i.hap hap/imputed_chr$i.sample ped/imputed_chr$i
-            then
-                continue
-            fi
+            $IMPUTE_2_PED hap/imputed_chr$i.hap hap/imputed_chr$i.sample ped/imputed_chr$i
         done
         """
 
@@ -347,7 +343,7 @@ rule interpolate:
 # TODO: does not work as conda do not know why
 rule germline:
     input: rules.interpolate.output
-    output: expand("germline/chr{i}.germline", i=CHROMOSOMES)
+    output: expand("germline/chr{i}.germline.match", i=CHROMOSOMES)
     conda:
         "envs/germline.yaml"
     shell:
@@ -355,10 +351,7 @@ rule germline:
         GERMLINE=/media/pipeline/tools/binaries/germline
 
         for i in `seq 1 22`; do
-            if ! $GERMLINE -input ped/imputed_chr$i.ped cm/chr$i.cm.map -homoz -min_m 2.5 -err_hom 2 -err_het 1 -output germline/chr$i.germline;
-            then
-                touch germline/chr$i.germline
-            fi
+            $GERMLINE -input ped/imputed_chr$i.ped cm/chr$i.cm.map -homoz -min_m 2.5 -err_hom 2 -err_het 1 -output germline/chr$i.germline;
             # TODO: germline returns some length in BP instead of cM - clean up is needed
             grep -v MB germline/chr$i.germline.match > germline/chr$i.germline.match.clean && mv germline/chr$i.germline.match.clean germline/chr$i.germline.match
         done
