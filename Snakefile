@@ -298,14 +298,12 @@ rule convert_to_hap:
 rule convert_to_ped:
     input: rules.convert_to_hap.output
     output: expand("ped/imputed_chr{i}.ped", i=CHROMOSOMES)
-    # TODO: find a package
-    # conda:
-    #     "envs/germline.yaml"
+    singularity:
+        "docker://alexgenx/germline:stable"
     shell:
         """
-        IMPUTE_2_PED=/media/pipeline/tools/binaries/impute_to_ped
         for i in `seq 1 22`; do
-            $IMPUTE_2_PED hap/imputed_chr$i.hap hap/imputed_chr$i.sample ped/imputed_chr$i
+            impute_to_ped hap/imputed_chr$i.hap hap/imputed_chr$i.sample ped/imputed_chr$i
         done
         """
 
