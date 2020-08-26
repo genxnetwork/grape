@@ -329,11 +329,7 @@ rule interpolate:
     shell:
         """
         for i in `seq 1 22`; do
-            if ! plink --file ped/imputed_chr$i --cm-map /media/genetic_map_b37/genetic_map_chr$i\_combined_b37.txt $i --recode --out cm/chr$i.cm;
-            then
-                touch cm/chr$i.cm.ped
-                continue
-            fi
+            plink --file ped/imputed_chr$i --cm-map /media/genetic_map_b37/genetic_map_chr$i\_combined_b37.txt $i --recode --out cm/chr$i.cm
         done
         """
 
