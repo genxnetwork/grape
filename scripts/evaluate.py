@@ -74,18 +74,6 @@ def ersa_king(rel_ersa, rel_king, segments_graph, outname):
                     else:
                         # KING will override ERSA for degree 1,2 and 3
                         dst = int(dst) + 1
-                if i == 0:
-                    print('values')
-                    print(fid1)
-                    print(iid1)
-                    print(fid2)
-                    print(iid2)
-                    print(dc.get('Rel_est1', "NA"))
-                    print(dc.get('Rel_est2', "NA"))
-                    print(str(dst))
-                    print(dst)
-                    print(segs.get('N', 0))
-                    print(segs.get('length', 0))
                 w.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:.2f}\n".format(
                     fid1, iid1, fid2, iid2, dc.get('Rel_est1', "NA"),
                     dc.get('Rel_est2', "NA"), str(dst), dst, segs.get('N', 0), segs.get('length', 0)
