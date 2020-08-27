@@ -12,7 +12,7 @@ PLINK           = "plink/*.bed"
 
 rule all:
     input:
-        "ersa/ersa.chr1"
+        "ersa/relatives.tsv"
 
 rule convert_23andme_to_plink:
     input:
@@ -333,7 +333,6 @@ rule interpolate:
         done
         """
 
-# TODO: does not work as conda do not know why
 rule germline:
     input: rules.interpolate.output
     output: expand("germline/chr{i}.germline.match", i=CHROMOSOMES)
@@ -348,21 +347,38 @@ rule germline:
         done
         """
 
+rule ersa_params:
+    input:
+        king=rules.run_king.output,
+        germline=rules.germline.output
+    output: "ersa/params.txt"
+    conda: "envs/ersa_params.yaml"
+    script: "scripts/estimate_ersa_params.py"
+
+rule merge_matches:
+    input:
+         expand("germline/chr{chrom}.germline.match", chrom=CHROMOSOMES)
+    output:
+          "germline/all.tsv"
+    shell:
+         "cat germline/*.match > {output}"
+
+
 rule ersa:
     # TODO: look for conda/container/pip
     # TODO: failed for chr8 bc of MB instead of Cm but why??? need to double check in interpolate
     # TODO: grep -v MB germline/chr8.germline.match > germline/chr8.germline.match.clean
-    input: rules.germline.output
-    output: expand("ersa/ersa.chr{i}", i=CHROMOSOMES)
+    input:
+        germline=rules.merge_matches.output,
+        estimated=rules.ersa_params.output
+    output: "ersa/relatives.tsv"
     singularity:
         "docker://alexgenx/ersa:stable"
     shell:
         """
-        ERSA_L=13.7
-        ERSA_TH=3.197
-        ERSA_T=2.5
-
-        for i in `seq 1 22`; do
-            ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH germline/chr$i.germline.match -o ersa/ersa.chr$i
-        done
+        #ERSA_L=13.7
+        #ERSA_TH=3.197
+        #ERSA_T=2.5
+        source {input.estimated}
+        ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.germline} -o {output}
         """
