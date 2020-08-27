@@ -12,7 +12,7 @@ PLINK           = "plink/*.bed"
 
 rule all:
     input:
-        "ersa/relatives.tsv"
+        "results/relatives.tsv"
 
 rule convert_23andme_to_plink:
     input:
@@ -382,3 +382,12 @@ rule ersa:
         source {input.estimated}
         ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.germline} -o {output}
         """
+
+rule merge_king_ersa:
+    input:
+        king=rules.run_king.output,
+        germline=rules.merge_matches.output,
+        ersa=rules.ersa.output
+    output: "results/relatives.tsv"
+    conda: "envs/evaluation.yaml"
+    script: "scripts/evaluate.py"

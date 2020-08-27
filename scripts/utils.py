@@ -280,7 +280,8 @@ def read_ersa(filename):
     with open(filename) as f:
         next(f)
         for line in f:
-            items = line.strip().split(sep="\t")
+            items = line.strip().split(sep="  ")
+            items = [item.strip() for item in items if item != '']
             if items[2] != 'NA' or items[3] != 'NA':
                 relation.add_edge(items[0], items[1], Rel_est1=items[2], Rel_est2=items[3], d_est=items[4])
     return relation
