@@ -1,14 +1,18 @@
-#configfile: "config.yaml"
-# run as snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media --singularity-args="-B /media:/media" -p all
-
-# TODO: add config
+# run as "snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media --singularity-args="-B /media:/media" -p all"
 # TODO: add reporting https://github.com/tanaes/snarkmark/blob/master/rules/report.rule
 
+import pandas as pd
+
+configfile: "config.yaml"
+
+samples_file    = config["samples_file"]
+SAMPLES         = pd.read_table(samples_file)
+SAMPLES_PATH    = SAMPLES.path.values.tolist()
+SAMPLES_NAME    = SAMPLES.name.values.tolist()
+
 CHROMOSOMES     = [str(i) for i in range(1, 23)]
-DATASETS        = [i for i in range(1, 41)] # include #40
 PLINK_FORMATS   = ['bed', 'bim', 'fam', 'log']
 PLINK_FORMATS_EXT   = ['bed', 'bim', 'fam', 'log', 'nosex']
-PLINK           = "plink/*.bed"
 
 rule all:
     input:
@@ -16,15 +20,15 @@ rule all:
 
 rule convert_23andme_to_plink:
     input:
-        expand("input/{i}.txt", i=DATASETS)
+        expand("{i}", i=SAMPLES_PATH)
     output:
-        sorted(expand("plink/{i}.{ext}", i=DATASETS, ext=PLINK_FORMATS))
+        sorted(expand("plink/{i}.{ext}", i=SAMPLES_NAME, ext=PLINK_FORMATS))
     conda:
         # TODO: separate for plink and bcftools
         "envs/pipeline.yaml"
     shell:
         """
-        for i in {DATASETS}; do
+        for i in {SAMPLES_NAME}; do
             plink --23file input/$i.txt $i $i i --output-chr M --make-bed --out plink/$i
         done
         """
@@ -37,13 +41,13 @@ rule merge_list:
     params:
     shell:
         """
-        true > {output} && for i in {DATASETS}; do echo "plink/$i" >> {output}; done
+        true > {output} && for i in {SAMPLES_NAME}; do echo "plink/$i" >> {output}; done
         """
 
 rule merge_to_vcf:
-    input: rules.merge_list.output # sorted(expand("plink/{i}.{ext}", i=DATASETS, ext=PLINK_FORMATS))
+    input: rules.merge_list.output
     output:
-        plink_clean = sorted(expand("plink/{i}_clean.{ext}", i=DATASETS, ext=PLINK_FORMATS)),
+        plink_clean = sorted(expand("plink/{i}_clean.{ext}", i=SAMPLES_NAME, ext=PLINK_FORMATS)),
         vcf = "vcf/merged.vcf.gz"
     conda:
         "envs/pipeline.yaml"
@@ -57,7 +61,7 @@ rule merge_to_vcf:
             for i in `cat {input}`;
                 do plink --bfile $i --exclude vcf/merged.missnp --make-bed --out $i\_clean;
             done
-            true > {input} && for i in {DATASETS}; do echo plink/$i\_clean >> {input}; done
+            true > {input} && for i in {SAMPLES_NAME}; do echo plink/$i\_clean >> {input}; done
             plink --merge-list {input} --output-chr M --export vcf bgz --out vcf/merged
             exit 0
         fi
