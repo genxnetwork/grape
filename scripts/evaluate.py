@@ -35,9 +35,7 @@ def read_segments_graph(matchfiles):
 
 
 def ersa_king(rel_ersa, rel_king, segments_graph, outname):
-    """Note FID2 and IID2 are subjects in the background data
-    If all=True, give all pairwise relatives between clients,
-    instead of that between client and background"""
+    """Note FID2 and IID2 are subjects in the background data"""
     for i in segments_graph.nodes:
         if i in rel_king:
             for n in rel_king.neighbors(i):
@@ -56,7 +54,7 @@ def ersa_king(rel_ersa, rel_king, segments_graph, outname):
     for sample_id in segments_graph:
         fid1, iid1 = sample_id.split('_')
         if sample_id in rel_ersa:
-            for n in rel_ersa.neighbors(sample_id):
+            for i, n in enumerate(rel_ersa.neighbors(sample_id)):
                 fid2, iid2 = n.split('_')
                 segs = segments_graph.edges.get((sample_id, n), {})
                 # for duplicate values both in target and background
@@ -76,6 +74,18 @@ def ersa_king(rel_ersa, rel_king, segments_graph, outname):
                     else:
                         # KING will override ERSA for degree 1,2 and 3
                         dst = int(dst) + 1
+                if i == 0:
+                    print('values')
+                    print(fid1)
+                    print(iid1)
+                    print(fid2)
+                    print(iid2)
+                    print(dc.get('Rel_est1', "NA"))
+                    print(dc.get('Rel_est2', "NA"))
+                    print(str(dst))
+                    print(dst)
+                    print(segs.get('N', 0))
+                    print(segs.get('length', 0))
                 w.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:.2f}\n".format(
                     fid1, iid1, fid2, iid2, dc.get('Rel_est1', "NA"),
                     dc.get('Rel_est2', "NA"), str(dst), dst, segs.get('N', 0), segs.get('length', 0)
