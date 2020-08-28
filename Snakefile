@@ -6,7 +6,7 @@ import pandas as pd
 configfile: "config.yaml"
 
 samples_file    = config["samples_file"]
-SAMPLES         = pd.read_table(samples_file)
+SAMPLES         = pd.read_table(samples_file).set_index("name", drop=False)
 SAMPLES_PATH    = SAMPLES.path.values.tolist()
 SAMPLES_NAME    = SAMPLES.name.values.tolist()
 
@@ -14,28 +14,40 @@ CHROMOSOMES     = [str(i) for i in range(1, 23)]
 PLINK_FORMATS   = ['bed', 'bim', 'fam', 'log']
 PLINK_FORMATS_EXT   = ['bed', 'bim', 'fam', 'log', 'nosex']
 
+def get_samples_name(wildcards):
+    return SAMPLES.loc[int(wildcards.sample), "name"] # mind the int index
+
+def get_samples_path(wildcards):
+    return SAMPLES.loc[int(wildcards.sample), "path"] # mind the int index
+
 rule all:
     input:
-        "results/relatives.tsv"
+        # "results/relatives.tsv"
+        # expand("plink/{sample}.{ext}", sample=SAMPLES_NAME, ext=PLINK_FORMATS)
+        # "plink/merge.list"
+        # vcf = "vcf/merged.vcf.gz"
+        # expand("plink/merged_filter.{ext}", ext=PLINK_FORMATS)
+        # "plink/merged_filter.bim"
+        # "plink/merged_filter.bim.chr"
+        "vcf/merged_mapped_sorted.vcf.gz"
 
 rule convert_23andme_to_plink:
     input:
-        expand("{i}", i=SAMPLES_PATH)
+        get_samples_path
     output:
-        sorted(expand("plink/{i}.{ext}", i=SAMPLES_NAME, ext=PLINK_FORMATS))
+        expand("plink/{{sample}}.{ext}", ext=PLINK_FORMATS)
+    params:
+        get_samples_name
     conda:
-        # TODO: separate for plink and bcftools
         "envs/plink.yaml"
     shell:
         """
-        for i in {SAMPLES_NAME}; do
-            plink --23file input/$i.txt $i $i i --output-chr M --make-bed --out plink/$i
-        done
+        plink --23file {input} {params} {params} i --output-chr M --make-bed --out plink/{params}
         """
 
 rule merge_list:
     input:
-        rules.convert_23andme_to_plink.output
+        expand("plink/{sample}.{ext}", sample=SAMPLES_NAME, ext=PLINK_FORMATS)
     output:
         "plink/merge.list"
     shell:
@@ -46,8 +58,10 @@ rule merge_list:
 rule merge_to_vcf:
     input: rules.merge_list.output
     output:
-        plink_clean = sorted(expand("plink/{i}_clean.{ext}", i=SAMPLES_NAME, ext=PLINK_FORMATS)),
-        vcf = "vcf/merged.vcf.gz"
+        plink_clean     = expand("plink/{i}_clean.{ext}", i=SAMPLES_NAME, ext=PLINK_FORMATS),
+        plink_merged    = expand("vcf/merged.{ext}", ext=PLINK_FORMATS),
+        vcf             = "vcf/merged.vcf.gz",
+        merge_list      = "plink/merge_clean.list"
     conda:
         "envs/plink.yaml"
     shell:
@@ -60,38 +74,25 @@ rule merge_to_vcf:
             for i in `cat {input}`;
                 do plink --bfile $i --exclude vcf/merged.missnp --make-bed --out $i\_clean;
             done
-            true > {input} && for i in {SAMPLES_NAME}; do echo plink/$i\_clean >> {input}; done
-            plink --merge-list {input} --output-chr M --export vcf bgz --out vcf/merged
+            true > {output.merge_list} && for i in {SAMPLES_NAME}; do echo plink/$i\_clean >> {output.merge_list}; done
+            plink --merge-list {output.merge_list} --output-chr M --export vcf bgz --out vcf/merged
             exit 0
         fi
         exit 1
         """
 
-# TODO: extra step bc we already have plink in vcf/merged
-rule convert_to_plink:
-    input: rules.merge_to_vcf.output["vcf"]
-    output: expand("plink/{i}.{ext}", i="merged", ext=PLINK_FORMATS_EXT)
-    params:
-        out = "plink/merged"
-    conda:
-        "envs/plink.yaml"
-    shell:
-        """
-        plink --vcf {input} --make-bed --out {params.out}
-        """
-
 rule plink_filter:
-    input: rules.convert_to_plink.output
-    output: expand("plink/{i}.{ext}", i="merged_filter", ext=PLINK_FORMATS_EXT)
+    input: rules.merge_to_vcf.output["vcf"]
+    output: expand("plink/merged_filter.{ext}", ext=PLINK_FORMATS)
     conda:
         "envs/plink.yaml"
     params:
-        input = "merged",
-        out = "merged_filter"
+        input   = "merged",
+        out     = "merged_filter"
     shell:
         """
         # TODO: the old parameter --maf 1e-50 is too low, back to the "default" 0.05
-        plink --bfile plink/{params.input} --geno 0.1 --maf 0.05 --hwe 0 --make-bed --keep-allele-order --out plink/{params.out}
+        plink --bfile vcf/{params.input} --geno 0.1 --maf 0.05 --hwe 0 --make-bed --keep-allele-order --out plink/{params.out}
         """
 
 rule pre_imputation_check:
