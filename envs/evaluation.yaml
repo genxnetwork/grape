@@ -1,0 +1,8 @@
+name: evaluation
+channels:
+    - conda-forge
+dependencies:
+    - networkx
+    - seaborn
+    - matplotlib
+    - pandas

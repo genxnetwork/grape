@@ -16,7 +16,7 @@ PLINK_FORMATS_EXT   = ['bed', 'bim', 'fam', 'log', 'nosex']
 
 rule all:
     input:
-        "ersa/ersa.chr1"
+        "results/relatives.tsv"
 
 rule convert_23andme_to_plink:
     input:
@@ -25,7 +25,7 @@ rule convert_23andme_to_plink:
         sorted(expand("plink/{i}.{ext}", i=SAMPLES_NAME, ext=PLINK_FORMATS))
     conda:
         # TODO: separate for plink and bcftools
-        "envs/pipeline.yaml"
+        "envs/plink.yaml"
     shell:
         """
         for i in {SAMPLES_NAME}; do
@@ -38,7 +38,6 @@ rule merge_list:
         rules.convert_23andme_to_plink.output
     output:
         "plink/merge.list"
-    params:
     shell:
         """
         true > {output} && for i in {SAMPLES_NAME}; do echo "plink/$i" >> {output}; done
@@ -50,7 +49,7 @@ rule merge_to_vcf:
         plink_clean = sorted(expand("plink/{i}_clean.{ext}", i=SAMPLES_NAME, ext=PLINK_FORMATS)),
         vcf = "vcf/merged.vcf.gz"
     conda:
-        "envs/pipeline.yaml"
+        "envs/plink.yaml"
     shell:
         """
         set +e
@@ -75,7 +74,7 @@ rule convert_to_plink:
     params:
         out = "plink/merged"
     conda:
-        "envs/pipeline.yaml"
+        "envs/plink.yaml"
     shell:
         """
         plink --vcf {input} --make-bed --out {params.out}
@@ -85,7 +84,7 @@ rule plink_filter:
     input: rules.convert_to_plink.output
     output: expand("plink/{i}.{ext}", i="merged_filter", ext=PLINK_FORMATS_EXT)
     conda:
-        "envs/pipeline.yaml"
+        "envs/plink.yaml"
     params:
         input = "merged",
         out = "merged_filter"
@@ -117,7 +116,7 @@ rule plink_clean_up:
         input = "plink/merged_filter",
         out = "plink/merged_mapped"
     conda:
-        "envs/pipeline.yaml"
+        "envs/plink.yaml"
     shell:
         """
         plink --bfile {params.input}         --extract       plink/merged_filter.bim.chr     --make-bed --out plink/merged_extracted
@@ -204,7 +203,7 @@ rule imputation_filter:
     output: expand("imputed/chr{i}.imputed.dose.pass.vcf.gz", i=CHROMOSOMES)
     threads: workflow.cores
     conda:
-        "envs/pipeline.yaml"
+        "envs/bcftools.yaml"
     shell:
         """
         FILTER="'R2>0.3 & strlen(REF)=1 & strlen(ALT)=1'"
@@ -226,7 +225,7 @@ rule merge_imputation_filter:
     params:
         list="vcf/imputed.merge.list"
     conda:
-        "envs/pipeline.yaml"
+        "envs/bcftools.yaml"
     shell:
         """
         # for now just skip empty files
@@ -248,7 +247,7 @@ rule convert_imputed_to_plink:
     params:
         out = "plink/merged_imputed"
     conda:
-        "envs/pipeline.yaml"
+        "envs/plink.yaml"
     shell:
         """
         plink --vcf {input} --make-bed --out {params.out}
@@ -275,7 +274,7 @@ rule index_and_split:
     input: rules.merge_imputation_filter.output
     output: expand("vcf/imputed_chr{i}.vcf.gz", i=CHROMOSOMES)
     conda:
-        "envs/pipeline.yaml"
+        "envs/bcftools.yaml"
     threads: workflow.cores
     shell:
         """
@@ -290,7 +289,7 @@ rule convert_to_hap:
     input: rules.index_and_split.output
     output: expand("hap/imputed_chr{i}.hap", i=CHROMOSOMES)
     conda:
-        "envs/pipeline.yaml"
+        "envs/bcftools.yaml"
     threads: workflow.cores
     shell:
         """
@@ -302,14 +301,12 @@ rule convert_to_hap:
 rule convert_to_ped:
     input: rules.convert_to_hap.output
     output: expand("ped/imputed_chr{i}.ped", i=CHROMOSOMES)
-    # TODO: find a package
-    # conda:
-    #     "envs/germline.yaml"
+    singularity:
+        "docker://alexgenx/germline:stable"
     shell:
         """
-        IMPUTE_2_PED=/media/pipeline/tools/binaries/impute_to_ped
         for i in `seq 1 22`; do
-            $IMPUTE_2_PED hap/imputed_chr$i.hap hap/imputed_chr$i.sample ped/imputed_chr$i
+            impute_to_ped hap/imputed_chr$i.hap hap/imputed_chr$i.sample ped/imputed_chr$i
         done
         """
 
@@ -332,48 +329,69 @@ rule interpolate:
     input: rules.convert_to_hap.output
     output: expand("cm/chr{i}.cm.ped", i=CHROMOSOMES)
     conda:
-        "envs/pipeline.yaml"
+        "envs/plink.yaml"
     shell:
         """
         for i in `seq 1 22`; do
-            if ! plink --file ped/imputed_chr$i --cm-map /media/genetic_map_b37/genetic_map_chr$i\_combined_b37.txt $i --recode --out cm/chr$i.cm;
-            then
-                touch cm/chr$i.cm.ped
-                continue
-            fi
+            plink --file ped/imputed_chr$i --cm-map /media/genetic_map_b37/genetic_map_chr$i\_combined_b37.txt $i --recode --out cm/chr$i.cm
         done
         """
 
-# TODO: does not work as conda do not know why
 rule germline:
     input: rules.interpolate.output
     output: expand("germline/chr{i}.germline.match", i=CHROMOSOMES)
-    conda:
-        "envs/germline.yaml"
+    singularity:
+        "docker://alexgenx/germline:stable"
     shell:
         """
-        GERMLINE=/media/pipeline/tools/binaries/germline
-
         for i in `seq 1 22`; do
-            $GERMLINE -input ped/imputed_chr$i.ped cm/chr$i.cm.map -homoz -min_m 2.5 -err_hom 2 -err_het 1 -output germline/chr$i.germline;
+            germline -input ped/imputed_chr$i.ped cm/chr$i.cm.map -homoz -min_m 2.5 -err_hom 2 -err_het 1 -output germline/chr$i.germline;
             # TODO: germline returns some length in BP instead of cM - clean up is needed
             grep -v MB germline/chr$i.germline.match > germline/chr$i.germline.match.clean && mv germline/chr$i.germline.match.clean germline/chr$i.germline.match
         done
         """
 
+rule ersa_params:
+    input:
+        king=rules.run_king.output,
+        germline=rules.germline.output
+    output: "ersa/params.txt"
+    conda: "envs/ersa_params.yaml"
+    script: "scripts/estimate_ersa_params.py"
+
+rule merge_matches:
+    input:
+         expand("germline/chr{chrom}.germline.match", chrom=CHROMOSOMES)
+    output:
+          "germline/all.tsv"
+    shell:
+         "cat germline/*.match > {output}"
+
+
 rule ersa:
     # TODO: look for conda/container/pip
     # TODO: failed for chr8 bc of MB instead of Cm but why??? need to double check in interpolate
     # TODO: grep -v MB germline/chr8.germline.match > germline/chr8.germline.match.clean
-    input: rules.germline.output
-    output: expand("ersa/ersa.chr{i}", i=CHROMOSOMES)
+    input:
+        germline=rules.merge_matches.output,
+        estimated=rules.ersa_params.output
+    output: "ersa/relatives.tsv"
+    singularity:
+        "docker://alexgenx/ersa:stable"
     shell:
         """
-        ERSA_L=13.7
-        ERSA_TH=3.197
-        ERSA_T=2.5
-
-        for i in `seq 1 22`; do
-            ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH germline/chr$i.germline.match -o ersa/ersa.chr$i
-        done
+        #ERSA_L=13.7
+        #ERSA_TH=3.197
+        #ERSA_T=2.5
+        source {input.estimated}
+        ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.germline} -o {output}
         """
+
+rule merge_king_ersa:
+    input:
+        king=rules.run_king.output,
+        germline=rules.merge_matches.output,
+        ersa=rules.ersa.output
+    output: "results/relatives.tsv"
+    conda: "envs/evaluation.yaml"
+    script: "scripts/evaluate.py"

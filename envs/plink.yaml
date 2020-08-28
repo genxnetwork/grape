@@ -1,0 +1,6 @@
+name: plink
+channels:
+    - bioconda
+    - soil
+dependencies:
+    - plink
