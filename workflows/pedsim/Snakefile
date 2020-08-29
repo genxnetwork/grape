@@ -1,0 +1,68 @@
+
+
+SAMPLES = [str(s) for s in range(10)]
+CHROMOSOMES     = [str(i) for i in range(1, 23)]
+
+CHIP_DATA_LINK = 'ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.chip.omni_broad_sanger_combined.20140818.snps.genotypes.vcf.gz'
+CHIP_INDEX_LINK = 'ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.chip.omni_broad_sanger_combined.20140818.snps.genotypes.vcf.gz.tbi'
+
+rule all:
+    input:
+        #expand("simulated/{sample}.txt", sample=SAMPLES)
+        "genomes_phased/merged.vcf.gz"
+
+
+rule download_source:
+    output:
+        bg="genomes_raw/all.vcf.gz",
+        tbi="genomes_raw/all.vcf.gz.tbi"
+
+    shell:
+         """
+             wget {CHIP_DATA_LINK} -O {output.bg} -nv
+             wget {CHIP_INDEX_LINK} -O {output.tbi} -nv 
+         """
+
+rule phase:
+    input: rules.download_source.output['bg']
+    output: "genomes_phased/chr{chrom}.phased.vcf.gz"
+    singularity:
+        "docker://biocontainers/bio-eagle:v2.4.1-1-deb_cv1"
+    shell:
+        """
+        GENOTYPE_1000GENOME=/media/1000genome/bcf/1000genome_chr{wildcards.chrom}.bcf
+        # TODO: not sure what to do with that
+        GENETIC_MAP=/media/tables/genetic_map_hg19_withX.txt.gz
+
+        /usr/bin/bio-eagle --vcfRef  /media/1000genome/bcf/1000genome_chr{wildcards.chrom}.bcf \
+            --vcfTarget {input}  \
+            --geneticMapFile $GENETIC_MAP \
+            --chrom {wildcards.chrom} \
+            --vcfOutFormat z \
+            --outPrefix genomes_phased/chr{wildcards.chrom}.phased
+        """
+
+rule merge_phased:
+    input:
+        expand("genomes_phased/chr{chrom}.phased.vcf.gz", chrom=CHROMOSOMES)
+    output:
+        rules.all.input
+    params:
+        list="genomes_phased/phased.merge.list"
+    conda:
+        "../../envs/bcftools.yaml"
+    shell:
+        """
+        # for now just skip empty files
+        true > {params.list} && \
+        for i in {input}; do
+            if [ -s $i ]
+            then
+                echo $i >> {params.list}
+            else
+                continue
+            fi
+        done
+        bcftools concat -f {params.list} -O z -o {output}
+        """
+
