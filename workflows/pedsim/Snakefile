@@ -9,7 +9,8 @@ CHIP_INDEX_LINK = 'ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/sup
 rule all:
     input:
         #expand("simulated/{sample}.txt", sample=SAMPLES)
-        "pedsim/phased/merged.vcf.gz"
+        vcf='pedsim/simulated/data.vcf.gz',
+        seg='pedsim/simulated/data.seg'
 
 
 rule download_source:
@@ -37,7 +38,7 @@ rule merge_background:
     input:
         expand("pedsim/phased/chr{chrom}.phased.vcf.gz", chrom=CHROMOSOMES)
     output:
-        rules.all.input
+        "pedsim/phased/background.vcf.gz"
     params:
         list="pedsim/phased/phased.merge.list"
     conda:
@@ -57,21 +58,35 @@ rule merge_background:
         bcftools concat -f {params.list} -O z -o {output}
         """
 
-rule simulate:
-    # os.system("{} -d {} -m {} -i {} -o  {} --intf {}".format(
-#             ped_sim, def_file, map_file, phased_input, outname, intf_file
-#         ))
+rule prepare_map:
+    output:
+        "workflows/pedsim/params/refined_mf.simmap"
+    shell:
+        """
+            wget https://github.com/cbherer/Bherer_etal_SexualDimorphismRecombination/raw/master/Refined_genetic_map_b37.tar.gz
+            tar xvzf Refined_genetic_map_b37.tar.gz
+            printf "#chr\tpos\tmale_cM\tfemale_cM\n" > {output}
+            for chr in {{1..22}}; do
+              paste Refined_genetic_map_b37/male_chr$chr.txt Refined_genetic_map_b37/female_chr$chr.txt \
+                | awk -v OFS="\t" 'NR > 1 && $2 == $6 {{print $1,$2,$4,$8}}' \
+                | sed 's/^chr//' >> {output};
+            done
+            rm -rf Refined_genetic_map_b37
+        """
 
+rule simulate:
     input:
         bg=rules.merge_background.output,
-        _map='workflows/pedsim/params/refined_mf.simmap',
+        _map=rules.prepare_map.output,
         _def='workflows/pedsim/params/Relatives.def',
         intf='workflows/pedsim/params/nu_p_campbell.tsv'
     output:
         vcf='pedsim/simulated/data.vcf.gz',
-        fam='pedsim/simulated/data.fam'
+        fam='pedsim/simulated/data.seg'
     params:
         prefix='pedsim/simulated/data'
+    singularity:
+        "docker://alexgenx/pedsim:stable"
     shell:
         """
             pedsim -d {input._def} -m {input._map} -i {input.bg} -o {params.prefix} --intf {input.intf}
