@@ -9,7 +9,7 @@ CHIP_INDEX_LINK = 'ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/sup
 rule all:
     input:
         #expand("simulated/{sample}.txt", sample=SAMPLES)
-        "genomes_phased/merged.vcf.gz"
+        "pedsim/phased/merged.vcf.gz"
 
 
 rule download_source:
@@ -23,32 +23,23 @@ rule download_source:
              wget {CHIP_INDEX_LINK} -O {output.tbi} -nv 
          """
 
-rule phase:
+rule intersect:
     input: rules.download_source.output['bg']
-    output: "genomes_phased/chr{chrom}.phased.vcf.gz"
-    singularity:
-        "docker://biocontainers/bio-eagle:v2.4.1-1-deb_cv1"
+    output: "pedsim/phased/chr{chrom}.phased.vcf.gz"
+
     shell:
         """
-        GENOTYPE_1000GENOME=/media/1000genome/bcf/1000genome_chr{wildcards.chrom}.bcf
-        # TODO: not sure what to do with that
-        GENETIC_MAP=/media/tables/genetic_map_hg19_withX.txt.gz
-
-        /usr/bin/bio-eagle --vcfRef  /media/1000genome/bcf/1000genome_chr{wildcards.chrom}.bcf \
-            --vcfTarget {input}  \
-            --geneticMapFile $GENETIC_MAP \
-            --chrom {wildcards.chrom} \
-            --vcfOutFormat z \
-            --outPrefix genomes_phased/chr{wildcards.chrom}.phased
+            bcftools isec -n=2 -w1 -r {wildcards.chrom} -O v -o {output} /media/1000genome/bcf/1000genome_chr{wildcards.chrom}.bcf {input}  
         """
 
-rule merge_phased:
+
+rule merge_background:
     input:
-        expand("genomes_phased/chr{chrom}.phased.vcf.gz", chrom=CHROMOSOMES)
+        expand("pedsim/phased/chr{chrom}.phased.vcf.gz", chrom=CHROMOSOMES)
     output:
         rules.all.input
     params:
-        list="genomes_phased/phased.merge.list"
+        list="pedsim/phased/phased.merge.list"
     conda:
         "../../envs/bcftools.yaml"
     shell:
@@ -66,3 +57,22 @@ rule merge_phased:
         bcftools concat -f {params.list} -O z -o {output}
         """
 
+rule simulate:
+    # os.system("{} -d {} -m {} -i {} -o  {} --intf {}".format(
+#             ped_sim, def_file, map_file, phased_input, outname, intf_file
+#         ))
+
+    input:
+        bg=rules.merge_background.output,
+        _map='workflows/pedsim/params/refined_mf.simmap',
+        _def='workflows/pedsim/params/Relatives.def',
+        intf='workflows/pedsim/params/nu_p_campbell.tsv'
+    output:
+        vcf='pedsim/simulated/data.vcf.gz',
+        fam='pedsim/simulated/data.fam'
+    params:
+        prefix='pedsim/simulated/data'
+    shell:
+        """
+            pedsim -d {input._def} -m {input._map} -i {input.bg} -o {params.prefix} --intf {input.intf}
+        """
