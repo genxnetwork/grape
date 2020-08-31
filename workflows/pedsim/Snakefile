@@ -9,8 +9,9 @@ CHIP_INDEX_LINK = 'ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/sup
 rule all:
     input:
         #expand("simulated/{sample}.txt", sample=SAMPLES)
-        vcf='pedsim/simulated/data.vcf.gz',
-        seg='pedsim/simulated/data.seg'
+        kin='pedsim/simulated/reheaded_data.kinship',
+        vcf='pedsim/simulated/reheaded_data.vcf.gz',
+        fam='pedsim/simulated/reheaded_data.fam'
 
 
 rule download_source:
@@ -82,12 +83,28 @@ rule simulate:
         intf='workflows/pedsim/params/nu_p_campbell.tsv'
     output:
         vcf='pedsim/simulated/data.vcf.gz',
-        fam='pedsim/simulated/data.seg'
+        seg='pedsim/simulated/data.seg',
+        fam='pedsim/simulated/data-everyone.fam'
     params:
         prefix='pedsim/simulated/data'
     singularity:
         "docker://alexgenx/pedsim:stable"
     shell:
         """
-            pedsim -d {input._def} -m {input._map} -i {input.bg} -o {params.prefix} --intf {input.intf}
+            pedsim -d {input._def} -m {input._map} -i {input.bg} -o {params.prefix} --intf {input.intf} --fam
         """
+
+rule postprocess:
+    input:
+        vcf='pedsim/simulated/data.vcf.gz',
+        fam='pedsim/simulated/data-everyone.fam'
+    output:
+        kin='pedsim/simulated/reheaded_data.kinship',
+        vcf='pedsim/simulated/reheaded_data.vcf.gz',
+        fam='pedsim/simulated/reheaded_data.fam'
+    conda:
+        "envs/postprocess.yaml"
+    script:
+        "scripts/postprocess.py"
+
+
