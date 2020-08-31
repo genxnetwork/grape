@@ -1,1 +1,2 @@
 samples_file: samples.tsv
+vcf_file: vcf/merged.vcf.gz

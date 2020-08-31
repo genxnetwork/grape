@@ -1,4 +1,4 @@
-
+#configfile: "workflows/pedsim/config.yaml"
 
 SAMPLES = [str(s) for s in range(10)]
 CHROMOSOMES     = [str(i) for i in range(1, 23)]
@@ -8,10 +8,8 @@ CHIP_INDEX_LINK = 'ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/sup
 
 rule all:
     input:
-        #expand("simulated/{sample}.txt", sample=SAMPLES)
-        kin='pedsim/simulated/reheaded_data.kinship',
-        vcf='pedsim/simulated/reheaded_data.vcf.gz',
-        fam='pedsim/simulated/reheaded_data.fam'
+        "results/relatives.tsv",
+        "results/accuracy.png"
 
 
 rule download_source:
@@ -61,7 +59,7 @@ rule merge_background:
 
 rule prepare_map:
     output:
-        "workflows/pedsim/params/refined_mf.simmap"
+        "pedsim/params/refined_mf.simmap"
     shell:
         """
             wget https://github.com/cbherer/Bherer_etal_SexualDimorphismRecombination/raw/master/Refined_genetic_map_b37.tar.gz
@@ -79,8 +77,8 @@ rule simulate:
     input:
         bg=rules.merge_background.output,
         _map=rules.prepare_map.output,
-        _def='workflows/pedsim/params/Relatives.def',
-        intf='workflows/pedsim/params/nu_p_campbell.tsv'
+        _def='pedsim/params/Relatives.def',
+        intf='pedsim/params/nu_p_campbell.tsv'
     output:
         vcf='pedsim/simulated/data.vcf.gz',
         seg='pedsim/simulated/data.seg',
@@ -108,3 +106,6 @@ rule postprocess:
         "scripts/postprocess.py"
 
 
+include: "../../rules/imputation.smk"
+
+include: "../../rules/relatives.smk"

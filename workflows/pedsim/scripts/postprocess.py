@@ -35,12 +35,33 @@ def bcftools_reheader(infile, sample, outname=None):
     """Rename vcf samples given a sample file"""
     if not outname:
         outname = infile
-    args = [BCFTOOLS, 'reheader', infile, '-s', sample, '-o', outname]
+
+    # workaround of https: // github.com / samtools / bcftools / issues / 1288
+    vcf_uncompressed = infile[:-3]  # remove .gz
+    view_args = [BCFTOOLS, 'view', infile, '-O', 'v', '-o', vcf_uncompressed]
+    pipes = subprocess.Popen(view_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    std_out, std_err = pipes.communicate()
+    if pipes.returncode != 0:
+        print(std_out.decode())
+        raise Exception(std_err.decode())
+
+    vcf_reheaded = vcf_uncompressed[:-4] + '.reheaded.vcf'
+    args = [BCFTOOLS, 'reheader', vcf_uncompressed, '-s', sample, '-o', vcf_reheaded]
     pipes = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     std_out, std_err = pipes.communicate()
     if pipes.returncode != 0:
         print(std_out.decode())
         raise Exception(std_err.decode())
+
+    args = [BCFTOOLS, 'view', vcf_reheaded, '-Oz', '-o', outname]
+    pipes = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    std_out, std_err = pipes.communicate()
+    if pipes.returncode != 0:
+        print(std_out.decode())
+        raise Exception(std_err.decode())
+
+    os.remove(vcf_reheaded)
+    os.remove(vcf_uncompressed)
     return outname
 
 

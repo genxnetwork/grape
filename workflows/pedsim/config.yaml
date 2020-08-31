@@ -1,0 +1,2 @@
+samples_file: samples.tsv
+vcf_file: pedsim/simulated/reheaded_data.vcf.gz

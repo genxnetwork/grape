@@ -47,7 +47,8 @@ rule merge_to_vcf:
     input: rules.merge_list.output
     output:
         plink_clean = sorted(expand("plink/{i}_clean.{ext}", i=SAMPLES_NAME, ext=PLINK_FORMATS)),
-        vcf = "vcf/merged.vcf.gz"
+        #vcf = "vcf/merged.vcf.gz"
+        vcf = config["vcf_file"]
     conda:
         "envs/plink.yaml"
     shell:
