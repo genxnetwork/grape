@@ -22,7 +22,7 @@ def get_samples_path(wildcards):
 
 rule all:
     input:
-        # "results/relatives.tsv"
+        "results/relatives.tsv"
 
 rule convert_23andme_to_plink:
     input:
