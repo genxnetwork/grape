@@ -20,9 +20,12 @@ def get_samples_name(wildcards):
 def get_samples_path(wildcards):
     return SAMPLES.loc[int(wildcards.sample), "path"] # mind the int index
 
+include: "rules/report.rule"
+
 rule all:
     input:
-        "results/relatives.tsv"
+        "results/relatives.tsv",
+        rules.report_benchmark_summary.output
 
 rule convert_23andme_to_plink:
     input:
@@ -33,9 +36,14 @@ rule convert_23andme_to_plink:
         get_samples_name
     conda:
         "envs/plink.yaml"
+    log:
+        "logs/plink/convert_23andme_to_plink-{sample}.log"
+    benchmark:
+        "benchmarks/plink/convert_23andme_to_plink-{sample}.txt"
     shell:
         """
-        plink --23file {input} {params} {params} i --output-chr M --make-bed --out plink/{params}
+        # by default plink write output in the same --out option. need to use tee to redirect
+        plink --23file {input} {params} {params} i --output-chr M --make-bed --out plink/{params} | tee {log}
         """
 
 rule merge_list:
@@ -57,18 +65,22 @@ rule merge_to_vcf:
         merge_list      = "plink/merge_clean.list"
     conda:
         "envs/plink.yaml"
+    log:
+        "logs/plink/merge_to_vcf.log"
+    benchmark:
+        "benchmarks/plink/merge_to_vcf.txt"
     shell:
         """
         set +e
-        plink --merge-list {input} --output-chr M --export vcf bgz --out vcf/merged
+        plink --merge-list {input} --output-chr M --export vcf bgz --out vcf/merged | tee -a {log}
         exitcode=$?
 
         if [[ -f "vcf/merged.missnp" ]]; then
             for i in `cat {input}`;
-                do plink --bfile $i --exclude vcf/merged.missnp --make-bed --out $i\_clean;
+                do plink --bfile $i --exclude vcf/merged.missnp --make-bed --out $i\_clean | tee -a {log};
             done
             true > {output.merge_list} && for i in {SAMPLES_NAME}; do echo plink/$i\_clean >> {output.merge_list}; done
-            plink --merge-list {output.merge_list} --output-chr M --export vcf bgz --out vcf/merged
+            plink --merge-list {output.merge_list} --output-chr M --export vcf bgz --out vcf/merged | tee -a {log}
             exit 0
         fi
         exit 1
@@ -82,10 +94,14 @@ rule plink_filter:
     params:
         input   = "merged",
         out     = "merged_filter"
+    log:
+        "logs/plink/plink_filter.log"
+    benchmark:
+        "benchmarks/plink/plink_filter.txt"
     shell:
         """
         # TODO: the old parameter --maf 1e-50 is too low, back to the "default" 0.05
-        plink --bfile vcf/{params.input} --geno 0.1 --maf 0.05 --hwe 0 --make-bed --keep-allele-order --out plink/{params.out}
+        plink --bfile vcf/{params.input} --geno 0.1 --maf 0.05 --hwe 0 --make-bed --keep-allele-order --out plink/{params.out} | tee {log}
         """
 
 rule pre_imputation_check:
@@ -95,8 +111,12 @@ rule pre_imputation_check:
         "plink/merged_filter.bim.pos",
         "plink/merged_filter.bim.force_allele",
         "plink/merged_filter.bim.flip"
-    script:
-        "pre_imputation_check.py"
+    log:
+        "logs/plink/pre_imputation_check.log"
+    benchmark:
+        "benchmarks/plink/pre_imputation_check.txt"
+    shell:
+        "python pre_imputation_check.py {input} | tee {log}"
 
 rule plink_clean_up:
     input:
@@ -111,12 +131,16 @@ rule plink_clean_up:
         out = "plink/merged_mapped"
     conda:
         "envs/plink.yaml"
+    log:
+        "logs/plink/plink_clean_up.log"
+    benchmark:
+        "benchmarks/plink/plink_clean_up.txt"
     shell:
         """
-        plink --bfile {params.input}         --extract       plink/merged_filter.bim.chr     --make-bed --out plink/merged_extracted
-        plink --bfile plink/merged_extracted --flip          plink/merged_filter.bim.flip    --make-bed --out plink/merged_flipped
-        plink --bfile plink/merged_flipped   --update-chr    plink/merged_filter.bim.chr     --make-bed --out plink/merged_chroped
-        plink --bfile plink/merged_chroped   --update-map    plink/merged_filter.bim.pos     --make-bed --out {params.out}
+        plink --bfile {params.input}         --extract       plink/merged_filter.bim.chr     --make-bed --out plink/merged_extracted    | tee -a {log}
+        plink --bfile plink/merged_extracted --flip          plink/merged_filter.bim.flip    --make-bed --out plink/merged_flipped      | tee -a {log}
+        plink --bfile plink/merged_flipped   --update-chr    plink/merged_filter.bim.chr     --make-bed --out plink/merged_chroped      | tee -a {log}
+        plink --bfile plink/merged_chroped   --update-map    plink/merged_filter.bim.pos     --make-bed --out {params.out}              | tee -a {log}
         """
 
 rule prepare_vcf:
@@ -127,16 +151,21 @@ rule prepare_vcf:
         input = "plink/merged_mapped"
     conda:
         "envs/pipeline.yaml"
+    log:
+        plink="logs/plink/prepare_vcf.log",
+        vcf="logs/vcf/prepare_vcf.log"
+    benchmark:
+        "benchmarks/plink/prepare_vcf.txt"
     shell:
         """
         GRCh37_fasta=/media/human_g1k_v37.fasta
 
-        plink --bfile {params.input} --a1-allele plink/merged_filter.bim.force_allele --make-bed --out plink/merged_mapped_alleled
-        plink --bfile plink/merged_mapped_alleled --keep-allele-order --output-chr M --export vcf bgz --out vcf/merged_mapped_clean
-        bcftools sort vcf/merged_mapped_clean.vcf.gz -O z -o vcf/merged_mapped_sorted.vcf.gz
+        plink --bfile {params.input} --a1-allele plink/merged_filter.bim.force_allele --make-bed --out plink/merged_mapped_alleled | tee -a {log.plink}
+        plink --bfile plink/merged_mapped_alleled --keep-allele-order --output-chr M --export vcf bgz --out vcf/merged_mapped_clean | tee -a {log.vcf}
+        bcftools sort vcf/merged_mapped_clean.vcf.gz -O z -o vcf/merged_mapped_sorted.vcf.gz | tee -a {log.vcf}
         # need to check output for the potential issues
         # bcftools norm --check-ref e -f $GRCh37_fasta merged_mapped_sorted.vcf.gz -O u -o /dev/null
-        bcftools index -f vcf/merged_mapped_sorted.vcf.gz
+        bcftools index -f vcf/merged_mapped_sorted.vcf.gz | tee -a {log.vcf}
         """
 
 rule phase:
@@ -145,6 +174,10 @@ rule phase:
     threads: workflow.cores
     singularity:
         "docker://biocontainers/bio-eagle:v2.4.1-1-deb_cv1"
+    log:
+        "logs/phase/eagle-{chrom}.log"
+    benchmark:
+        "benchmarks/phase/eagle-{chrom}.txt"
     shell:
         """
         GENETIC_MAP=/media/tables/genetic_map_hg19_withX.txt.gz
@@ -155,7 +188,7 @@ rule phase:
         --geneticMapFile $GENETIC_MAP \
         --chrom {wildcards.chrom} \
         --vcfOutFormat z \
-        --outPrefix phase/chr{wildcards.chrom}.phased
+        --outPrefix phase/chr{wildcards.chrom}.phased | tee {log}
         """
     
 rule impute:
@@ -164,6 +197,10 @@ rule impute:
     threads: workflow.cores
     singularity:
         "docker://biocontainers/minimac4:v1.0.0-2-deb_cv1"
+    log:
+        "logs/impute/minimac4-{chrom}.log"
+    benchmark:
+        "benchmarks/impute/minimac4-{chrom}.txt"
     shell:
         """
         /usr/bin/minimac4 \
@@ -171,7 +208,7 @@ rule impute:
         --haps phase/chr{wildcards.chrom}.phased.vcf.gz \
         --format GT,GP \
         --prefix imputed/chr{wildcards.chrom}.imputed \
-        --cpus {threads}
+        --cpus {threads} | tee {log}
         """
 
 rule imputation_filter:
@@ -181,11 +218,15 @@ rule imputation_filter:
     # threads: workflow.cores
     conda:
         "envs/bcftools.yaml"
+    log:
+        "logs/impute/imputation_filter-{chrom}.log"
+    benchmark:
+        "benchmarks/impute/imputation_filter-{chrom}.txt"
     shell:
         """
         FILTER="'R2>0.3 & strlen(REF)=1 & strlen(ALT)=1'"
 
-        bcftools view -i 'R2>0.3 & strlen(REF)=1 & strlen(ALT)=1' imputed/chr{wildcards.chrom}.imputed.dose.vcf.gz -v snps -m 2 -M 2 -O z -o imputed/chr{wildcards.chrom}.imputed.dose.pass.vcf.gz
+        bcftools view -i 'R2>0.3 & strlen(REF)=1 & strlen(ALT)=1' imputed/chr{wildcards.chrom}.imputed.dose.vcf.gz -v snps -m 2 -M 2 -O z -o imputed/chr{wildcards.chrom}.imputed.dose.pass.vcf.gz | tee {log}
         """
 
 rule merge_imputation_filter:
@@ -199,6 +240,10 @@ rule merge_imputation_filter:
         list="vcf/imputed.merge.list"
     conda:
         "envs/bcftools.yaml"
+    log:
+        "logs/vcf/merge_imputation_filter.log"
+    benchmark:
+        "benchmarks/vcf/merge_imputation_filter.txt"
     shell:
         """
         # for now just skip empty files
@@ -211,8 +256,8 @@ rule merge_imputation_filter:
                 continue
             fi
         done
-        bcftools concat -f {params.list} -O z -o {output}
-        bcftools index -f {output}
+        bcftools concat -f {params.list} -O z -o {output} | tee -a {log}
+        bcftools index -f {output} | tee -a {log}
         """
 
 rule convert_imputed_to_plink:
@@ -222,9 +267,13 @@ rule convert_imputed_to_plink:
         out = "plink/merged_imputed"
     conda:
         "envs/plink.yaml"
+    log:
+        "logs/plink/convert_imputed_to_plink.log"
+    benchmark:
+        "benchmarks/plink/convert_imputed_to_plink.txt"
     shell:
         """
-        plink --vcf {input} --make-bed --out {params.out}
+        plink --vcf {input} --make-bed --out {params.out} | tee {log}
         """
 
 rule run_king:
@@ -236,12 +285,16 @@ rule run_king:
     threads: workflow.cores
     singularity:
         "docker://lifebitai/king:latest"
+    log:
+        "logs/king/run_king.log"
+    benchmark:
+        "benchmarks/king/run_king.txt"
     shell:
         """
         # TODO: add cores
         KING_DEGREE=4
 
-        king -b {params.input}.bed --cpus {threads} --ibdseg --degree $KING_DEGREE --prefix {params.out}
+        king -b {params.input}.bed --cpus {threads} --ibdseg --degree $KING_DEGREE --prefix {params.out} | tee {log}
         """
 
 rule index_and_split:
@@ -251,9 +304,13 @@ rule index_and_split:
         "envs/bcftools.yaml"
     # TODO: because "The option is currently used only for the compression of the output stream"
     # threads: workflow.cores
+    log:
+        "logs/vcf/index_and_split-{chrom}.log"
+    benchmark:
+        "benchmarks/vcf/index_and_split-{chrom}.txt"
     shell:
         """
-        bcftools filter {input} -r {wildcards.chrom} -O z -o vcf/imputed_chr{wildcards.chrom}.vcf.gz;
+        bcftools filter {input} -r {wildcards.chrom} -O z -o vcf/imputed_chr{wildcards.chrom}.vcf.gz | tee {log}
         """
 
 rule convert_to_hap:
@@ -263,9 +320,14 @@ rule convert_to_hap:
         "envs/bcftools.yaml"
     # TODO: because "The option is currently used only for the compression of the output stream"
     # threads: workflow.cores
+    log:
+        "logs/vcf/convert_to_hap-{chrom}.log"
+    benchmark:
+        "benchmarks/vcf/convert_to_hap-{chrom}.txt"
     shell:
         """
-        bcftools convert vcf/imputed_chr{wildcards.chrom}.vcf.gz --hapsample hap/imputed_chr{wildcards.chrom} && gunzip -f hap/imputed_chr{wildcards.chrom}.hap.gz;
+        bcftools convert vcf/imputed_chr{wildcards.chrom}.vcf.gz --hapsample hap/imputed_chr{wildcards.chrom} | tee {log}
+        gunzip -f hap/imputed_chr{wildcards.chrom}.hap.gz | tee {log}
         """
 
 rule convert_to_ped:
@@ -273,9 +335,13 @@ rule convert_to_ped:
     output: "ped/imputed_chr{chrom}.ped"
     singularity:
         "docker://alexgenx/germline:stable"
+    log:
+        "logs/ped/convert_to_ped-{chrom}.log"
+    benchmark:
+        "benchmarks/ped/convert_to_ped-{chrom}.txt"
     shell:
         """
-        impute_to_ped hap/imputed_chr{wildcards.chrom}.hap hap/imputed_chr{wildcards.chrom}.sample ped/imputed_chr{wildcards.chrom}
+        impute_to_ped hap/imputed_chr{wildcards.chrom}.hap hap/imputed_chr{wildcards.chrom}.sample ped/imputed_chr{wildcards.chrom} | tee {log}
         """
 
 # TODO: skip this step for now
@@ -298,9 +364,13 @@ rule interpolate:
     output: "cm/chr{chrom}.cm.ped"
     conda:
         "envs/plink.yaml"
+    log:
+        "logs/cm/interpolate-{chrom}.log"
+    benchmark:
+        "benchmarks/cm/interpolate-{chrom}.txt"
     shell:
         """
-        plink --file ped/imputed_chr{wildcards.chrom} --cm-map /media/genetic_map_b37/genetic_map_chr{wildcards.chrom}\_combined_b37.txt {wildcards.chrom} --recode --out cm/chr{wildcards.chrom}.cm
+        plink --file ped/imputed_chr{wildcards.chrom} --cm-map /media/genetic_map_b37/genetic_map_chr{wildcards.chrom}\_combined_b37.txt {wildcards.chrom} --recode --out cm/chr{wildcards.chrom}.cm | tee {log}
         """
 
 rule germline:
@@ -308,9 +378,13 @@ rule germline:
     output: "germline/chr{chrom}.germline.match"
     singularity:
         "docker://alexgenx/germline:stable"
+    log:
+        "logs/germline/germline-{chrom}.log"
+    benchmark:
+        "benchmarks/germline/germline-{chrom}.txt"
     shell:
         """
-        germline -input ped/imputed_chr{wildcards.chrom}.ped cm/chr{wildcards.chrom}.cm.map -homoz -min_m 2.5 -err_hom 2 -err_het 1 -output germline/chr{wildcards.chrom}.germline
+        germline -input ped/imputed_chr{wildcards.chrom}.ped cm/chr{wildcards.chrom}.cm.map -homoz -min_m 2.5 -err_hom 2 -err_het 1 -output germline/chr{wildcards.chrom}.germline | tee {log}
         # TODO: germline returns some length in BP instead of cM - clean up is needed
         grep -v MB germline/chr{wildcards.chrom}.germline.match > germline/chr{wildcards.chrom}.germline.match.clean && mv germline/chr{wildcards.chrom}.germline.match.clean germline/chr{wildcards.chrom}.germline.match
         """
@@ -344,13 +418,17 @@ rule ersa:
     output: "ersa/relatives.tsv"
     singularity:
         "docker://alexgenx/ersa:stable"
+    log:
+        "logs/ersa/ersa.log"
+    benchmark:
+        "benchmarks/ersa/ersa.txt"
     shell:
         """
         #ERSA_L=13.7
         #ERSA_TH=3.197
         #ERSA_T=2.5
         source {input.estimated}
-        ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.germline} -o {output}
+        ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.germline} -o {output} | tee {log}
         """
 
 rule merge_king_ersa:
