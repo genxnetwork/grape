@@ -327,7 +327,7 @@ rule convert_to_hap:
     shell:
         """
         bcftools convert vcf/imputed_chr{wildcards.chrom}.vcf.gz --hapsample hap/imputed_chr{wildcards.chrom} | tee {log}
-        gunzip -f hap/imputed_chr{wildcards.chrom}.hap.gz | tee {log}
+        gunzip -f hap/imputed_chr{wildcards.chrom}.hap.gz | tee -a {log}
         """
 
 rule convert_to_ped:
