@@ -207,8 +207,6 @@ rule report_benchmark_summary:
         report = "reports/report.html",
         stats = "reports/benchmark_dataframe.txt",
         summary = "reports/benchmark_summary_stats.txt"
-    conda:
-        "envs/report.yaml"
     run:
         from snakemake.utils import report
 

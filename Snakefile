@@ -20,12 +20,12 @@ def get_samples_name(wildcards):
 def get_samples_path(wildcards):
     return SAMPLES.loc[int(wildcards.sample), "path"] # mind the int index
 
-include: "rules/report.rule"
+# include: "rules/report.rule"
 
 rule all:
     input:
         "results/relatives.tsv",
-        rules.report_benchmark_summary.output
+        # rules.report_benchmark_summary.output
 
 rule convert_23andme_to_plink:
     input:
