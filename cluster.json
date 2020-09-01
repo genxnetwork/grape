@@ -1,0 +1,9 @@
+{
+    "__default__": {
+        "time"      : "4:00:00",
+        "n"         : 1,
+        "mem"       : 4,
+        "output"    : "/dev/null",
+        "error"     : "/dev/null"
+    }
+}

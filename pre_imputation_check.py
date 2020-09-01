@@ -104,6 +104,6 @@ def pre_imputation_check(params, fn='./data/hapmap20', rs=True, reference=SITE_1
     print("Total flip&swap: {}.".format(flip_swap))
     return flip_file, force_allele_file, chr_file, pos_file
 
-if __name__ == "__main__":
-        pre_imputation_check(snakemake.input[0])
 
+if __name__ == "__main__":
+    pre_imputation_check(sys.argv[1])

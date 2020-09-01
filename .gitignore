@@ -20,3 +20,4 @@ dag.png
 .idea
 results/relatives.tsv
 scripts/__pycache__/*
+logs/*

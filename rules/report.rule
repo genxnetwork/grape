@@ -1,0 +1,437 @@
+import json
+import yaml
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+from glob import glob
+import numpy as np
+import re
+
+# simple function to get benchmark files
+def get_benchmarks():
+    benchmarks = glob('./benchmarks/*/*.txt')
+    return(benchmarks)
+
+
+# function to read a benchmark file
+def read_benchmark(fp, pattern = '^.*benchmarks/(.+?)/(.+?).txt$'):
+    # check to make sure .txt filepath matches expected format
+    m = re.search(pattern, fp)
+
+    if m:
+        benchmarks = pd.read_csv(fp, sep='\t', header=0)
+        
+        benchmarks['benchmark_file'] = fp
+        benchmarks['rule'] = m.group(2)
+        benchmarks['module'] = m.group(1)
+
+        return(benchmarks)
+    else:
+        return(None)
+
+
+# function to load all benchmarks into a data frame
+def load_benchmarks(benchmark_fps, cluster_json):
+
+    benchmark_results = []
+
+    for i, benchmark_file in enumerate(benchmark_fps):
+        try:
+            benchmark_results.append(read_benchmark(benchmark_file))
+        except pd.errors.EmptyDataError:
+            print('%s has no data\n' % benchmark_file)
+
+    benchmark_df = pd.concat(benchmark_results)
+    benchmark_df = benchmark_df.reset_index(drop=True)
+
+    # remove non-numeric and redundant h:m:s
+    benchmark_df.drop('h:m:s', axis=1, inplace=True)
+
+    # add in resource requests per rule
+    benchmark_df = benchmark_df.copy()
+    benchmark_df['n_cpus'] = np.nan
+    benchmark_df['mem'] = np.nan
+
+    for rule in set(benchmark_df['rule']):
+        if rule in cluster_json:
+            benchmark_df.loc[benchmark_df['rule'] == rule,'n_cpus'] = cluster_json[rule]['n']
+            benchmark_df.loc[benchmark_df['rule'] == rule,'mem'] = cluster_json[rule]['mem']
+        else:
+            benchmark_df.loc[benchmark_df['rule'] == rule,'n_cpus'] = cluster_json['__default__']['n']
+            benchmark_df.loc[benchmark_df['rule'] == rule,'mem'] = cluster_json['__default__']['mem']
+
+    benchmark_df['cpu_s'] = benchmark_df['s'] * benchmark_df['n_cpus']
+    benchmark_df['cpu_h'] = benchmark_df['s'] * benchmark_df['n_cpus'] / 3600
+    
+    benchmark_tidy = pd.melt(benchmark_df,
+               id_vars=['benchmark_file', 'rule', 'module', 'n_cpus', 'mem'])
+    
+    # convert value column to numeric
+    benchmark_tidy['value'] = pd.to_numeric(benchmark_tidy['value'], errors='coerce')
+
+    return(benchmark_df, benchmark_tidy)
+
+
+# plotting functions
+def plot_xy_bymodule(benchmark_tidy, variables = ['s','cpu_h','max_rss','io_in','io_out','mean_load'], outdir = '.'):
+    # isolate modules
+    modules = list(set(benchmark_tidy['module']))
+    modules.sort()
+    
+    plot_fps = {}
+
+    # iterate over modules
+    for module in modules:
+        g = sns.FacetGrid(benchmark_tidy.loc[(benchmark_tidy['variable'].isin(variables)) &
+                                             (benchmark_tidy['module'] == module),],
+                          col="variable", col_wrap=3, hue="rule", sharey = False, legend_out=True)
+
+        (g.map(plt.scatter, "module", "value"))
+
+        g.set_xticklabels(rotation=30)
+
+        lgd = plt.legend(loc='center left',bbox_to_anchor=(1,1))
+        
+        fig_fp = os.path.join(outdir, 'benchmarks_xy_%s.pdf' % module)
+        png_fp = os.path.join(outdir, 'benchmarks_xy_%s.png' % module)
+
+        g.savefig(fig_fp, bbox_extra_artists=(lgd,), bbox_inches='tight')
+        g.savefig(png_fp, bbox_extra_artists=(lgd,), bbox_inches='tight')
+
+        plot_fps[module] = fig_fp
+    
+    return(plot_fps)
+
+
+def plot_per_sample_barcharts(benchmark_df, outdir = '.'):
+    # stacked barcharts to show, per sample, total CPU hours used per module
+
+    sub_df = benchmark_df.groupby(['rule','module'])['cpu_h'].sum().unstack().fillna(0)
+    per_sample_bars = sub_df.plot(kind='bar',stacked=True)
+
+    fig_fp = os.path.join(outdir, 'per_sample_cpu_h_barchart.pdf')
+    png_fp = os.path.join(outdir, 'per_sample_cpu_h_barchart.png')
+
+    per_sample_bars.get_figure().savefig(fig_fp, bbox_inches='tight')
+    per_sample_bars.get_figure().savefig(png_fp, bbox_inches='tight')
+
+    return(fig_fp)
+
+
+def plot_per_module_barcharts(benchmark_df, outdir = '.'):
+    # stacked bar chart to show total CPU hours used per module and per rule
+
+    sub_df = benchmark_df.groupby(['module','rule'])['cpu_h'].sum().unstack().fillna(0)
+    per_module_bars = sub_df.plot(kind='bar',stacked=True)
+    per_module_bars.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    
+    fig_fp = os.path.join(outdir, 'per_module_cpu_h_barchart.pdf')
+    png_fp = os.path.join(outdir, 'per_module_cpu_h_barchart.png')
+
+    per_module_bars.get_figure().savefig(fig_fp, bbox_inches='tight')
+    per_module_bars.get_figure().savefig(png_fp, bbox_inches='tight')
+
+    return(fig_fp)
+
+
+def plot_resource_boxplot(benchmark_tidy, outdir = '.'):
+    # box plot to show used memory and cpu load as compared to requested values
+
+    test_df = benchmark_tidy.loc[(benchmark_tidy['variable'] == 'mean_load'),:]
+    test_df['value'] = pd.to_numeric(test_df['value'])
+
+    test2_df = benchmark_tidy.loc[(benchmark_tidy['variable'] == 'max_rss'),:]
+    test2_df['value'] = pd.to_numeric(test2_df['value'])
+
+
+    fig, (ax1,ax2) = plt.subplots(ncols=1, nrows=2, sharex=True)
+
+    rule_means_df = test_df.groupby('rule', as_index=False).mean()
+    rule_means_df['mem_mb'] = rule_means_df['mem'] * 1000
+    rule_means_df['cpu_avail'] = rule_means_df['n_cpus'] * 100
+
+    # TROUBLESHOOTING
+    print("test_df:\n")
+    print(test_df.head())
+    print("rule_means_df:\n")
+    print(rule_means_df.head())
+
+
+    sns.boxplot(x = 'rule', y = 'value', data = test_df, ax = ax1)
+    sns.stripplot(x='rule',
+                  y='cpu_avail',
+                  data = rule_means_df,
+                  linewidth=1, edgecolor='gray',
+                  color='black',
+                  jitter=False, size=3, split=True, ax=ax1)
+
+    sns.stripplot(x='rule',
+                  y='mem_mb',
+                  data = rule_means_df,
+                  linewidth=1, edgecolor='gray',
+                  color='black',
+                  jitter=False, size=3, split=True, ax=ax2)
+    sns.boxplot(x = 'rule', y = 'value', data = test2_df, ax = ax2)
+
+    ax1.set_yscale('linear')
+    ax1.set(xlabel='', ylabel='CPU usage (%)')
+
+    ax2.set_yscale('log')
+    ax2.set(xlabel='rule', ylabel='Memory usage (MB)')
+
+    for tick in ax2.get_xticklabels(): 
+        tick.set(rotation=90)
+
+    fig.tight_layout()
+
+    fig_fp = os.path.join(outdir, 'resource_boxplots.pdf')
+    png_fp = os.path.join(outdir, 'resource_boxplots.png')
+
+    fig.savefig(fig_fp, bbox_inches='tight')
+    fig.savefig(png_fp, bbox_inches='tight')
+
+    return(fig_fp)
+
+def png_ify(fp):
+    return(os.path.join('figures',
+            os.path.splitext(os.path.basename(fp))[0] + '.png'))
+
+class ReportFigs(object):
+    pass
+
+rule report_benchmark_summary:
+    input:
+        cluster_config = "cluster.json"
+    output:
+        report = "reports/report.html",
+        stats = "reports/benchmark_dataframe.txt",
+        summary = "reports/benchmark_summary_stats.txt"
+    run:
+        from snakemake.utils import report
+
+        # set output directories
+        outdir = os.path.dirname(output.report)
+        figdir = os.path.join(outdir,'figures')
+        if not os.path.exists(figdir):
+            os.makedirs(figdir)
+
+        # read in resource requests per sample from cluster.json
+        cluster_json = json.load(open(input.cluster_config))
+
+        # get benchmark files and load into Pandas dataframe
+        benchmark_fps = get_benchmarks()
+        benchmark_df, benchmark_tidy = load_benchmarks(benchmark_fps, cluster_json)
+
+        # TROUBLESHOOTING
+        print("benchmark_df:\n")
+        print(benchmark_df.head())
+        print("benchmark_tidy:\n")
+        print(benchmark_tidy.head())
+
+        # save benchmark dataframe
+        benchmark_df.to_csv(output.stats, sep = '\t')
+
+        # plot xy graphs 
+        xy_graphs = plot_xy_bymodule(benchmark_tidy, outdir = figdir)
+
+        # plot per-sample barcharts
+        per_sample_graph = plot_per_sample_barcharts(benchmark_df, outdir = figdir)
+
+        # plot per-module barcharts
+        per_module_graph = plot_per_module_barcharts(benchmark_df, outdir = figdir)
+
+        # plot resource usage barcharts
+        resource_graph = plot_resource_boxplot(benchmark_tidy, outdir = figdir)
+
+        # calculate summary stats
+        benchmark_tidy_grp = benchmark_tidy.groupby(['rule','variable'])
+        summary_stat_df = benchmark_tidy_grp['value'].describe()
+
+        # save summary stats
+        summary_stat_df.to_csv(output.summary, sep = '\t')
+
+        # access total cpu hours used
+        total_cpu_h = benchmark_df['cpu_h'].sum()
+
+        # generate per-module report
+        modules = list(set(benchmark_tidy['module']))
+        modules.sort()
+
+        # initialize our figures
+        fig_num = 0
+        figs = ReportFigs()
+
+        # add table to figs
+        setattr(figs, 'T1', output.summary)
+        setattr(figs, 'T2', output.stats)
+
+        # generate overview fig reports
+        resource_reports = ''
+
+        # Per-sample barchart
+        fig_num += 1
+        samplebar_fig = 'F%s' % fig_num
+        setattr(figs, samplebar_fig, per_sample_graph)
+        samplebar_png = png_ify(per_sample_graph)
+        text = """
+               **Resources per sample**
+
+               This figure shows the total number of CPU hours utilized per
+               sample (one bar per sample), broken down by module (bar colors).
+
+               .. image:: {samplebar_png}
+                   :width: 700px
+                   :align: center
+
+               PDF version: {samplebar_fig}_
+
+               """.format(**locals())
+
+        resource_reports += text
+
+
+        # Per-module barchart
+        fig_num += 1
+        modulebar_fig = 'F%s' % fig_num
+        setattr(figs, modulebar_fig, per_module_graph)
+        modulebar_png = png_ify(per_module_graph)
+        text = """
+               **Resources per module**
+
+               This figure shows the total number of CPU hours utilized per
+               module (one bar per module), broken down by rule (bar colors).
+
+               .. image:: {modulebar_png}
+                   :width: 700px
+                   :align: center
+
+               PDF version: {modulebar_fig}_
+
+               """.format(**locals())
+
+        resource_reports += text
+
+
+        # Resource utilization
+        fig_num += 1
+        resource_fig = 'F%s' % fig_num
+        setattr(figs, resource_fig, resource_graph)
+        resource_png = png_ify(resource_graph)
+        text = """
+               **Resource utilization**
+
+               This figure shows the amount of resources used compared to the
+               amount of resources requested for each rule in the workflow. Each
+               rule is represented by a box plot summarizing all executions of 
+               that rule, with the amount of resource requested for that rule
+               in cluster.json indicated by a single black dot above the
+               boxplot. Theoretically, rules with large gaps between the used
+               and requested values could be optimized with lower resource
+               requests to maximimize cluster utiliation. 
+
+               The top panel indicates CPU usage, or the average core
+               utilization in %. (A value of 200 indicates complete utilization
+               of two cores.)
+
+               The bottom panel indicates memory usage, in megabytes. The 
+               observed values indicate the max_rss observed by the process, 
+               while the black dots indicate the amount of memory reserved for
+               the job. 
+
+               .. image:: {resource_png}
+                   :width: 700px
+                   :align: center
+
+               PDF version: {resource_fig}_
+
+               """.format(**locals())
+
+        resource_reports += text
+
+        # generate module reports
+        module_reports = ''
+
+        for module in modules:
+            module_cpu_h = benchmark_df.loc[benchmark_df['module'] == module, 'cpu_h'].sum()
+
+            module_cpu_util = np.mean(benchmark_df.loc[benchmark_df['module'] == module, 'mean_load'] /
+                              (benchmark_df.loc[benchmark_df['module'] == module, 'n_cpus'] * 100)) * 100
+
+            module_rss_util = np.mean(benchmark_df.loc[benchmark_df['module'] == module, 'max_rss'] /
+                              (benchmark_df.loc[benchmark_df['module'] == module, 'mem'] * 1000)) * 100
+
+            # add figure to report figs
+            fig_num += 1
+            module_fig = 'F%s' % fig_num
+            setattr(figs, module_fig, xy_graphs[module])
+            resource_png = png_ify(xy_graphs[module])
+            text = """
+                   **Module: {module}**
+
+                   In total, this module consumed {module_cpu_h:.2f} CPU hours. 
+                   The average CPU utilization for jobs in this module was 
+                   {module_cpu_util:.2f}%. Average maximum memory used,
+                   compared to memory requested, was {module_rss_util:.2f}%.
+
+                   Each execution of a rule is indicated by a point on the 
+                   following graphs, where the X axis indicates the number of
+                   reads found in the primary sample (in the case of read-map
+                   rules, the primary sample is the sample being mapped to),
+                   and the Y axis indicates the amount of resource used. 
+
+                   .. image:: {resource_png}
+                        :width: 700px
+                        :align: center
+
+                   PDF version: {module_fig}_
+
+                   """.format(**locals())
+
+            module_reports += text
+
+        report_text = """
+           =================
+           Benchmark results
+           =================
+
+           Benchmarking results for execution of the `snakemake_assemble`
+           workflow. 
+
+           This report details the resources used by each step and on each
+           sample of the executed workflow, summarizing all of the benchmark
+           reports saved in the `benchmarks` directory.
+
+           In total, the workflow used {total_cpu_h:.0f} CPU hours to execute. 
+
+
+           Summary statistics
+           ------------------
+
+           Per-rule benchmark summary statistics are in Table T1_.
+
+           Per-job compiled benchmark statistics are in Table T2_.
+
+
+           Overall resource use
+           --------------------
+
+           These figures show a summary of the resources used across the
+           workflow. 
+
+           {resource_reports}
+
+
+           Resources per module
+           --------------------
+
+           These figures detail the resources used for job, broken down
+           into different rules (indicated by color) per module, with each
+           type of resource indicated by a separate figure panel. 
+
+           {module_reports}
+
+           """.format(**locals())
+        print(report_text)
+        # generate report
+        report(report_text, output.report, **figs.__dict__)
