@@ -61,7 +61,8 @@ def ersa_king(rel_ersa, rel_king, segments_graph, outname):
                 dc = rel_ersa[sample_id][n]
                 dst = dc.get('d_est', 'NA')
                 dst_k = dc.get('King_est', "NA")
-                if dst != 'NA':
+                #print(iid1, iid2, dst, dst_k)
+                if dst_k != 'NA':
                     if dst_k == 'PO':
                         dst = 1
                     elif dst_k == 'FS':
@@ -69,13 +70,16 @@ def ersa_king(rel_ersa, rel_king, segments_graph, outname):
                     elif dst_k == '2nd':
                         # KING '2nd': half-sibs, avuncular pairs and grandparentgrandchild pairs
                         # so here, dst can be either 2 or 3 by our definition
+                        dst = 2
+                    elif dst_k == '3rd':
                         dst = 3
                     else:
+                        pass
                         # KING will override ERSA for degree 1,2 and 3
-                        dst = int(dst) + 1
+                        #dst = int(dst) + 1
                 w.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:.2f}\n".format(
                     fid1, iid1, fid2, iid2, dc.get('Rel_est1', "NA"),
-                    dc.get('Rel_est2', "NA"), str(dst), dst, segs.get('N', 0), segs.get('length', 0)
+                    dc.get('Rel_est2', "NA"), str(dst), dst_k, segs.get('N', 0), segs.get('length', 0)
                 ))
         else:
             ids_no_relatives.append((fid1, iid1))
@@ -91,6 +95,14 @@ def ersa_king(rel_ersa, rel_king, segments_graph, outname):
 
 if __name__ == '__main__':
     rel_king = read_king(snakemake.input['king'][0])
+    print(rel_king.nodes)
+    print()
+    print(rel_king.edges)
+    degrees = {}
+    for (u, v, deg) in rel_king.edges.data('degree', default='NA'):
+        degrees[deg] = degrees.get(deg, 0) + 1
+    print('king degrees are: ')
+    print(degrees)
     segments_graph = read_segments_graph(snakemake.input['germline'])
     rel_ersa = read_ersa(snakemake.input['ersa'][0])
     ersa_king(rel_ersa, rel_king, segments_graph, snakemake.output[0])

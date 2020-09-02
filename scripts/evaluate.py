@@ -45,6 +45,7 @@ def evaluate(result, fam, plot_name, only_client=False):
     #print(len(inferred), inferred.edges)
     #print('*'*100)
     #print(len(kinship), kinship.edges)
+    confusion_matrix = {}
     total = {}
     correct = {}
     if only_client:
@@ -63,13 +64,17 @@ def evaluate(result, fam, plot_name, only_client=False):
             if inferred.has_edge(i, j) and inferred[i][j]['ersa'] != 'NA':
                 ersa_d = int(inferred[i][j]['ersa'])
                 print(i, j, degree, ersa_d, inferred[i][j]['king'])
-                if (degree <= ersa_d <= degree + 2):
+                key = (degree, ersa_d)
+                confusion_matrix[key] = confusion_matrix.get(key, 0) + 1
+                if degree - 1 <= ersa_d <= degree + 1:
                     correct[degree] = correct.get(degree, 0) + 1
-            else:
-                # print(i, j, degree, "NA", "NA")
-                pass
     if not total:
         return
+    print('correct: ', correct)
+    print('total: ', total)
+    keys = sorted(list(confusion_matrix.keys()))
+    for key in keys:
+        print(f'{key}\t{confusion_matrix[key]}')
     compare(total, correct, plot_name)
 
 

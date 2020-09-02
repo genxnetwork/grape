@@ -94,7 +94,7 @@ rule germline:
     shell:
         """
         for i in `seq 1 22`; do
-            germline -input ped/imputed_chr$i.ped cm/chr$i.cm.map -homoz -min_m 2.5 -err_hom 2 -err_het 1 -output germline/chr$i.germline;
+            germline -input ped/imputed_chr$i.ped cm/chr$i.cm.map -homoz -min_m 2.5 -err_hom 4 -err_het 2 -output germline/chr$i.germline;
             # TODO: germline returns some length in BP instead of cM - clean up is needed
             grep -v MB germline/chr$i.germline.match > germline/chr$i.germline.match.clean && mv germline/chr$i.germline.match.clean germline/chr$i.germline.match
         done
@@ -143,7 +143,7 @@ rule merge_king_ersa:
         ersa=rules.ersa.output
     output: "results/relatives.tsv"
     conda: "../envs/evaluation.yaml"
-    script: "../scripts/king_ersa.py"
+    script: "../scripts/ersa_king.py"
 
 rule evaluate_accuracy:
     input:

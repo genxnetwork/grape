@@ -272,8 +272,8 @@ def read_across_kin(name):
 
 
 def read_king(prefix):
-    if os.path.exists(prefix + ".seg"):
-        relations = read_across_kin(prefix + ".seg")
+    if os.path.exists(prefix):
+        relations = read_across_kin(prefix)
     else:
         relations = nx.Graph()
 
