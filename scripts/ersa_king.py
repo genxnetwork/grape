@@ -73,6 +73,8 @@ def ersa_king(rel_ersa, rel_king, segments_graph, outname):
                         dst = 2
                     elif dst_k == '3rd':
                         dst = 3
+                    elif dst_k == '4th':
+                        dst = 4
                     else:
                         pass
                         # KING will override ERSA for degree 1,2 and 3
