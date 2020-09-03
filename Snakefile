@@ -3,7 +3,7 @@
 
 import pandas as pd
 
-configfile: "config.yaml"
+#configfile: "config.yaml"
 
 samples_file    = config["samples_file"]
 SAMPLES         = pd.read_table(samples_file).set_index("name", drop=False)
@@ -26,6 +26,19 @@ rule all:
     input:
         "results/relatives.tsv",
         # rules.report_benchmark_summary.output
+
+#rule load_references:
+#    output:
+#        #fasta='/media/references_v38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna',
+#        refs='/media/references_v38/ALL.chr{chrom}_GRCh38.genotypes.20170504.bcf'
+#    conda: "envs/bcftools.yaml"
+#    shell:
+#        """
+#            cd /media/references_v38/
+#            for chr in {{1..22}} X Y; do
+#              ./scripts/load_references.sh -c ${{chr}}
+#            done
+#        """
 
 rule convert_23andme_to_plink:
     input:
@@ -61,8 +74,8 @@ rule merge_to_vcf:
     output:
         plink_clean     = expand("plink/{i}_clean.{ext}", i=SAMPLES_NAME, ext=PLINK_FORMATS),
         plink_merged    = expand("vcf/merged.{ext}", ext=PLINK_FORMATS),
-        vcf             = "vcf/merged.vcf.gz",
-        merge_list      = "plink/merge_clean.list"
+        vcf             = "vcf/merged.vcf.gz"
+        #merge_list      = "plink/merge_clean.list"
     conda:
         "envs/plink.yaml"
     log:
@@ -72,7 +85,7 @@ rule merge_to_vcf:
     shell:
         """
         set +e
-        plink --merge-list {input} --output-chr M --export vcf bgz --out vcf/merged
+        plink --merge-list {input} --output-chr 26 --export vcf bgz --out vcf/merged
         exitcode=$?
 
         if [[ -f "vcf/merged.missnp" ]]; then
@@ -80,14 +93,47 @@ rule merge_to_vcf:
                 do plink --bfile $i --exclude vcf/merged.missnp --make-bed --out $i\_clean;
             done
             true > {input} && for i in {SAMPLES_NAME}; do echo plink/$i\_clean >> {input}; done
-            plink --merge-list {input} --output-chr M --export vcf bgz --out vcf/merged
+            plink --merge-list {input} --output-chr 26  --snps-only --export vcf bgz --out vcf/merged
             exit 0
         fi
         exit 1
         """
 
+'''
+rule recode_vcf:
+    input: vcf=rules.merge_to_vcf.output['vcf']
+    output: vcf = "vcf/merged_recoded.recode.vcf"
+    singularity: "docker://biocontainers/vcftools:v0.1.16-1-deb_cv1"
+    shell: "vcftools --gzvcf {input.vcf} --remove-indels --recode --out vcf/merged_recoded"
+'''
+
+rule recode_vcf:
+    input: vcf=rules.merge_to_vcf.output['vcf']
+    output: vcf = "vcf/merged_recoded.vcf.gz"
+    conda: "envs/plink.yaml"
+    shell: "plink --vcf {input.vcf} --snps-only just-acgt --output-chr M --not-chr XY,MT --export vcf bgz --out vcf/merged_recoded"
+
+rule liftover:
+    input:
+        vcf=rules.recode_vcf.output['vcf'],
+        chain='/media/hg38ToHg19.over.chain.gz',
+        ref='/media/human_g1k_v37.fasta'
+    output:
+        vcf="vcf/merged_lifted.vcf"
+
+    #conda: "envs/crossmap.yaml"
+    singularity: "docker://alexgenx/picard:latest"
+    shell:
+        """
+            #java -jar /picard/picard.jar CreateSequenceDictionary R={input.ref} 
+                 
+            java -jar /picard/picard.jar LiftoverVcf I={input.vcf} O={output.vcf} CHAIN={input.chain} REJECT=vcf/rejected.vcf R={input.ref}
+                
+        """
+    #shell: "CrossMap.py vcf {input.chain} {input.vcf} {input.ref} {output}"
+
 rule plink_filter:
-    input: rules.merge_to_vcf.output["vcf"]
+    input: rules.liftover.output
     output: expand("plink/merged_filter.{ext}", ext=PLINK_FORMATS)
     conda:
         "envs/plink.yaml"
@@ -103,6 +149,8 @@ rule plink_filter:
         # TODO: the old parameter --maf 1e-50 is too low, back to the "default" 0.05
         plink --bfile vcf/{params.input} --geno 0.1 --maf 0.05 --hwe 0 --make-bed --keep-allele-order --out plink/{params.out} | tee {log}
         """
+
+
 
 rule pre_imputation_check:
     input: "plink/merged_filter.bim"
@@ -150,7 +198,7 @@ rule prepare_vcf:
     params:
         input = "plink/merged_mapped"
     conda:
-        "envs/pipeline.yaml"
+         "envs/bcf_plink.yaml"
     log:
         plink="logs/plink/prepare_vcf.log",
         vcf="logs/vcf/prepare_vcf.log"
@@ -171,7 +219,7 @@ rule prepare_vcf:
 rule phase:
     input: "vcf/merged_mapped_sorted.vcf.gz"
     output: "phase/chr{chrom}.phased.vcf.gz"
-    threads: workflow.cores
+    threads: 1
     singularity:
         "docker://biocontainers/bio-eagle:v2.4.1-1-deb_cv1"
     log:
@@ -190,10 +238,10 @@ rule phase:
         --vcfOutFormat z \
         --outPrefix phase/chr{wildcards.chrom}.phased | tee {log}
         """
-    
+'''    
 rule impute:
     input: rules.phase.output
-    output: expand("imputed/chr{i}.imputed.dose.vcf.gz", i=CHROMOSOMES)
+    output: "imputed/chr{chrom}.imputed.dose.vcf.gz"
     threads: workflow.cores
     singularity:
         "docker://biocontainers/minimac4:v1.0.0-2-deb_cv1"
@@ -210,6 +258,7 @@ rule impute:
         --prefix imputed/chr{wildcards.chrom}.imputed \
         --cpus {threads} | tee {log}
         """
+
 
 rule imputation_filter:
     input: rules.impute.output
@@ -228,10 +277,12 @@ rule imputation_filter:
 
         bcftools view -i 'R2>0.3 & strlen(REF)=1 & strlen(ALT)=1' imputed/chr{wildcards.chrom}.imputed.dose.vcf.gz -v snps -m 2 -M 2 -O z -o imputed/chr{wildcards.chrom}.imputed.dose.pass.vcf.gz | tee {log}
         """
+'''
 
 rule merge_imputation_filter:
     input:
-        expand("imputed/chr{i}.imputed.dose.pass.vcf.gz", i=CHROMOSOMES)
+        #expand("imputed/chr{i}.imputed.dose.pass.vcf.gz", i=CHROMOSOMES)
+        expand("phase/chr{chrom}.phased.vcf.gz", chrom=CHROMOSOMES)
         # TODO: wildcard violation
         # rules.imputation_filter.output
     output:
@@ -409,9 +460,6 @@ rule merge_matches:
 
 
 rule ersa:
-    # TODO: look for conda/container/pip
-    # TODO: failed for chr8 bc of MB instead of Cm but why??? need to double check in interpolate
-    # TODO: grep -v MB germline/chr8.germline.match > germline/chr8.germline.match.clean
     input:
         germline=rules.merge_matches.output,
         estimated=rules.ersa_params.output

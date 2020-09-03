@@ -24,3 +24,6 @@ snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media 
 snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media --singularity-args="-B /media:/media" -p -s workflows/pedsim/Snakefile
 ```
 
+### References
+
+1. 

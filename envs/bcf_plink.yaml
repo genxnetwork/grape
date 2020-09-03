@@ -1,7 +1,7 @@
+name: bcf_plink
 channels:
     - bioconda
     - soil
 dependencies:
-    - plink
     - bcftools
-    - eagle
+    - plink

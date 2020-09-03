@@ -69,7 +69,7 @@ rule prepare_vcf:
     params:
         input = "plink/merged_mapped"
     conda:
-        "../envs/pipeline.yaml"
+         "../envs/snakemake.yaml"
     shell:
         """
         GRCh37_fasta=/media/human_g1k_v37.fasta
