@@ -16,7 +16,7 @@ rule run_king:
         # TODO: add cores
         KING_DEGREE=4
 
-        king -b {params.input}.bed --cpus {threads} --ibdseg --degree $KING_DEGREE --prefix {params.out}
+        king -b {params.input}.bed --cpus {threads} --ibdseg --degree KING_DEGREE --prefix {params.out}
         """
 
 rule index_and_split:
