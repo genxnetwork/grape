@@ -13,3 +13,4 @@ dependencies:
   - biom-format
   - scikit-bio
   - docutils
+  - rq

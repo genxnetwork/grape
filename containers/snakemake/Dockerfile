@@ -48,6 +48,4 @@ RUN apt-get install -y wget bzip2 gnupg2 git && \
 RUN echo "source activate snakemake" > ~/.bashrc
 ENV PATH /opt/conda/envs/snakemake/bin:${PATH}
 
-RUN conda init bash && conda activate snakemake && mamba install -c conda-forge rq
-
 RUN apt-get install -y redis-server && redis-server --daemonize yes
