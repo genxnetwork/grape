@@ -147,7 +147,7 @@ rule plink_filter:
     shell:
         """
         # TODO: the old parameter --maf 1e-50 is too low, back to the "default" 0.05
-        plink --bfile vcf/{params.input} --geno 0.1 --maf 0.05 --hwe 0 --make-bed --keep-allele-order --out plink/{params.out} | tee {log}
+        plink --bfile vcf/{params.input} --geno 0.5 --maf 0.05 --hwe 0 --make-bed --keep-allele-order --out plink/{params.out} | tee {log}
         """
 
 
@@ -163,8 +163,8 @@ rule pre_imputation_check:
         "logs/plink/pre_imputation_check.log"
     benchmark:
         "benchmarks/plink/pre_imputation_check.txt"
-    shell:
-        "python pre_imputation_check.py {input} | tee {log}"
+    script:
+        "scripts/pre_imputation_check.py"
 
 rule plink_clean_up:
     input:
@@ -238,7 +238,7 @@ rule phase:
         --vcfOutFormat z \
         --outPrefix phase/chr{wildcards.chrom}.phased | tee {log}
         """
-'''    
+
 rule impute:
     input: rules.phase.output
     output: "imputed/chr{chrom}.imputed.dose.vcf.gz"
@@ -277,12 +277,12 @@ rule imputation_filter:
 
         bcftools view -i 'R2>0.3 & strlen(REF)=1 & strlen(ALT)=1' imputed/chr{wildcards.chrom}.imputed.dose.vcf.gz -v snps -m 2 -M 2 -O z -o imputed/chr{wildcards.chrom}.imputed.dose.pass.vcf.gz | tee {log}
         """
-'''
+
 
 rule merge_imputation_filter:
     input:
-        #expand("imputed/chr{i}.imputed.dose.pass.vcf.gz", i=CHROMOSOMES)
-        expand("phase/chr{chrom}.phased.vcf.gz", chrom=CHROMOSOMES)
+        expand("imputed/chr{i}.imputed.dose.pass.vcf.gz", i=CHROMOSOMES)
+        #expand("phase/chr{chrom}.phased.vcf.gz", chrom=CHROMOSOMES)
         # TODO: wildcard violation
         # rules.imputation_filter.output
     output:
@@ -411,7 +411,7 @@ rule split_map:
         """
 
 rule interpolate:
-    input: rules.convert_to_hap.output
+    input: rules.convert_to_ped.output
     output: "cm/chr{chrom}.cm.ped"
     conda:
         "envs/plink.yaml"
@@ -421,7 +421,7 @@ rule interpolate:
         "benchmarks/cm/interpolate-{chrom}.txt"
     shell:
         """
-        plink --file ped/imputed_chr{wildcards.chrom} --cm-map /media/genetic_map_b37/genetic_map_chr{wildcards.chrom}\_combined_b37.txt {wildcards.chrom} --recode --out cm/chr{wildcards.chrom}.cm | tee {log}
+        plink --file ped/imputed_chr{wildcards.chrom} --cm-map /media/genetic_map_b37/genetic_map_chr{wildcards.chrom}_combined_b37.txt {wildcards.chrom} --recode --out cm/chr{wildcards.chrom}.cm | tee {log}
         """
 
 rule germline:
@@ -486,4 +486,4 @@ rule merge_king_ersa:
         ersa=rules.ersa.output
     output: "results/relatives.tsv"
     conda: "envs/evaluation.yaml"
-    script: "scripts/evaluate.py"
+    script: "scripts/ersa_king.py"
