@@ -1,5 +1,5 @@
+name: crossmap
 channels:
     - bioconda
 dependencies:
-    - bcftools
-    - samtools
+    - CrossMap

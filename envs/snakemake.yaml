@@ -1,0 +1,16 @@
+name: snakemake
+channels:
+  - bioconda
+  - biocore
+  - conda-forge
+dependencies:
+  - python>=3.5
+  - snakemake==5.23.0
+  - matplotlib
+  - pandas
+  - numpy
+  - seaborn
+  - biom-format
+  - scikit-bio
+  - docutils
+  - rq

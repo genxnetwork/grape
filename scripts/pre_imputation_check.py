@@ -106,4 +106,4 @@ def pre_imputation_check(params, fn='./data/hapmap20', rs=True, reference=SITE_1
 
 
 if __name__ == "__main__":
-    pre_imputation_check(sys.argv[1])
+    pre_imputation_check(snakemake.input[0])

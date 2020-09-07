@@ -192,10 +192,14 @@ def read_pedigree(fn):
     iids = set()
     for i in open(fn):
         _, iid, f, m = i.split()[:4]
+        iid = iid.split('_')[1]
+
         iids.add(iid)
         if f != '0':
+            f = f.split('_')[1]
             pedigree.add_edge(f, iid)
         if m != '0':
+            m = m.split('_')[1]
             pedigree.add_edge(m, iid)
     return iids, pedigree
 
@@ -212,8 +216,9 @@ def read_pipeline_output(fn, only_client=False):
             if only_client:
                 clients.add(items[3])
             if items[-1] != 'NA':
+                #print('items: ', items)
                 g1, g2 = items[1], items[3]
-                g.add_edge(g1, g2, ersa=items[-2], king=items[-1])
+                g.add_edge(g1, g2, ersa=items[-4], king=items[-3])
     return g, clients
 
 
@@ -267,8 +272,8 @@ def read_across_kin(name):
 
 
 def read_king(prefix):
-    if os.path.exists(prefix + ".seg"):
-        relations = read_across_kin(prefix + ".seg")
+    if os.path.exists(prefix):
+        relations = read_across_kin(prefix)
     else:
         relations = nx.Graph()
 

@@ -49,5 +49,7 @@ def get_l_th(matchfiles, rel_king, ERSA_t=2.5):
 
 if __name__ == '__main__':
     rel_king = read_king(snakemake.input['king'][0])
-    l, th = get_l_th(snakemake.input['germline'], rel_king)
+    #l, th = get_l_th(snakemake.input['germline'], rel_king)
+    l = 1.33
+    th = 3.5
     write_l_th(l, th, 2.5, snakemake.output[0])
