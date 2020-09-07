@@ -202,7 +202,8 @@ class ReportFigs(object):
 
 rule report_benchmark_summary:
     input:
-        cluster_config = "cluster.json"
+        cluster_config = "cluster.json",
+        "results/relatives.tsv"
     output:
         report = "reports/report.html",
         stats = "reports/benchmark_dataframe.txt",
