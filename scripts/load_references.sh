@@ -3,6 +3,7 @@
 #samtools faidx {{output.fasta}}
             #wget http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/GRCh38_positions/ALL.chr{{9..22}}_GRCh38.genotypes.20170504.vcf.gz{{,.tbi}}
 
+cd /media/references_v38
 (bcftools view --no-version -h ALL.chr${c}_GRCh38.genotypes.20170504.vcf.gz | \
    grep -v "^##contig=<ID=[GNh]" | sed 's/^##contig=<ID=MT/##contig=<ID=chrM/;s/^##contig=<ID=\([0-9XY]\)/##contig=<ID=chr\1/'; \
    bcftools view --no-version -H -c 2 ALL.chr${c}_GRCh38.genotypes.20170504.vcf.gz | sed 's/^/chr/') | \

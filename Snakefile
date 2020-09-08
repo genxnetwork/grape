@@ -27,19 +27,6 @@ rule all:
         "results/relatives.tsv",
         # rules.report_benchmark_summary.output
 
-#rule load_references:
-#    output:
-#        #fasta='/media/references_v38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna',
-#        refs='/media/references_v38/ALL.chr{chrom}_GRCh38.genotypes.20170504.bcf'
-#    conda: "envs/bcftools.yaml"
-#    shell:
-#        """
-#            cd /media/references_v38/
-#            for chr in {{1..22}} X Y; do
-#              ./scripts/load_references.sh -c ${{chr}}
-#            done
-#        """
-
 rule convert_23andme_to_plink:
     input:
         get_samples_path
