@@ -88,6 +88,9 @@ if __name__ == '__main__':
     print(args)
 
     start_time = datetime.datetime.now()
+
+    if not os.path.exists(args.directory):
+        os.mkdir(args.directory)
     copy_input(args.input, args.directory, args.samples)
     # Please mind dryrun = True!
     if not snakemake.snakemake(

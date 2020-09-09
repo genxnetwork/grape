@@ -29,7 +29,7 @@ snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media 
 ```shell script
 docker build -t snakemake_t -f containers/snakemake/Dockerfile -m 4GB .
 docker tag snakemake_t:latest alexgenx/snakemake:latest
-docker 
+docker push alexgenx/snakemake:latest
 ```
 
 ### Launch using docker container
