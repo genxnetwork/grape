@@ -49,3 +49,5 @@ RUN echo "source activate snakemake" > ~/.bashrc
 ENV PATH /opt/conda/envs/snakemake/bin:${PATH}
 
 RUN apt-get install -y redis-server && redis-server --daemonize yes
+
+ENTRYPOINT ["python", "launcher.py"]

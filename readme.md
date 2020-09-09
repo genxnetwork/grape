@@ -24,6 +24,14 @@ snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media 
 snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media --singularity-args="-B /media:/media" -p -s workflows/pedsim/Snakefile
 ```
 
+### Build snakemake docker container
+
+```shell script
+docker build -t snakemake_t -f containers/snakemake/Dockerfile -m 4GB .
+docker tag snakemake_t:latest alexgenx/snakemake:latest
+docker 
+```
+
 ### Launch using docker container
 
 ```shell script
@@ -50,5 +58,6 @@ snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media/
     m3vcf = '/media/Minimac/{1..22}.1000g.Phase3.v5.With.Parameter.Estimates.m3vcf.gz', size = 3.2G 
 4. For interpolation:
     map = '/media/genetic_map_b37/genetic_map_chr{1..22}_combined_b37.txt', size = 120M 
-    
+5. For imputation check:
+    tab = '/media/1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.only_rs.biallelic.tab', size = 12G
     
