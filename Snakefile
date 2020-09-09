@@ -474,3 +474,9 @@ rule merge_king_ersa:
     output: "results/relatives.tsv"
     conda: "envs/evaluation.yaml"
     script: "scripts/ersa_king.py"
+
+onsuccess:
+    print("Workflow finished, no error")
+
+onerror:
+    print("An error occurred")
