@@ -26,9 +26,9 @@ def get_parser_args():
         help="Number of CPU cores to use in this pipeline run (default %(default)s)")
 
     parser.add_argument(
-        "--dry-run",
-        help="If this argument is present, Snakemake will do a dry run of the pipeline, it is True by default",
-        action="store_false")
+        "--real-run",
+        help="If this argument is present, Snakemake will run the pipeline instead of dry-run, it is False by default",
+        action="store_true")
 
     parser.add_argument(
         "--directory",
@@ -60,11 +60,32 @@ def get_parser_args():
     )
 
     parser.add_argument(
-        '--stat_file',
+        '--stat-file',
         default='stat_file.txt',
         help='File for writing statistics'
     )
 
+    parser.add_argument(
+        '--singularity-prefix',
+        default='/media/singulariry_cache',
+        help='Directory where snakemake will put singularity images'
+    )
+    parser.add_argument(
+        '--singularity-args',
+        default='-B /media:/media',
+        help='Additional singularity arguments'
+    )
+    parser.add_argument(
+        '--conda-prefix',
+        default='/tmp',
+        help='Conda prefix for environments'
+    )
+
+    parser.add_argument(
+        '--simulate',
+        action='store_true',
+        help='If this argument is present, simulate data and run pipeline on it. You need to provide correct Snakefile from workflows/pedsim/Snakefile'
+    )
     return parser.parse_args()
 
 
@@ -91,23 +112,27 @@ if __name__ == '__main__':
 
     if not os.path.exists(args.directory):
         os.mkdir(args.directory)
-    copy_input(args.input, args.directory, args.samples)
+
+    if not args.simulate:
+        copy_input(args.input, args.directory, args.samples)
     # Please mind dryrun = True!
+
     if not snakemake.snakemake(
             snakefile=args.snakefile,
             configfiles=[args.configfile],
             workdir=args.directory,
             cores=args.cores,
             printshellcmds=True,
-            dryrun=args.dry_run,
+            dryrun=(not args.real_run),
             targets=['all'],
             stats=args.stat_file,
             forcerun=[args.rule] if args.rule is not None else [],
             until=[args.until] if args.until is not None else [],
             use_conda=True,
+            conda_prefix=args.conda_prefix,
             use_singularity=True,
-            singularity_prefix='/media/singulariry_cache',
-            singularity_args='-B /media:/media'
+            singularity_prefix=args.singularity_prefix,
+            singularity_args=args.singularity_args
     ):
         raise ValueError("Pipeline failed see Snakemake error message for details")
 

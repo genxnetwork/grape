@@ -35,7 +35,8 @@ rule intersect:
 
 rule merge_background:
     input:
-        expand("pedsim/phased/chr{chrom}.phased.vcf.gz", chrom=CHROMOSOMES)
+        data=expand("pedsim/phased/chr{chrom}.phased.vcf.gz", chrom=CHROMOSOMES),
+        eu="eu.tsv"
     output:
         "pedsim/phased/background.vcf.gz"
     params:
@@ -44,18 +45,29 @@ rule merge_background:
         "../../envs/bcftools.yaml"
     shell:
         """
-        # for now just skip empty files
-        true > {params.list} && \
-        for i in {input}; do
-            if [ -s $i ]
-            then
-                echo $i >> {params.list}
-            else
-                continue
-            fi
-        done
-        bcftools concat -f {params.list} -O z -o {output}
+            # for now just skip empty files
+            true > {params.list} && \
+            for i in {input.data}; do
+                if [ -s $i ]
+                then
+                    echo $i >> {params.list}
+                else
+                    continue
+                fi
+            done
+            bcftools concat -f {params.list} | bcftools view --force-samples --samples-file {input.eu} -O z -o {output}
         """
+
+rule filter_by_population:
+    input:
+        rules.merge_background.output
+    output:
+        "pedsim/phased/eu_background.vcf.gz"
+    conda:
+        "../../envs/bcftools.yaml"
+    shell:
+        "bcftools view"
+
 
 rule prepare_map:
     output:
@@ -92,20 +104,39 @@ rule simulate:
             pedsim -d {input._def} -m {input._map} -i {input.bg} -o {params.prefix} --intf {input.intf} --fam
         """
 
+
 rule postprocess:
     input:
         vcf='pedsim/simulated/data.vcf.gz',
         fam='pedsim/simulated/data-everyone.fam'
     output:
         kin='pedsim/simulated/reheaded_data.kinship',
-        vcf='pedsim/simulated/reheaded_data.vcf.gz',
+        vcf='vcf/merged_mapped_sorted.vcf.gz',
         fam='pedsim/simulated/reheaded_data.fam'
     conda:
         "envs/postprocess.yaml"
     script:
         "scripts/postprocess.py"
 
+rule index:
+    input:
+        vcf=rules.postprocess.output['vcf'],
+    output:
+        idx='vcf/merged_mapped_sorted.vcf.gz.csi'
+    conda:
+        '../../envs/bcftools.yaml'
+    shell:
+        "bcftools index {input}"
 
 include: "../../rules/imputation.smk"
 
 include: "../../rules/relatives.smk"
+
+rule evaluate_accuracy:
+    input:
+        rel=rules.merge_king_ersa.output[0],
+        fam=rules.postprocess.output['fam']
+    output:
+        'results/accuracy.png'
+    script:
+         '../../scripts/evaluate.py'

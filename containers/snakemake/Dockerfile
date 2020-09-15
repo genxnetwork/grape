@@ -31,8 +31,8 @@ RUN apt-get clean && apt-get update && apt-get install -y ca-certificates libsec
 
 #ENTRYPOINT ["/usr/local/singularity/bin/singularity"]
 
-ADD . /tmp/repo
-WORKDIR /tmp/repo
+ADD envs/snakemake.yaml envs/snakemake.yaml
+
 ENV PATH /opt/conda/bin:${PATH}
 ENV LANG C.UTF-8
 ENV SHELL /bin/bash
@@ -45,9 +45,10 @@ RUN apt-get install -y wget bzip2 gnupg2 git && \
     mamba env create -f envs/snakemake.yaml && \
     conda clean --all -y
 
+ADD . /src/repo
+WORKDIR /src/repo
+
 RUN echo "source activate snakemake" > ~/.bashrc
 ENV PATH /opt/conda/envs/snakemake/bin:${PATH}
 
-RUN apt-get install -y redis-server && redis-server --daemonize yes
-
-ENTRYPOINT ["python", "launcher.py"]
+ENTRYPOINT ["python"]

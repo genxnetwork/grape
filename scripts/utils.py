@@ -192,14 +192,14 @@ def read_pedigree(fn):
     iids = set()
     for i in open(fn):
         _, iid, f, m = i.split()[:4]
-        iid = iid.split('_')[1]
+        #iid = iid.split('_')[1]
 
         iids.add(iid)
         if f != '0':
-            f = f.split('_')[1]
+            #f = f.split('_')[1]
             pedigree.add_edge(f, iid)
         if m != '0':
-            m = m.split('_')[1]
+            #m = m.split('_')[1]
             pedigree.add_edge(m, iid)
     return iids, pedigree
 

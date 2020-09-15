@@ -71,7 +71,7 @@ rule prepare_vcf:
         "benchmarks/plink/prepare_vcf.txt"
     shell:
         """
-        GRCh37_fasta=/media/human_g1k_v37.fasta
+        GRCh37_fasta=/media/ref/human_g1k_v37.fasta
 
         plink --bfile {params.input} --a1-allele plink/merged_filter.bim.force_allele --make-bed --out plink/merged_mapped_alleled | tee -a {log.plink}
         plink --bfile plink/merged_mapped_alleled --keep-allele-order --output-chr M --export vcf bgz --out vcf/merged_mapped_clean | tee -a {log.vcf}

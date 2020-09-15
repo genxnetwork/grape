@@ -66,8 +66,8 @@ rule recode_vcf:
 rule liftover:
     input:
         vcf=rules.recode_vcf.output['vcf'],
-        chain='/media/hg38ToHg19.over.chain.gz',
-        ref='/media/human_g1k_v37.fasta'
+        chain='/media/ref/hg38ToHg19.over.chain.gz',
+        ref='/media/ref/human_g1k_v37.fasta'
     output:
         vcf="vcf/merged_lifted.vcf"
 

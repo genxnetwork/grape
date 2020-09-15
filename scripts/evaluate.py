@@ -33,18 +33,21 @@ def compare(total, correct, plot_name=None, cutoff=1):
     if not plot_name:
         plt.show()
     else:
+        print('plot saved to ', plot_name)
         plt.savefig(plot_name)
         plt.close()
+    print('comparison finished')
 
 
 def evaluate(result, fam, plot_name, only_client=False):
     """If only_client=True, all pairwise relatives between client are evaluated"""
     iids, pedigree = read_pedigree(fn=fam)
     _, kinship = get_kinship(pedigree)
+    print('results is: ', result)
     inferred, clients = read_pipeline_output(result, only_client)
-    #print(len(inferred), inferred.edges)
-    #print('*'*100)
-    #print(len(kinship), kinship.edges)
+    print(len(inferred), list(inferred.edges)[:10])
+    print('*'*100)
+    print(len(kinship), list(kinship.edges)[:10])
     confusion_matrix = {}
     total = {}
     correct = {}
@@ -69,12 +72,14 @@ def evaluate(result, fam, plot_name, only_client=False):
                 if degree - 1 <= ersa_d <= degree + 1:
                     correct[degree] = correct.get(degree, 0) + 1
     if not total:
+        print('total is not total')
         return
     print('correct: ', correct)
     print('total: ', total)
     keys = sorted(list(confusion_matrix.keys()))
     for key in keys:
         print(f'{key}\t{confusion_matrix[key]}')
+
     compare(total, correct, plot_name)
 
 

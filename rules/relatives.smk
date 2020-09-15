@@ -92,7 +92,7 @@ rule interpolate:
         "benchmarks/cm/interpolate-{chrom}.txt"
     shell:
         """
-        plink --file ped/imputed_chr{wildcards.chrom} --cm-map /media/genetic_map_b37/genetic_map_chr{wildcards.chrom}_combined_b37.txt {wildcards.chrom} --recode --out cm/chr{wildcards.chrom}.cm | tee {log}
+        plink --file ped/imputed_chr{wildcards.chrom} --cm-map /media/ref/genetic_map_b37/genetic_map_chr{wildcards.chrom}_combined_b37.txt {wildcards.chrom} --recode --out cm/chr{wildcards.chrom}.cm | tee {log}
         """
 
 rule germline:
@@ -119,7 +119,7 @@ rule ersa_params:
         germline=expand("germline/chr{i}.germline.match", i=CHROMOSOMES)
     output: "ersa/params.txt"
     conda: "../envs/ersa_params.yaml"
-    script: "scripts/estimate_ersa_params.py"
+    script: "../scripts/estimate_ersa_params.py"
 
 rule merge_matches:
     input:
@@ -157,4 +157,4 @@ rule merge_king_ersa:
         ersa=rules.ersa.output
     output: "results/relatives.tsv"
     conda: "../envs/evaluation.yaml"
-    script: "scripts/ersa_king.py"
+    script: "../scripts/ersa_king.py"

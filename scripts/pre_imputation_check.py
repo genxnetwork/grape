@@ -30,7 +30,7 @@ def match_ref(a1, a2, ref, alt):
             else:
                 return 4
 
-SITE_1000GENOME = "/media/1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.only_rs.biallelic.tab"
+SITE_1000GENOME = "/media/ref/1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.only_rs.biallelic.tab"
 
 def pre_imputation_check(params, fn='./data/hapmap20', rs=True, reference=SITE_1000GENOME):
     """Given a plink bim file
