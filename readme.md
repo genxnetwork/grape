@@ -18,7 +18,10 @@ name	path
 ### How to run full pipeline
 
 ```shell script
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro alexgenx/snakemake:latest \ 
+
+docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
+
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \ 
 launcher.py --samples /media/ref/samples.tsv --input /media/ref/input --directory /tmp/pipeline-real-run-1 \
 --singularity-prefix /tmp --singularity-args -B /tmp:/tmp -W /tmp --conda-prefix /tmp --real-run
 ```
