@@ -14,7 +14,7 @@ rule plink_filter:
     shell:
         """
         # TODO: the old parameter --maf 1e-50 is too low, back to the "default" 0.05
-        plink --vcf vcf/{input} --geno 0.5 --maf 0.05 --hwe 0 --make-bed --keep-allele-order --out plink/{params.out} | tee {log}
+        plink --vcf {input} --geno 0.5 --maf 0.05 --hwe 0 --make-bed --keep-allele-order --out plink/{params.out} | tee {log}
         """
 
 rule pre_imputation_check:
@@ -29,7 +29,7 @@ rule pre_imputation_check:
     benchmark:
         "benchmarks/plink/pre_imputation_check.txt"
     script:
-        "scripts/pre_imputation_check.py"
+        "../scripts/pre_imputation_check.py"
 
 rule plink_clean_up:
     input:

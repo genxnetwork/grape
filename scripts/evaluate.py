@@ -57,10 +57,10 @@ def evaluate(result, fam, plot_name, only_client=False):
         iterator = itertools.product(clients, iids - clients)
     for i, j in iterator:
         # check if name is this format 'fid_iid'
-        if '_' in i:
-            i = "_".join(i.split('_')[1:])
-        if '_' in j:
-            j = "_".join(j.split('_')[1:])
+        #if '_' in i:
+        #    i = "_".join(i.split('_')[1:])
+        #if '_' in j:
+        #    j = "_".join(j.split('_')[1:])
         if kinship.has_edge(i, j):
             degree = kinship[i][j]['degree']
             total[degree] = total.get(degree, 0) + 1

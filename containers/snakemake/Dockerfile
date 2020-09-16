@@ -37,6 +37,8 @@ ENV PATH /opt/conda/bin:${PATH}
 ENV LANG C.UTF-8
 ENV SHELL /bin/bash
 
+ENV CONDA_PGKS_DIR /tmp/conda/pgks
+
 RUN apt-get install -y wget bzip2 gnupg2 git && \
     wget -nv https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
     bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda && \
@@ -44,6 +46,12 @@ RUN apt-get install -y wget bzip2 gnupg2 git && \
     conda install -c conda-forge mamba && \
     mamba env create -f envs/snakemake.yaml && \
     conda clean --all -y
+
+# Workaround of NonWritableError when conda tries to create environments for the first time
+# funnel launches docker containers with --read-only and snakemake cannot create conda envs
+# because it has to do something with urls.txt
+# https://github.com/conda/conda/issues/7267#issuecomment-458661530
+RUN mkdir -p /root/.conda/pkgs && touch /root/.conda/pkgs/urls.txt
 
 ADD . /src/repo
 WORKDIR /src/repo

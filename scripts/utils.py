@@ -212,12 +212,12 @@ def read_pipeline_output(fn, only_client=False):
         next(f)
         for line in f:
             items = line.strip().split(sep="\t")
-            clients.add(items[1])
+            clients.add(f'{items[0]}_{items[1]}')
             if only_client:
-                clients.add(items[3])
+                clients.add(f'{items[2]}_{items[3]}')
             if items[-1] != 'NA':
                 #print('items: ', items)
-                g1, g2 = items[1], items[3]
+                g1, g2 = f'{items[0]}_{items[1]}', f'{items[2]}_{items[3]}'
                 g.add_edge(g1, g2, ersa=items[-4], king=items[-3])
     return g, clients
 

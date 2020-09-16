@@ -1,0 +1,25 @@
+{
+  "name": "Snakemake demo",
+  "description": "Demonstrates Snakemake.",
+
+  "inputs": [{
+    "url": "file:///media/ref",
+    "path": "/media/ref",
+    "type": "DIRECTORY"
+  }],
+
+  "outputs": [{
+    "url": "file:///media/containers/outputs/real-run.txt",
+    "path": "/outputs/real-run.txt"
+  }],
+
+  "executors": [
+    {
+      "image": "alexgenx/snakemake",
+      "command": ["launcher.py", "--samples", "/media/ref/samples.tsv", "--input", "/media/ref/input", "--directory", "/tmp/pipeline-real-run-1", "--singularity-prefix", "/tmp", "--singularity-args", "-B /tmp:/tmp -W /tmp", "--conda-prefix", "/tmp", "--real-run"],
+      "stdout": "/outputs/real-run.txt",
+      "workdir": "/src/repo",
+      "env": { "SINGULARITY_TMPDIR": "/tmp", "SINGULARITY_CACHEDIR": "/tmp", "CONDA_ENVS_PATH": "/tmp/conda"}
+    }
+  ]
+}

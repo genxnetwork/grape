@@ -117,9 +117,14 @@ if __name__ == "__main__":
     fam_output = snakemake.output['fam']
     with open(fam_name, 'r') as old_file, open(fam_output, 'w') as new_file:
         old_ids = old_file.readlines()
-        for old_id in old_ids:
+        for i, old_id in enumerate(old_ids):
+            if i < 5:
+                print(i, old_id)
             # make names legal for input
-            new_file.write(old_id.replace("-", "").replace("_", ""))
+            #new_file.write(old_id.replace("-", "").replace("_", ""))
+            new_file.write(old_id)
+
+    print()
 
     _, kinship = get_kinship(read_pedigree(fam_name))
     kin_name = snakemake.output['kin']
@@ -129,8 +134,11 @@ if __name__ == "__main__":
     vcf_output = snakemake.output['vcf']
     sample_ids = bcftools_samples(vcf_name)
     with open(vcf_output + '.samples', 'w') as samples_file:
-        for i in sample_ids:
-            i1, i2 = i.split(sep='_')
-            samples_file.write("{}_{}\n".format(i1, i.replace("-", "").replace("_", "")))
+        for i, _id in enumerate(sample_ids):
+            if i < 5:
+                print(i, _id)
+            i1, i2 = _id.split(sep='_')
+            samples_file.write("{}_{}\n".format(i1, i2))
 
     filename = bcftools_reheader(vcf_name, vcf_name + '.samples', vcf_output)
+    bcftools_index(vcf_output)

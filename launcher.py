@@ -108,6 +108,10 @@ if __name__ == '__main__':
 
     print(args)
 
+    print()
+
+    print(os.environ)
+
     start_time = datetime.datetime.now()
 
     if not os.path.exists(args.directory):
@@ -132,7 +136,8 @@ if __name__ == '__main__':
             conda_prefix=args.conda_prefix,
             use_singularity=True,
             singularity_prefix=args.singularity_prefix,
-            singularity_args=args.singularity_args
+            singularity_args=args.singularity_args,
+            envvars=['CONDA_ENVS_PATH', 'CONDA_PKGS_DIR']
     ):
         raise ValueError("Pipeline failed see Snakemake error message for details")
 
