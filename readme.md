@@ -7,6 +7,7 @@
 
 1. Docker
 2. samples.tsv tab-separated file with format and one line for each sample:
+
 ```text
 name	path
 1	input/1.txt
@@ -17,7 +18,7 @@ name	path
 
 ### How to run full pipeline
 
-```shell script
+```text
 
 docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
 
@@ -38,7 +39,7 @@ launcher.py --samples /media/ref/samples.tsv --input /media/ref/input --director
 Use option --simulate and pass different workflow description in workflows/pedsim/Snakefile. 
 Options --input and --samples are not needed in this case.
 
-```shell script
+```text
 docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
 
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \ 
