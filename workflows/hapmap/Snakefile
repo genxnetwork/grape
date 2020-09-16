@@ -1,0 +1,45 @@
+#configfile: "workflows/pedsim/config.yaml"
+
+CHROMOSOMES     = [str(i) for i in range(1, 23)]
+
+CHIP_DATA_LINK = 'ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.chip.omni_broad_sanger_combined.20140818.snps.genotypes.vcf.gz'
+CHIP_INDEX_LINK = 'ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.chip.omni_broad_sanger_combined.20140818.snps.genotypes.vcf.gz.tbi'
+
+rule all:
+    input:
+        "results/relatives.tsv",
+        "results/accuracy.png"
+
+
+rule recode_to_vcf:
+    input:
+        ped='/media/ref/hapmap/ceu.ped',
+        mp='/media/ref/hapmap/ceu.map'
+    conda: "../../envs/plink.yaml"
+    shell: "plink --ped {input.ped} --map {input.mp} --snps-only just-acgt --output-chr M --not-chr XY,MT --export vcf bgz --out vcf/merged_recoded"
+
+
+rule postprocess:
+    input:
+        vcf='pedsim/simulated/data.vcf.gz',
+        fam='pedsim/simulated/data-everyone.fam'
+    output:
+        kin='pedsim/simulated/reheaded_data.kinship',
+        vcf='vcf/merged_mapped_sorted.vcf.gz',
+        fam='pedsim/simulated/reheaded_data.fam'
+    conda:
+        "envs/postprocess.yaml"
+    script:
+        "scripts/postprocess.py"
+
+
+include: "../../rules/imputation.smk"
+
+include: "../../rules/relatives.smk"
+
+rule evaluate_accuracy:
+    input:
+        rel=rules.merge_king_ersa.output,
+        fam=rules.postprocess.output['fam']
+    output:
+        'results/accuracy.png'

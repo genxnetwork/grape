@@ -1,63 +1,56 @@
-# GenX relatives detection pipeline
+# GenX Relatives Detection Pipeline
 
-### Snakemake launch
 
-    snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media --singularity-args="-B /media:/media" -p all
+## Atlas
 
-## Visualization of the DAG
+### Requirements
 
-    snakemake --dag all | dot -Tsvg > dag.svg
-
-```shell script
-snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media --singularity-args="-B /media:/media" -p all
+1. Docker
+2. samples.tsv tab-separated file with format and one line for each sample:
+```text
+name	path
+1	input/1.txt
+2	input/2.txt
 ```
+3. Folder with inputs in 23andme format. One sample per file.
+4. Folder with all references
 
-### Force-launch single rule
-
-```shell script
-snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media --singularity-args="-B /media:/media" -R somerule --until somerule
-```
-
-### Simulate data
-
-```shell script
-snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media --singularity-args="-B /media:/media" -p -s workflows/pedsim/Snakefile
-```
-
-### Build snakemake docker container
-
-```shell script
-docker build -t snakemake_t -f containers/snakemake/Dockerfile -m 4GB .
-docker tag snakemake_t:latest alexgenx/snakemake:latest
-docker 
-```
-
-### Launch using docker container
+### How to run full pipeline
 
 ```shell script
 
-cp -r input /media/pipeline_data/atlas40/
-cp samples.tsv /media/pipeline_data/atlas40/
+docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
 
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro alexgenx/snakemake:latest /bin/bash
-# this is inside docker container
-
-snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media/singulariry_cache --singularity-args="-B /media:/media" -p --configfile config.yaml --directory /media/pipeline_data/atlas40 -n
-
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \ 
+launcher.py --samples /media/ref/samples.tsv --input /media/ref/input --directory /tmp/pipeline-real-run-1 \
+--singularity-prefix /tmp --singularity-args -B /tmp:/tmp -W /tmp --conda-prefix /tmp --real-run
 ```
 
-### References
+## Evaluation on Simulated Data
 
-1. For lifting:
-    chain = '/media/hg38ToHg19.over.chain.gz'
-    ref = '/media/human_g1k_v37.fasta', size = 3G
-2. For phasing:
-    map = '/media/tables/genetic_map_hg19_withX.txt.gz', size = 51M
-    bcf = '/media/1000genome/bcf/1000genome_chr{1..22}.bcf', size = 14G 
-3. For imputation:
-    m3vcf = '/media/Minimac/{1..22}.1000g.Phase3.v5.With.Parameter.Estimates.m3vcf.gz', size = 3.2G 
-4. For interpolation:
-    map = '/media/genetic_map_b37/genetic_map_chr{1..22}_combined_b37.txt', size = 120M 
-5. For imputation check:
-    tab = '/media/1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.only_rs.biallelic.tab', size = 12G
-    
+### Requirements
+
+1. Docker
+2. Folder with all references
+
+### How to run simulation
+
+Use option --simulate and pass different workflow description in workflows/pedsim/Snakefile. 
+Options --input and --samples are not needed in this case.
+
+```shell script
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro alexgenx/snakemake:latest \ 
+launcher.py --directory /tmp/pipeline-dry-run-1 --singularity-prefix /tmp --singularity-args -B /tmp:/tmp -W /tmp --conda-prefix /tmp \
+--real-run --simulate -s workflows/pedsim/Snakefile
+```
+
+## Evaluation on Hapmap Data
+
+### Requirements
+
+1. Docker
+2. Folder with all references
+
+### How to run hapmap
+
+TODO: not implemented yet

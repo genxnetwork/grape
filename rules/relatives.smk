@@ -1,62 +1,69 @@
-CHROMOSOMES     = [str(i) for i in range(1, 23)]
-PLINK_FORMATS   = ['bed', 'bim', 'fam', 'log']
-PLINK_FORMATS_EXT   = ['bed', 'bim', 'fam', 'log', 'nosex']
-
 rule run_king:
-    input: rules.convert_phased_to_plink.output
+    input: rules.convert_imputed_to_plink.output
     output: "king/merged_imputed_king.seg"
     params:
-        input = "plink/merged_phased",
+        input = "plink/merged_imputed",
         out = "king/merged_imputed_king"
     threads: workflow.cores
     singularity:
         "docker://lifebitai/king:latest"
+    log:
+        "logs/king/run_king.log"
+    benchmark:
+        "benchmarks/king/run_king.txt"
     shell:
         """
         # TODO: add cores
         KING_DEGREE=4
 
-        king -b {params.input}.bed --cpus {threads} --ibdseg --degree KING_DEGREE --prefix {params.out}
+        king -b {params.input}.bed --cpus {threads} --ibdseg --degree $KING_DEGREE --prefix {params.out} | tee {log}
         """
 
 rule index_and_split:
-    input: rules.merge_phased.output
-    output: expand("vcf/imputed_chr{i}.vcf.gz", i=CHROMOSOMES)
+    input: rules.merge_imputation_filter.output
+    output: "vcf/imputed_chr{chrom}.vcf.gz"
     conda:
         "../envs/bcftools.yaml"
-    threads: workflow.cores
+    # TODO: because "The option is currently used only for the compression of the output stream"
+    # threads: workflow.cores
+    log:
+        "logs/vcf/index_and_split-{chrom}.log"
+    benchmark:
+        "benchmarks/vcf/index_and_split-{chrom}.txt"
     shell:
         """
-        bcftools index -f {input}
-
-        for i in `seq 1 22`; do
-            bcftools filter {input} -r $i --threads {threads} -O z -o vcf/imputed_chr$i.vcf.gz;
-        done
+        bcftools filter {input} -r {wildcards.chrom} -O z -o vcf/imputed_chr{wildcards.chrom}.vcf.gz | tee {log}
         """
 
 rule convert_to_hap:
     input: rules.index_and_split.output
-    output: expand("hap/imputed_chr{i}.hap", i=CHROMOSOMES)
+    output: "hap/imputed_chr{chrom}.hap"
     conda:
         "../envs/bcftools.yaml"
-    threads: workflow.cores
+    # TODO: because "The option is currently used only for the compression of the output stream"
+    # threads: workflow.cores
+    log:
+        "logs/vcf/convert_to_hap-{chrom}.log"
+    benchmark:
+        "benchmarks/vcf/convert_to_hap-{chrom}.txt"
     shell:
         """
-        for i in `seq 1 22`; do
-            bcftools convert vcf/imputed_chr$i.vcf.gz --threads {threads} --hapsample hap/imputed_chr$i && gunzip -f hap/imputed_chr$i.hap.gz;
-        done
+        bcftools convert vcf/imputed_chr{wildcards.chrom}.vcf.gz --hapsample hap/imputed_chr{wildcards.chrom} | tee {log}
+        gunzip -f hap/imputed_chr{wildcards.chrom}.hap.gz | tee -a {log}
         """
 
 rule convert_to_ped:
     input: rules.convert_to_hap.output
-    output: expand("ped/imputed_chr{i}.ped", i=CHROMOSOMES)
+    output: "ped/imputed_chr{chrom}.ped"
     singularity:
         "docker://alexgenx/germline:stable"
+    log:
+        "logs/ped/convert_to_ped-{chrom}.log"
+    benchmark:
+        "benchmarks/ped/convert_to_ped-{chrom}.txt"
     shell:
         """
-        for i in `seq 1 22`; do
-            impute_to_ped hap/imputed_chr$i.hap hap/imputed_chr$i.sample ped/imputed_chr$i
-        done
+        impute_to_ped hap/imputed_chr{wildcards.chrom}.hap hap/imputed_chr{wildcards.chrom}.sample ped/imputed_chr{wildcards.chrom} | tee {log}
         """
 
 # TODO: skip this step for now
@@ -76,34 +83,40 @@ rule split_map:
 
 rule interpolate:
     input: rules.convert_to_ped.output
-    output: expand("cm/chr{i}.cm.ped", i=CHROMOSOMES)
+    output: "cm/chr{chrom}.cm.ped"
     conda:
         "../envs/plink.yaml"
+    log:
+        "logs/cm/interpolate-{chrom}.log"
+    benchmark:
+        "benchmarks/cm/interpolate-{chrom}.txt"
     shell:
         """
-        for i in `seq 1 22`; do
-            plink --file ped/imputed_chr$i --cm-map /media/genetic_map_b37/genetic_map_chr$i\_combined_b37.txt $i --recode --out cm/chr$i.cm
-        done
+        plink --file ped/imputed_chr{wildcards.chrom} --cm-map /media/ref/genetic_map_b37/genetic_map_chr{wildcards.chrom}_combined_b37.txt {wildcards.chrom} --recode --out cm/chr{wildcards.chrom}.cm | tee {log}
         """
 
 rule germline:
     input: rules.interpolate.output
-    output: expand("germline/chr{i}.germline.match", i=CHROMOSOMES)
+    output: "germline/chr{chrom}.germline.match"
     singularity:
         "docker://alexgenx/germline:stable"
+    log:
+        "logs/germline/germline-{chrom}.log"
+    benchmark:
+        "benchmarks/germline/germline-{chrom}.txt"
     shell:
         """
-        for i in `seq 1 22`; do
-            germline -input ped/imputed_chr$i.ped cm/chr$i.cm.map -homoz -min_m 2.5 -err_hom 4 -err_het 2 -output germline/chr$i.germline;
-            # TODO: germline returns some length in BP instead of cM - clean up is needed
-            grep -v MB germline/chr$i.germline.match > germline/chr$i.germline.match.clean && mv germline/chr$i.germline.match.clean germline/chr$i.germline.match
-        done
+        germline -input ped/imputed_chr{wildcards.chrom}.ped cm/chr{wildcards.chrom}.cm.map -homoz -min_m 2.5 -err_hom 2 -err_het 1 -output germline/chr{wildcards.chrom}.germline | tee {log}
+        # TODO: germline returns some length in BP instead of cM - clean up is needed
+        grep -v MB germline/chr{wildcards.chrom}.germline.match > germline/chr{wildcards.chrom}.germline.match.clean && mv germline/chr{wildcards.chrom}.germline.match.clean germline/chr{wildcards.chrom}.germline.match
         """
 
 rule ersa_params:
     input:
         king=rules.run_king.output,
-        germline=rules.germline.output
+        # TODO: wildcard violation
+        # germline=rules.germline.output
+        germline=expand("germline/chr{i}.germline.match", i=CHROMOSOMES)
     output: "ersa/params.txt"
     conda: "../envs/ersa_params.yaml"
     script: "../scripts/estimate_ersa_params.py"
@@ -118,22 +131,23 @@ rule merge_matches:
 
 
 rule ersa:
-    # TODO: look for conda/container/pip
-    # TODO: failed for chr8 bc of MB instead of Cm but why??? need to double check in interpolate
-    # TODO: grep -v MB germline/chr8.germline.match > germline/chr8.germline.match.clean
     input:
         germline=rules.merge_matches.output,
         estimated=rules.ersa_params.output
     output: "ersa/relatives.tsv"
     singularity:
         "docker://alexgenx/ersa:stable"
+    log:
+        "logs/ersa/ersa.log"
+    benchmark:
+        "benchmarks/ersa/ersa.txt"
     shell:
         """
         #ERSA_L=13.7
         #ERSA_TH=3.197
         #ERSA_T=2.5
         source {input.estimated}
-        ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.germline} -o {output}
+        ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.germline} -o {output} | tee {log}
         """
 
 rule merge_king_ersa:
@@ -144,12 +158,3 @@ rule merge_king_ersa:
     output: "results/relatives.tsv"
     conda: "../envs/evaluation.yaml"
     script: "../scripts/ersa_king.py"
-
-rule evaluate_accuracy:
-    input:
-        rel=rules.merge_king_ersa.output[0],
-        fam=rules.simulate.output['fam']
-    output:
-        "results/accuracy.png"
-    conda: "../envs/evaluation.yaml"
-    script: "../scripts/evaluate.py"
