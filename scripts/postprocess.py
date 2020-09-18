@@ -9,7 +9,7 @@ BCFTOOLS = "bcftools"
 
 
 def bcftools_index(infile):
-    args = [BCFTOOLS, 'index', '-f', infile]
+    args = [BCFTOOLS, 'index', '--force', '-f', infile]
     pipes = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     std_out, std_err = pipes.communicate()
     if pipes.returncode != 0:

@@ -1,11 +1,7 @@
 # many to many tests of relationships
 
-import os
-import sys
 import itertools
-import networkx as nx
 import pandas as pd
-from utils import read_ersa, read_king
 import seaborn as sns
 from matplotlib import pyplot as plt
 
@@ -42,6 +38,8 @@ def compare(total, correct, plot_name=None, cutoff=1):
 def evaluate(result, fam, plot_name, only_client=False):
     """If only_client=True, all pairwise relatives between client are evaluated"""
     iids, pedigree = read_pedigree(fn=fam)
+    print('pedigree:')
+    print(list(pedigree.edges)[:10])
     _, kinship = get_kinship(pedigree)
     print('results is: ', result)
     inferred, clients = read_pipeline_output(result, only_client)

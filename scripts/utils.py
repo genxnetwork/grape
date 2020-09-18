@@ -191,16 +191,18 @@ def read_pedigree(fn):
     pedigree = nx.DiGraph()
     iids = set()
     for i in open(fn):
-        _, iid, f, m = i.split()[:4]
+        fid, iid, father, mother = i.split()[:4]
         #iid = iid.split('_')[1]
-
-        iids.add(iid)
-        if f != '0':
+        full_id = f'{fid}_{iid}' if '_' not in iid else iid
+        iids.add(full_id)
+        if father != '0':
             #f = f.split('_')[1]
-            pedigree.add_edge(f, iid)
-        if m != '0':
+            father_iid = f'{fid}_{father}' if '_' not in father else father
+            pedigree.add_edge(father_iid, full_id)
+        if mother != '0':
             #m = m.split('_')[1]
-            pedigree.add_edge(m, iid)
+            mother_iid = f'{fid}_{mother}' if '_' not in mother else mother
+            pedigree.add_edge(mother_iid, full_id)
     return iids, pedigree
 
 

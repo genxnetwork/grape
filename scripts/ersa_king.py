@@ -1,17 +1,8 @@
 # many to many tests of relationships
 
-import os
-import sys
-import itertools
 import networkx as nx
-import pandas as pd
 from utils import read_ersa, read_king
-import seaborn as sns
-from matplotlib import pyplot as plt
 
-from utils import get_kinship
-from utils import read_pedigree
-from utils import read_pipeline_output
 from utils import line_generator
 
 
