@@ -56,4 +56,13 @@ launcher.py --directory /tmp/pipeline-dry-run-1 --singularity-prefix /tmp --sing
 
 ### How to run hapmap
 
-TODO: not implemented yet
+Use option --hapmap and pass different workflow description in workflows/hapmap/Snakefile. 
+Options --input and --samples are not needed in this case.
+
+```text
+docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
+
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \ 
+launcher.py --directory /tmp/pipeline-dry-run-1 --singularity-prefix /tmp --singularity-args -B /tmp:/tmp -W /tmp --conda-prefix /tmp \
+--real-run --hapmap -s workflows/hapmap/Snakefile
+```
