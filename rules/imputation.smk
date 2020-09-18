@@ -31,7 +31,7 @@ rule phase:
 rule impute:
     input: rules.phase.output
     output: "imputed/chr{chrom}.imputed.dose.vcf.gz"
-    threads: workflow.cores
+    threads: 1
     singularity:
         "docker://biocontainers/minimac4:v1.0.0-2-deb_cv1"
     log:

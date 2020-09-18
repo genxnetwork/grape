@@ -45,8 +45,10 @@ def evaluate(result, fam, plot_name, only_client=False):
     _, kinship = get_kinship(pedigree)
     print('results is: ', result)
     inferred, clients = read_pipeline_output(result, only_client)
+    print('inferred:')
     print(len(inferred), list(inferred.edges)[:10])
     print('*'*100)
+    print('kinship:')
     print(len(kinship), list(kinship.edges)[:10])
     confusion_matrix = {}
     total = {}

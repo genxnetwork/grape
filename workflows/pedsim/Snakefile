@@ -114,9 +114,9 @@ rule postprocess:
         vcf='vcf/merged_mapped_sorted.vcf.gz',
         fam='pedsim/simulated/reheaded_data.fam'
     conda:
-        "envs/postprocess.yaml"
+        "../../envs/postprocess.yaml"
     script:
-        "scripts/postprocess.py"
+        "../../scripts/postprocess.py"
 
 rule index:
     input:

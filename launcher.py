@@ -86,7 +86,16 @@ def get_parser_args():
         action='store_true',
         help='If this argument is present, simulate data and run pipeline on it. You need to provide correct Snakefile from workflows/pedsim/Snakefile'
     )
+
+    parser.add_argument(
+        '--hapmap',
+        action='store_true',
+        help='If this argument is present, run pipeline on HapMap CEU data. You need to provide correct Snakefile from workflows/hapmap/Snakefile'
+    )
+
     return parser.parse_args()
+
+
 
 
 def copy_input(input_dir, working_dir, samples_file):
@@ -117,7 +126,7 @@ if __name__ == '__main__':
     if not os.path.exists(args.directory):
         os.mkdir(args.directory)
 
-    if not args.simulate:
+    if not (args.simulate or args.hapmap):
         copy_input(args.input, args.directory, args.samples)
     # Please mind dryrun = True!
 

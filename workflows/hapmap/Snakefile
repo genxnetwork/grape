@@ -11,27 +11,45 @@ rule all:
         "results/accuracy.png"
 
 
-rule recode_to_vcf:
+rule recode_vcf:
     input:
         ped='/media/ref/hapmap/ceu.ped',
         mp='/media/ref/hapmap/ceu.map'
+    output:
+        vcf='vcf/merged_recoded.vcf.gz'
+    params:
+        out='vcf/merged_recoded'
     conda: "../../envs/plink.yaml"
-    shell: "plink --ped {input.ped} --map {input.mp} --snps-only just-acgt --output-chr M --not-chr XY,MT --export vcf bgz --out vcf/merged_recoded"
+    shell: "plink --ped {input.ped} --map {input.mp} --snps-only just-acgt --output-chr M --not-chr XY,MT --export vcf bgz --out {params.out}"
 
 
 rule postprocess:
     input:
-        vcf='pedsim/simulated/data.vcf.gz',
-        fam='pedsim/simulated/data-everyone.fam'
+        vcf=rules.recode_vcf.output['vcf'],
+        fam='/media/ref/hapmap/relations.txt'
     output:
-        kin='pedsim/simulated/reheaded_data.kinship',
-        vcf='vcf/merged_mapped_sorted.vcf.gz',
-        fam='pedsim/simulated/reheaded_data.fam'
+        kin='kinship/reheaded_data.kinship',
+        vcf='vcf/merged_sorted.vcf.gz',
+        fam='kinship/reheaded_data.fam'
     conda:
-        "envs/postprocess.yaml"
+        "envs/hapmap.yaml"
     script:
-        "scripts/postprocess.py"
+        "scripts/hapmap.py"
 
+rule liftover:
+    input:
+        vcf=rules.postprocess.output['vcf'],
+        chain='/media/ref/hg18ToHg19.over.chain.gz',
+        ref='/media/ref/human_g1k_v37.fasta'
+    output:
+        vcf="vcf/merged_mapped_sorted.vcf.gz"
+
+    #conda: "envs/crossmap.yaml"
+    singularity: "docker://alexgenx/picard:latest"
+    shell:
+        """
+            java -Xmx16G -jar /picard/picard.jar LiftoverVcf MAX_RECORDS_IN_RAM=100000 I={input.vcf} O={output.vcf} CHAIN={input.chain} REJECT=vcf/rejected.vcf R={input.ref}
+        """
 
 include: "../../rules/imputation.smk"
 
@@ -39,7 +57,11 @@ include: "../../rules/relatives.smk"
 
 rule evaluate_accuracy:
     input:
-        rel=rules.merge_king_ersa.output,
+        rel=rules.merge_king_ersa.output[0],
         fam=rules.postprocess.output['fam']
     output:
         'results/accuracy.png'
+    script:
+        '../../scripts/evaluate.py'
+
+
