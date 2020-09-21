@@ -146,7 +146,7 @@ if __name__ == '__main__':
             use_singularity=True,
             singularity_prefix=args.singularity_prefix,
             singularity_args=args.singularity_args,
-            envvars=['CONDA_ENVS_PATH', 'CONDA_PKGS_DIR']
+            envvars=['CONDA_ENVS_PATH', 'CONDA_PKGS_DIRS']
     ):
         raise ValueError("Pipeline failed see Snakemake error message for details")
 

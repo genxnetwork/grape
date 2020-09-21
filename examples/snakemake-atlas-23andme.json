@@ -15,11 +15,14 @@
 
   "executors": [
     {
-      "image": "alexgenx/snakemake",
-      "command": ["launcher.py", "--samples", "/media/ref/samples.tsv", "--input", "/media/ref/input", "--directory", "/tmp/pipeline-real-run-1", "--singularity-prefix", "/tmp", "--singularity-args", "-B /tmp:/tmp -W /tmp", "--conda-prefix", "/tmp", "--real-run"],
+      "image": "genx_relatives:latest",
+      "command": ["launcher.py", "--samples", "/media/ref/samples.tsv",
+        "--input", "/media/ref/input", "--directory", "/tmp/pipeline-real-run-1",
+        "--singularity-prefix", "/tmp", "--singularity-args", "-B /tmp:/tmp -B /media:/media -W /tmp",
+        "--conda-prefix", "/tmp", "--real-run"],
       "stdout": "/outputs/real-run.txt",
       "workdir": "/src/repo",
-      "env": { "SINGULARITY_TMPDIR": "/tmp", "SINGULARITY_CACHEDIR": "/tmp", "CONDA_ENVS_PATH": "/tmp/conda"}
+      "env": { "SINGULARITY_TMPDIR": "/tmp", "SINGULARITY_CACHEDIR": "/tmp", "CONDA_ENVS_PATH": "/tmp/conda", "CONDA_PKGS_DIRS":  "/tmp/conda/pkgs"}
     }
   ]
 }

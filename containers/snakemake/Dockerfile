@@ -37,7 +37,7 @@ ENV PATH /opt/conda/bin:${PATH}
 ENV LANG C.UTF-8
 ENV SHELL /bin/bash
 
-ENV CONDA_PGKS_DIR /tmp/conda/pgks
+#ENV CONDA_PKGS_DIR /tmp/conda/pgks
 
 RUN apt-get install -y wget bzip2 gnupg2 git && \
     wget -nv https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
