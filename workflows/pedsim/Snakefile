@@ -58,17 +58,6 @@ rule merge_background:
             bcftools concat -f {params.list} | bcftools view --force-samples --samples-file {input.eu} -O z -o {output}
         """
 
-rule filter_by_population:
-    input:
-        rules.merge_background.output
-    output:
-        "pedsim/phased/eu_background.vcf.gz"
-    conda:
-        "../../envs/bcftools.yaml"
-    shell:
-        "bcftools view"
-
-
 rule prepare_map:
     output:
         "pedsim/params/refined_mf.simmap"

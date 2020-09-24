@@ -71,7 +71,6 @@ rule liftover:
     output:
         vcf="vcf/merged_lifted.vcf"
 
-    #conda: "envs/crossmap.yaml"
     singularity: "docker://alexgenx/picard:latest"
     shell:
         """

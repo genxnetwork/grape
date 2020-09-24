@@ -16,16 +16,28 @@ name	path
 3. Folder with inputs in 23andme format. One sample per file.
 4. Folder with all references with path /media/ref
 
+
+### Pipeline checking 
+
+To check if snakemake correctly sees input files do not pass --real-run to the launcher.py:
+
+```text
+
+docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
+
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
+launcher.py --samples /media/ref/samples.tsv --input /media/ref/input --directory /media/pipeline_data/real-data 
+```
+
 ### How to run full pipeline
 
 ```text
 
 docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
 
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \ 
--e CONDA_ENVS_PATH=/tmp/envs -e CONDA_PKGS_DIRS=/tmp/conda/pkgs genx_relatives:latest \
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
 launcher.py --samples /media/ref/samples.tsv --input /media/ref/input --directory /media/pipeline_data/real-data \
---singularity-prefix /tmp --singularity-args='-B /media:/media -B /tmp:/tmp -W /tmp' --conda-prefix /tmp --real-run
+ --real-run
 ```
 
 ## Evaluation on Simulated Data
@@ -43,10 +55,8 @@ Options --input and --samples are not needed in this case.
 ```text
 docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
 
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \ 
--e CONDA_ENVS_PATH=/tmp/envs -e CONDA_PKGS_DIRS=/tmp/conda/pkgs genx_relatives:latest \
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
 launcher.py --directory /media/pipeline_data/simulation \
---singularity-prefix /tmp --singularity-args='-B /media:/media -B /tmp:/tmp -W /tmp' --conda-prefix /tmp \
 --real-run --simulate -s workflows/pedsim/Snakefile
 ```
 
@@ -65,10 +75,8 @@ Options --input and --samples are not needed in this case.
 ```text
 docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
 
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \ 
--e CONDA_ENVS_PATH=/tmp/envs -e CONDA_PKGS_DIRS=/tmp/conda/pkgs genx_relatives:latest \
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
 launcher.py --directory /media/pipeline_data/hapmap \
---singularity-prefix /tmp --singularity-args='-B /media:/media -B /tmp:/tmp -W /tmp' --conda-prefix /tmp \
 --real-run --hapmap -s workflows/hapmap/Snakefile
 
 ```

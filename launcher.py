@@ -65,14 +65,15 @@ def get_parser_args():
         help='File for writing statistics'
     )
 
+    # --singularity-prefix /tmp --singularity-args='-B /media:/media -B /tmp:/tmp -W /tmp' --conda-prefix /tmp
     parser.add_argument(
         '--singularity-prefix',
-        default='/media/singulariry_cache',
+        default='/tmp',
         help='Directory where snakemake will put singularity images'
     )
     parser.add_argument(
         '--singularity-args',
-        default='-B /media:/media',
+        default='-B /media:/media -B /tmp:/tmp -W /tmp',
         help='Additional singularity arguments'
     )
     parser.add_argument(
@@ -128,7 +129,11 @@ if __name__ == '__main__':
 
     if not (args.simulate or args.hapmap):
         copy_input(args.input, args.directory, args.samples)
-    # Please mind dryrun = True!
+
+    if 'CONDA_ENVS_PATH' not in os.environ:
+        os.environ['CONDA_ENVS_PATH'] = '/tmp/envs'
+    if 'CONDA_PKGS_DIRS' not in os.environ:
+        os.environ['CONDA_PKGS_DIRS'] = '/tmp/conda/pkgs'
 
     if not snakemake.snakemake(
             snakefile=args.snakefile,
