@@ -120,7 +120,6 @@ if __name__ == '__main__':
 
     print()
 
-    print(os.environ)
 
     start_time = datetime.datetime.now()
 
@@ -134,6 +133,8 @@ if __name__ == '__main__':
         os.environ['CONDA_ENVS_PATH'] = '/tmp/envs'
     if 'CONDA_PKGS_DIRS' not in os.environ:
         os.environ['CONDA_PKGS_DIRS'] = '/tmp/conda/pkgs'
+
+    print(os.environ)
 
     if not snakemake.snakemake(
             snakefile=args.snakefile,
