@@ -26,7 +26,7 @@ To check if snakemake correctly sees input files do not pass --real-run to the l
 docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
 
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py --samples /media/ref/samples.tsv --input /media/ref/input --directory /media/pipeline_data/real-data 
+launcher.py find --samples /media/ref/samples.tsv --input /media/ref/input --directory /media/pipeline_data/real-data 
 ```
 
 ### How to run full pipeline
@@ -36,7 +36,11 @@ launcher.py --samples /media/ref/samples.tsv --input /media/ref/input --director
 docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
 
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py --samples /media/ref/samples.tsv --input /media/ref/input --directory /media/pipeline_data/real-data \
+launcher.py preprocess --samples /media/ref/samples.tsv --input /media/ref/input --directory /media/pipeline_data/real-data \
+ --real-run
+
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
+launcher.py find --samples /media/ref/samples.tsv --input /media/ref/input --directory /media/pipeline_data/real-data \
  --real-run
 ```
 
@@ -49,15 +53,16 @@ launcher.py --samples /media/ref/samples.tsv --input /media/ref/input --director
 
 ### How to run simulation
 
-Use option --simulate and pass different workflow description in workflows/pedsim/Snakefile. 
-Options --input and --samples are not needed in this case.
+Use command simulate. Options --input and --samples are not needed in this case.
 
 ```text
 docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
 
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py --directory /media/pipeline_data/simulation \
---real-run --simulate -s workflows/pedsim/Snakefile
+launcher.py simulate --directory /media/pipeline_data/simulation --real-run
+
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
+launcher.py find --directory /media/pipeline_data/simulation --real-run 
 ```
 
 ## Evaluation on Hapmap Data
@@ -69,14 +74,15 @@ launcher.py --directory /media/pipeline_data/simulation \
 
 ### How to run hapmap
 
-Use option --hapmap and pass different workflow description in workflows/hapmap/Snakefile. 
-Options --input and --samples are not needed in this case.
+Use command hapmap for preparing hapmap ceu data. Options --input and --samples are not needed in this case.
+Then, use find
 
 ```text
 docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
 
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py --directory /media/pipeline_data/hapmap \
---real-run --hapmap -s workflows/hapmap/Snakefile
+launcher.py hapmap --directory /media/pipeline_data/hapmap --real-run
 
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
+launcher.py find --directory /media/pipeline_data/hapmap --real-run
 ```

@@ -9,6 +9,15 @@ import os
 def get_parser_args():
     parser = argparse.ArgumentParser()
 
+    parser.add_argument('command',
+                        default='find',
+                        help="""What pipeline should do, possible values are find, preprocess, simulate, hapmap.
+                        preprocess converts hg38 per-sample 23andme input files to the one single vcf in hg37;
+                        find detects relatives in vcf file;
+                        simulate generates pedigree and vcf file with distant relatives from 1000 genomes CEU(CEPH) population using pedsim;
+                        hapmap extracts CEU(CEPH) data for running find;
+                        For running the main pipeline you can provide .vcf file and use find or use preprocess with 23andme inputs""")
+
     parser.add_argument(
         "--configfile",
         default="config.yaml",
@@ -16,7 +25,7 @@ def get_parser_args():
 
     parser.add_argument(
         "--snakefile",
-        default="Snakefile",
+        default="",
         help="Snakemake file path")
 
     parser.add_argument(
@@ -82,21 +91,7 @@ def get_parser_args():
         help='Conda prefix for environments'
     )
 
-    parser.add_argument(
-        '--simulate',
-        action='store_true',
-        help='If this argument is present, simulate data and run pipeline on it. You need to provide correct Snakefile from workflows/pedsim/Snakefile'
-    )
-
-    parser.add_argument(
-        '--hapmap',
-        action='store_true',
-        help='If this argument is present, run pipeline on HapMap CEU data. You need to provide correct Snakefile from workflows/hapmap/Snakefile'
-    )
-
     return parser.parse_args()
-
-
 
 
 def copy_input(input_dir, working_dir, samples_file):
@@ -120,14 +115,29 @@ if __name__ == '__main__':
 
     print()
 
-
     start_time = datetime.datetime.now()
 
     if not os.path.exists(args.directory):
         os.mkdir(args.directory)
 
-    if not (args.simulate or args.hapmap):
+    valid_commands = ['preprocess', 'find', 'simulate', 'hapmap']
+    if args.command not in valid_commands:
+        raise RuntimeError(f'command {args.command} not in list of valid commands: {valid_commands}')
+
+    if args.command == 'preprocess':
         copy_input(args.input, args.directory, args.samples)
+
+    snakefiles = {
+        'preprocess': 'workflows/preprocess/Snakefile',
+        'find': 'Snakefile',
+        'simulate': 'workflows/pedsim/Snakefile',
+        'hapmap': 'workflows/hapmap/Snakefile'
+    }
+
+    if not args.snakefile:
+        snakefile = snakefiles[args.command]
+    else:
+        snakefile = args.snakefile
 
     if 'CONDA_ENVS_PATH' not in os.environ:
         os.environ['CONDA_ENVS_PATH'] = '/tmp/envs'
@@ -137,7 +147,7 @@ if __name__ == '__main__':
     print(os.environ)
 
     if not snakemake.snakemake(
-            snakefile=args.snakefile,
+            snakefile=snakefile,
             configfiles=[args.configfile],
             workdir=args.directory,
             cores=args.cores,
