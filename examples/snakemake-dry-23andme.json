@@ -1,6 +1,6 @@
 {
-  "name": "Snakemake ",
-  "description": "Demonstrates Snakemake.",
+  "name": "Snakemake dry run",
+  "description": "Cheks if Snakemake correctly sees input files",
 
   "inputs": [{
     "url": "file:///media/ref",
@@ -17,15 +17,6 @@
     {
       "image": "genx_relatives:latest",
       "command": ["launcher.py", "preprocess", "--samples", "/media/ref/samples.tsv",
-        "--input", "/media/ref/input", "--directory", "/tmp/pipeline-real-run-1",
-        "--real-run"],
-      "stdout": "/outputs/real-run.txt",
-      "workdir": "/src/repo",
-      "env": { "SINGULARITY_TMPDIR": "/tmp", "SINGULARITY_CACHEDIR": "/tmp", "CONDA_ENVS_PATH": "/tmp/conda", "CONDA_PKGS_DIRS":  "/tmp/conda/pkgs"}
-    },
-    {
-      "image": "genx_relatives:latest",
-      "command": ["launcher.py", "find", "--samples", "/media/ref/samples.tsv",
         "--input", "/media/ref/input", "--directory", "/tmp/pipeline-real-run-1",
         "--real-run"],
       "stdout": "/outputs/real-run.txt",
