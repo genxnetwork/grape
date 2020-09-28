@@ -13,7 +13,9 @@ The visualisation of execution graph ([svg](https://drive.google.com/file/d/1g-Q
 Multi-core parallelization is highly utilized due to the ability to split input data by each sample/chromosome.
 
 Information about stages:
+
 1. Preprocessing: we remove all multiallelic variants and indels.
+
 2. Liftover: we use picard tools and lift data from hg38 to hg37.
 3. Phasing: Eagle 2.4.1 and 1000 Genomes reference panel.
 4. Imputation: Minimac4 and 1000 Genomes reference panel.
@@ -36,7 +38,10 @@ Password: b2mR4wQpJJdeKdsW
 
 ```
 
-Compile Funnel from https://github.com/messwith/funnel with go 1.12+ and make. Then one can just use bin/funnel binary. This Funnel fork simply adds ‘--privileged’ flag to all task docker commands. Without ‘--privileged’ singularity containers do not work inside docker. 
+Compile Funnel from https://github.com/messwith/funnel with go 1.12+ and make.
+Then one can just use bin/funnel binary.
+This Funnel fork simply adds ‘--privileged’ flag to all task docker commands.
+Without ‘--privileged’ singularity containers do not work inside docker. 
 
 ### Usage
 #### Input data format
@@ -80,7 +85,9 @@ launcher.py find --samples /media/ref/samples.tsv --input /media/ref/input --dir
 #### Execution by scheduler
 The pipeline can be executed using lightweight scheduler Funnel, which implements Task Execution Schema developed by GA4GH.
 
-During execution, incoming data for analysis can be obtained in several ways: locally, FTP, HTTPS, S3, Google, etc. The resulting files can be uploaded in the same ways. It is possible to add another feature such as writing to the database, sending to the REST service. The scheduler itself can work in various environments from a regular VM to a Kubernetes cluster with resource quotas support.
+During execution, incoming data for analysis can be obtained in several ways: locally, FTP, HTTPS, S3, Google, etc.
+The resulting files can be uploaded in the same ways. It is possible to add another feature such as writing to the database, sending to the REST service.
+The scheduler itself can work in various environments from a regular VM to a Kubernetes cluster with resource quotas support.
 
 More information: https://ohsu-comp-bio.github.io/funnel/docs/
 
