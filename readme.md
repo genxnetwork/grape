@@ -7,7 +7,7 @@ The project intends to implement best-practices of estimation of recent shared a
 
 The pipeline is implemented with the Snakemake framework. All used components are wrapped in Singularity containers or isolated in a Conda environment.
 
-The visualisation of execution graph ([svg](https://drive.google.com/file/d/1g-Qh73XbSi0tXJ0uyHAFMbsgMWT34hAJ/view?usp=sharing), [png](https://bitbucket.org/genxglobal/genx-relatives-snakemake/raw/077f33cfdd421ae17b5c02a3a5f8eb34bd20e1fd/dag.svg)).
+The visualisation of execution graph: [svg](https://bitbucket.org/genxglobal/genx-relatives-snakemake/raw/077f33cfdd421ae17b5c02a3a5f8eb34bd20e1fd/dag.svg).
 
 
 Multi-core parallelization is highly utilized due to the ability to split input data by each sample/chromosome.
@@ -38,10 +38,9 @@ Password: b2mR4wQpJJdeKdsW
 
 ```
 
-Compile Funnel from https://github.com/messwith/funnel with go 1.12+ and make.
-Then one can just use bin/funnel binary.
-This Funnel fork simply adds ‘--privileged’ flag to all task docker commands.
-Without ‘--privileged’ singularity containers do not work inside docker. 
+Compile Funnel from https://github.com/messwith/funnel with go 1.12+ and make. Then one can just use bin/funnel binary.  
+This Funnel fork simply adds ‘--privileged’ flag to all task docker commands.  
+Without ‘--privileged’ singularity containers do not work inside docker.
 
 ### Usage
 #### Input data format
@@ -83,13 +82,13 @@ launcher.py find --samples /media/ref/samples.tsv --input /media/ref/input --dir
 ```
 
 #### Execution by scheduler
-The pipeline can be executed using lightweight scheduler Funnel, which implements Task Execution Schema developed by GA4GH.
+The pipeline can be executed using lightweight scheduler Funnel, which implements Task Execution Schema developed by GA4GH.  
+  
+During execution, incoming data for analysis can be obtained in several ways: locally, FTP, HTTPS, S3, Google, etc.  
+The resulting files can be uploaded in the same ways. It is possible to add another feature such as writing to the database, sending to the REST service.  
+The scheduler itself can work in various environments from a regular VM to a Kubernetes cluster with resource quotas support.  
 
-During execution, incoming data for analysis can be obtained in several ways: locally, FTP, HTTPS, S3, Google, etc.
-The resulting files can be uploaded in the same ways. It is possible to add another feature such as writing to the database, sending to the REST service.
-The scheduler itself can work in various environments from a regular VM to a Kubernetes cluster with resource quotas support.
-
-More information: https://ohsu-comp-bio.github.io/funnel/docs/
+More information: https://ohsu-comp-bio.github.io/funnel/docs/  
 
 How to execute dry-run (sample output):
 
