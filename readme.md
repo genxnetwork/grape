@@ -7,9 +7,7 @@ The project intends to implement best-practices of estimation of recent shared a
 
 The pipeline is implemented with the Snakemake framework. All used components are wrapped in Singularity containers or isolated in a Conda environment.
 
-The visualisation of execution graph ([svg](https://drive.google.com/file/d/1g-Qh73XbSi0tXJ0uyHAFMbsgMWT34hAJ/view?usp=sharing)):
-
-![execution graph](https://drive.google.com/file/d/1vezV4LzqfwRaeAXFQZ8IlblK-ixMRflh/view?usp=sharing)
+The visualisation of execution graph ([svg](https://drive.google.com/file/d/1g-Qh73XbSi0tXJ0uyHAFMbsgMWT34hAJ/view?usp=sharing), [png](https://bitbucket.org/genxglobal/genx-relatives-snakemake/raw/077f33cfdd421ae17b5c02a3a5f8eb34bd20e1fd/dag.svg)).
 
 
 Multi-core parallelization is highly utilized due to the ability to split input data by each sample/chromosome.
