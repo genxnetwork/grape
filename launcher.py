@@ -94,6 +94,14 @@ def get_parser_args():
     return parser.parse_args()
 
 
+def copy_file(working_dir, file_path):
+
+    samples_name = os.path.split(file_path)[-1]
+    samples_path = os.path.join(working_dir, samples_name)
+    if not os.path.exists(samples_path):
+        shutil.copy(file_path, os.path.join(working_dir, samples_name))
+
+
 def copy_input(input_dir, working_dir, samples_file):
 
     input_name = os.path.split(input_dir)[-1]
@@ -126,6 +134,9 @@ if __name__ == '__main__':
 
     if args.command == 'preprocess':
         copy_input(args.input, args.directory, args.samples)
+
+    if args.command == 'simulate':
+        copy_input('workflows/pedsim/params', args.directory, 'workflows/pedsim/ceph_unrelated.tsv')
 
     snakefiles = {
         'preprocess': 'workflows/preprocess/Snakefile',

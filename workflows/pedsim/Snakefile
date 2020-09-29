@@ -36,7 +36,7 @@ rule intersect:
 rule merge_background:
     input:
         data=expand("pedsim/phased/chr{chrom}.phased.vcf.gz", chrom=CHROMOSOMES),
-        eu="eu.tsv"
+        eu="ceph_unrelated.tsv"
     output:
         "pedsim/phased/background.vcf.gz"
     params:
@@ -60,7 +60,7 @@ rule merge_background:
 
 rule prepare_map:
     output:
-        "pedsim/params/refined_mf.simmap"
+        "params/refined_mf.simmap"
     shell:
         """
             wget https://github.com/cbherer/Bherer_etal_SexualDimorphismRecombination/raw/master/Refined_genetic_map_b37.tar.gz
@@ -78,8 +78,8 @@ rule simulate:
     input:
         bg=rules.merge_background.output,
         _map=rules.prepare_map.output,
-        _def='pedsim/params/Relatives.def',
-        intf='pedsim/params/nu_p_campbell.tsv'
+        _def='params/Relatives.def',
+        intf='params/nu_p_campbell.tsv'
     output:
         vcf='pedsim/simulated/data.vcf.gz',
         seg='pedsim/simulated/data.seg',
