@@ -77,6 +77,6 @@ rule prepare_vcf:
         plink --bfile plink/merged_mapped_alleled --keep-allele-order --output-chr M --export vcf bgz --out vcf/merged_mapped_clean | tee -a {log.vcf}
         bcftools sort vcf/merged_mapped_clean.vcf.gz -O z -o vcf/merged_mapped_sorted.vcf.gz | tee -a {log.vcf}
         # need to check output for the potential issues
-        # bcftools norm --check-ref e -f $GRCh37_fasta merged_mapped_sorted.vcf.gz -O u -o /dev/null
+        bcftools norm --check-ref e -f $GRCh37_fasta vcf/merged_mapped_sorted.vcf.gz -O u -o /dev/null | tee -a {log.vcf}
         bcftools index -f vcf/merged_mapped_sorted.vcf.gz | tee -a {log.vcf}
         """
