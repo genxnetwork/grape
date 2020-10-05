@@ -9,7 +9,8 @@ CHIP_INDEX_LINK = 'ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/sup
 rule all:
     input:
         "results/relatives.tsv",
-        "results/accuracy.png"
+        "results/accuracy.png",
+        "results/overlaps.tsv"
 
 
 rule download_source:
@@ -26,7 +27,7 @@ rule download_source:
 rule intersect:
     input: rules.download_source.output['bg']
     output: "pedsim/phased/chr{chrom}.phased.vcf.gz"
-
+    conda: "../../envs/bcftools.yaml"
     shell:
         """
             bcftools isec -n=2 -w1 -r {wildcards.chrom} -O v -o {output} /media/1000genome/bcf/1000genome_chr{wildcards.chrom}.bcf {input}  
@@ -78,7 +79,7 @@ rule simulate:
     input:
         bg=rules.merge_background.output,
         _map=rules.prepare_map.output,
-        _def='params/Relatives.def',
+        _def='params/relatives_average.def',
         intf='params/nu_p_campbell.tsv'
     output:
         vcf='pedsim/simulated/data.vcf.gz',
@@ -129,3 +130,14 @@ rule evaluate_accuracy:
         'results/accuracy.png'
     script:
          '../../scripts/evaluate.py'
+
+rule evaluate_ibd:
+    input:
+        pedsim=rules.simulate.output['seg'],
+        germline=rules.merge_matches.output[0]
+    params:
+        cm_dir='cm'
+    output:
+        overlap='results/overlaps.tsv'
+    script:
+        '../../scripts/evaluate_ibd.py'

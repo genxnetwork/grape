@@ -50,6 +50,11 @@ def get_l_th(matchfiles, rel_king, ERSA_t=2.5):
 if __name__ == '__main__':
     rel_king = read_king(snakemake.input['king'][0])
     #l, th = get_l_th(snakemake.input['germline'], rel_king)
+
+    # best params are
+    #l = 1.33
+    #th = 3.5
+
     l = 1.33
-    th = 3.5
+    th = 4.0
     write_l_th(l, th, 2.5, snakemake.output[0])
