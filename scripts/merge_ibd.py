@@ -1,4 +1,4 @@
-from ibd import merge_germline_segments, segments_to_germline, interpolate_all
+from ibd_utils import merge_germline_segments, segments_to_germline, interpolate_all, read_germline_segments
 import pandas
 
 
@@ -11,5 +11,4 @@ if __name__ == '__main__':
     segments = interpolate_all(segments, map_dir)
     segments = merge_germline_segments(segments, gap=gap)
 
-    frame = pandas.DataFrame.from_dict(segments, orient='index')
-    frame.to_csv(snakemake.output['ibd'], sep='\t')
+    segments_to_germline(segments, snakemake.output['ibd'])

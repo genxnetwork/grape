@@ -1,4 +1,4 @@
-from ibd import read_pedsim_segments, read_germline_segments, interpolate_all, total_overlap
+from ibd_utils import read_pedsim_segments, read_germline_segments, interpolate_all, total_overlap
 import pandas
 
 

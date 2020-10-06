@@ -19,6 +19,9 @@ def precision_recall(confusion_matrix, plot_name=None, cutoff=1):
     for key, value in confusion_matrix.items():
 
         true_degree = key[0]
+        # how much of the selected items are relevant
+        for key2, value2 in confusion_matrix.items():
+            if key[0] == ke
         precision =
 
         if i >= cutoff:

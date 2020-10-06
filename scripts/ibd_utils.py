@@ -168,21 +168,22 @@ def total_overlap(true_segments, found_segments):
 def segments_to_germline(segments, dest_path):
 
     records = []
-    for key, seg in segments.items():
-        record = {
-            'fid_iid1': f'{key[0]} {key[0]}',
-            'fid_iid2': f'{key[1]} {key[1]}',
-            'chrom': seg.chrom,
-            'start_end_bp': f'{seg.bp_start} {seg.bp_end}',
-            'start_end_snp': f'{seg.bp_start} {seg.bp_end}',  # ersa should not use it
-            'snp_len': 1,  # ersa should not use it
-            'genetic_len': seg.cm_len,
-            'len_units': 'cM',
-            'mismatches': 0,  # ersa should not use it
-            'is_homozygous1': 0,  # ersa should not use it
-            'is_homozygous2': 0  # ersa should not use it
-        }
-        records.append(record)
+    for key, segs in segments.items():
+        for seg in segs:
+            record = {
+                'fid_iid1': f'{key[0]} {key[0]}',
+                'fid_iid2': f'{key[1]} {key[1]}',
+                'chrom': seg.chrom,
+                'start_end_bp': f'{seg.bp_start} {seg.bp_end}',
+                'start_end_snp': f'{seg.bp_start} {seg.bp_end}',  # ersa should not use it
+                'snp_len': 1,  # ersa should not use it
+                'genetic_len': seg.cm_len,
+                'len_units': 'cM',
+                'mismatches': 0,  # ersa should not use it
+                'is_homozygous1': 0,  # ersa should not use it
+                'is_homozygous2': 0  # ersa should not use it
+            }
+            records.append(record)
 
     frame = pandas.DataFrame.from_records(records)
     frame.to_csv(dest_path, sep='\t', index=False, header=None)
@@ -196,19 +197,20 @@ def merge_germline_segments(segments, gap=0.6):
     for key, segs in segments.items():
 
         merged = None
-        for i, seg in enumerate(segs):
+        sorted_segs = sorted(segs, key=lambda s: (s.chrom, s.cm_start))
+        for i, seg in enumerate(sorted_segs):
             if merged is None:
                 merged = seg
                 continue
 
-            if seg.cm_start - merged.cm_end <= gap:
+            if merged.chrom == seg.chrom and seg.cm_start - merged.cm_end <= gap:
 
                 merged = Segment(seg.id1, seg.id2, seg.chrom,
                                  cm_start=merged.cm_start, cm_end=seg.cm_end, bp_start=merged.bp_start, bp_end=seg.bp_end)
 
             else:
                 new_segments[key].append(merged)
-                merged = None
+                merged = seg
 
     return new_segments
 

@@ -6,10 +6,10 @@ from utils import read_ersa, read_king
 from utils import line_generator
 
 
-def read_segments_graph(matchfiles):
+def read_segments_graph(matchfile):
     i1, i2, l = 1, 3, 10
     segments_graph = nx.Graph()
-    for line in line_generator(matchfiles):
+    for line in line_generator([matchfile]):
         items = line.split()
         id1 = items[i1]
         id2 = items[i2]

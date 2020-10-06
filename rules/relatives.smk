@@ -139,7 +139,7 @@ rule merge_ibd_segments:
         ibd='germline/merged_ibd.tsv'
     conda: "../envs/evaluation.yaml"
     script:
-        '../../scripts/merge_ibd.py'
+        '../scripts/merge_ibd.py'
 
 rule ersa:
     input:
