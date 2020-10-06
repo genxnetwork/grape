@@ -1,0 +1,14 @@
+image: atlassian/default-image:2
+
+pipelines:
+  branches:
+    test:
+    - step:
+        name: build local container and run simulation
+        script:
+          - pipe: atlassian/ssh-run:0.2.6
+            variables:
+              SSH_USER: 'genx'
+              SERVER: '40.69.200.138'
+              MODE: 'command'
+              COMMAND: 'touch $BITBUCKET_COMMIT'
