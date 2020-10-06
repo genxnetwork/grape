@@ -4,11 +4,18 @@ pipelines:
   branches:
     test:
     - step:
-        name: build local container and run simulation
+        name: pull repo, build local container, and run simulation
         script:
           - pipe: atlassian/ssh-run:0.2.6
             variables:
               SSH_USER: 'genx'
               SERVER: '40.69.200.138'
-              MODE: 'command'
-              COMMAND: 'touch $BITBUCKET_COMMIT'
+              MODE: 'script'
+              COMMAND: 'simulation.sh $BITBUCKET_COMMIT'
+    - step:
+        name: send slack notification
+        script:
+          - pipe: atlassian/slack-notify:0.3.6
+            variables:
+              WEBHOOK_URL: $WEBHOOK_URL
+              MESSAGE: 'CI has been run for $BITBUCKET_COMMIT'
