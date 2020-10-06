@@ -9,6 +9,38 @@ from utils import get_kinship
 from utils import read_pedigree
 from utils import read_pipeline_output
 
+'''
+def precision_recall(confusion_matrix, plot_name=None, cutoff=1):
+
+    data = {'true_degree': [], 'precision': [], 'recall': []}
+
+    cm_df = pd.DataFrame.from_dict(confusion_matrix, orient='index', ).reset_index()
+
+    for key, value in confusion_matrix.items():
+
+        true_degree = key[0]
+        precision =
+
+        if i >= cutoff:
+            c = correct.get(i, 0)
+            cs.append((c / total[i]) * 100)
+            ds.append(i)
+    df = pd.DataFrame(columns=['Degree of Relatedness', '% predicted correct +/- 1 degree relationship'])
+    df.iloc[:, 0] = ds
+    df.iloc[:, 1] = cs
+    ax = sns.barplot(x="Degree of Relatedness", y="% predicted correct +/- 1 degree relationship", data=df,
+                     palette='muted')
+    for _, row in df.iterrows():
+        ax.text(row.name, row.iloc[1] + 1, round(row.iloc[1], 1), color='black', ha="center")
+    ax.set(ylim=(0, 100))
+    if not plot_name:
+        plt.show()
+    else:
+        print('plot saved to ', plot_name)
+        plt.savefig(plot_name)
+        plt.close()
+    print('comparison finished')
+'''
 
 def compare(total, correct, plot_name=None, cutoff=1):
     ds = []

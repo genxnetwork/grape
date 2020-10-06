@@ -12,4 +12,4 @@ if __name__ == '__main__':
     segments = merge_germline_segments(segments, gap=gap)
 
     frame = pandas.DataFrame.from_dict(segments, orient='index')
-    frame.to_csv(snakemake.output['overlap'], sep='\t')
+    frame.to_csv(snakemake.output['ibd'], sep='\t')

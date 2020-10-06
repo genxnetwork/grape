@@ -140,5 +140,5 @@ if __name__ == "__main__":
             i1, i2 = _id.split(sep='_')
             samples_file.write("{}_{}\n".format(i1, i2))
 
-    filename = bcftools_reheader(vcf_name, vcf_name + '.samples', vcf_output)
+    filename = bcftools_reheader(vcf_name, vcf_output + '.samples', vcf_output)
     bcftools_index(vcf_output)

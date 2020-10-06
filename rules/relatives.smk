@@ -129,10 +129,21 @@ rule merge_matches:
     shell:
          "cat germline/*.match > {output}"
 
+rule merge_ibd_segments:
+    input:
+        germline=rules.merge_matches.output[0]
+    params:
+        cm_dir='cm',
+        merge_gap='0.6'
+    output:
+        ibd='germline/merged_ibd.tsv'
+    conda: "../envs/evaluation.yaml"
+    script:
+        '../../scripts/merge_ibd.py'
 
 rule ersa:
     input:
-        germline=rules.merge_matches.output,
+        germline=rules.merge_ibd_segments.output['ibd'],
         estimated=rules.ersa_params.output
     output: "ersa/relatives.tsv"
     singularity:
@@ -150,10 +161,11 @@ rule ersa:
         ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.germline} -o {output} | tee {log}
         """
 
+
 rule merge_king_ersa:
     input:
         king=rules.run_king.output,
-        germline=rules.merge_matches.output,
+        germline=rules.merge_ibd_segments.output['ibd'],
         ersa=rules.ersa.output
     output: "results/relatives.tsv"
     conda: "../envs/evaluation.yaml"
