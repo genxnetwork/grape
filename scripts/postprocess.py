@@ -21,7 +21,6 @@ def bcftools_index(infile):
 def bcftools_samples(infile):
     """Return individual ids of given vcf file"""
     #if not os.path.exists(infile + '.csi'):
-    #    bcftools_index(infile)
     args = [BCFTOOLS, 'query', '-l', infile]
     pipes = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     std_out, std_err = pipes.communicate()
