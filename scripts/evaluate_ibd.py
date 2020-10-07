@@ -1,5 +1,8 @@
-from ibd_utils import read_pedsim_segments, read_germline_segments, interpolate_all, total_overlap
+from utils.ibd import read_pedsim_segments, read_germline_segments, interpolate_all, total_overlap
 import pandas
+
+
+#def plot_segment_accuracy(true_segments, found_segments):
 
 
 if __name__ == '__main__':

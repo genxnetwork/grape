@@ -1,4 +1,4 @@
-from ibd_utils import merge_germline_segments, segments_to_germline, interpolate_all, read_germline_segments
+from utils.ibd import merge_germline_segments, segments_to_germline, interpolate_all, read_germline_segments
 import pandas
 
 

@@ -1,9 +1,8 @@
 # many to many tests of relationships
 
 import networkx as nx
-from utils import read_ersa, read_king
-
-from utils import line_generator
+from utils.relatives import read_ersa, read_king
+from utils.relatives import line_generator
 
 
 def read_segments_graph(matchfile):

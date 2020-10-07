@@ -1,5 +1,5 @@
 import networkx as nx
-from utils import line_generator, read_king
+from utils.relatives import line_generator, read_king
 
 
 def write_l_th(l, th, t, file_path):

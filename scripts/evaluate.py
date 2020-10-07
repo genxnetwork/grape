@@ -5,9 +5,7 @@ import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
 
-from utils import get_kinship
-from utils import read_pedigree
-from utils import read_pipeline_output
+from utils.relatives import get_kinship, read_pedigree, read_pipeline_output
 
 
 def precision_recall(total, confusion_matrix, plot_name=None):
@@ -40,14 +38,8 @@ def precision_recall(total, confusion_matrix, plot_name=None):
         data['True Degree'].append(true_degree)
 
     df = pd.DataFrame.from_dict(data)
-    # df = df.melt(id_vars=['True Degree'], value_vars=['Precision', 'Recall'],
-    #         var_name='Metric', value_name='Value')
-
-    # ax = sns.barplot(x="True Degree", y="Metric", data=df,
-    #                  palette='muted', hue='Value')
     df.set_index('True Degree').plot.bar()
 
-    #ax.set(ylim=(0, 1.0))
     if not plot_name:
         plt.show()
     else:
