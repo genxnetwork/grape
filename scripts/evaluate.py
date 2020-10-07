@@ -9,41 +9,53 @@ from utils import get_kinship
 from utils import read_pedigree
 from utils import read_pipeline_output
 
-'''
-def precision_recall(confusion_matrix, plot_name=None, cutoff=1):
 
-    data = {'true_degree': [], 'precision': [], 'recall': []}
+def precision_recall(total, confusion_matrix, plot_name=None):
 
-    cm_df = pd.DataFrame.from_dict(confusion_matrix, orient='index', ).reset_index()
+    data = {'True Degree': [], 'Precision': [], 'Recall': []}
 
-    for key, value in confusion_matrix.items():
+    max_degree = max(c[0] for c in confusion_matrix.keys())
 
-        true_degree = key[0]
-        # how much of the selected items are relevant
-        for key2, value2 in confusion_matrix.items():
-            if key[0] == ke
-        precision =
+    for true_degree in range(1, max_degree + 1):
 
-        if i >= cutoff:
-            c = correct.get(i, 0)
-            cs.append((c / total[i]) * 100)
-            ds.append(i)
-    df = pd.DataFrame(columns=['Degree of Relatedness', '% predicted correct +/- 1 degree relationship'])
-    df.iloc[:, 0] = ds
-    df.iloc[:, 1] = cs
-    ax = sns.barplot(x="Degree of Relatedness", y="% predicted correct +/- 1 degree relationship", data=df,
-                     palette='muted')
-    for _, row in df.iterrows():
-        ax.text(row.name, row.iloc[1] + 1, round(row.iloc[1], 1), color='black', ha="center")
-    ax.set(ylim=(0, 100))
+        # precision: how many of the selected items are relevant
+        # recall: how many of the relevant items are selected
+        true_positives, false_negatives, false_positives = 0, 0, 0
+        for key, value in confusion_matrix.items():
+            predicted_degree = key[1]
+            if true_degree == key[0]:
+                if true_degree - 1 <= predicted_degree <= true_degree + 1:
+                    true_positives += value
+                else:
+                    false_negatives += value
+            if key[0] == -1 and true_degree == predicted_degree:
+                false_positives += value
+
+        true_total = total[true_degree]
+        false_negatives = true_total - false_negatives - true_positives
+
+        print(f'td: {true_degree}\t tp: {true_positives}\t fn: {false_negatives}\t fp: {false_positives}')
+        data['Precision'].append(true_positives / (true_positives + false_positives))
+        data['Recall'].append(true_positives / (true_positives + false_negatives))
+        data['True Degree'].append(true_degree)
+
+    df = pd.DataFrame.from_dict(data)
+    # df = df.melt(id_vars=['True Degree'], value_vars=['Precision', 'Recall'],
+    #         var_name='Metric', value_name='Value')
+
+    # ax = sns.barplot(x="True Degree", y="Metric", data=df,
+    #                  palette='muted', hue='Value')
+    df.set_index('True Degree').plot.bar()
+
+    #ax.set(ylim=(0, 1.0))
     if not plot_name:
         plt.show()
     else:
         print('plot saved to ', plot_name)
         plt.savefig(plot_name)
         plt.close()
-    print('comparison finished')
-'''
+    print('precision and recall plotting finished')
+
 
 def compare(total, correct, plot_name=None, cutoff=1):
     ds = []
@@ -70,7 +82,7 @@ def compare(total, correct, plot_name=None, cutoff=1):
     print('comparison finished')
 
 
-def evaluate(result, fam, plot_name, only_client=False):
+def evaluate(result, fam, plot_name, pr_plot_name, only_client=False):
     """If only_client=True, all pairwise relatives between client are evaluated"""
     iids, pedigree = read_pedigree(fn=fam)
     print('pedigree:')
@@ -101,11 +113,20 @@ def evaluate(result, fam, plot_name, only_client=False):
             total[degree] = total.get(degree, 0) + 1
             if inferred.has_edge(i, j) and inferred[i][j]['ersa'] != 'NA':
                 ersa_d = int(inferred[i][j]['ersa'])
-                print(i, j, degree, ersa_d, inferred[i][j]['king'])
+                #print(i, j, degree, ersa_d, inferred[i][j]['king'])
                 key = (degree, ersa_d)
                 confusion_matrix[key] = confusion_matrix.get(key, 0) + 1
                 if degree - 1 <= ersa_d <= degree + 1:
                     correct[degree] = correct.get(degree, 0) + 1
+
+        else:
+            if inferred.has_edge(i, j) and inferred[i][j]['ersa'] != 'NA':
+                ersa_d = int(inferred[i][j]['ersa'])
+                #print(i, j, degree, ersa_d, inferred[i][j]['king'])
+                degree = -1
+                key = (degree, ersa_d)
+                confusion_matrix[key] = confusion_matrix.get(key, 0) + 1
+
     if not total:
         print('total is not total')
         return
@@ -116,7 +137,7 @@ def evaluate(result, fam, plot_name, only_client=False):
         print(f'{key}\t{confusion_matrix[key]}')
 
     compare(total, correct, plot_name)
-
+    precision_recall(total, confusion_matrix, pr_plot_name)
 
 if __name__ == '__main__':
-    evaluate(snakemake.input['rel'], snakemake.input['fam'], snakemake.output[0], only_client=True)
+    evaluate(snakemake.input['rel'], snakemake.input['fam'], snakemake.output['accuracy'], snakemake.output['pr'], only_client=True)

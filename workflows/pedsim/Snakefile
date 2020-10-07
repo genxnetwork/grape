@@ -116,7 +116,8 @@ rule evaluate_accuracy:
         rel=rules.merge_king_ersa.output[0],
         fam=rules.postprocess.output['fam']
     output:
-        'results/accuracy.png'
+        accuracy='results/accuracy.png',
+        pr='results/precision_recall.png'
     script:
          '../../scripts/evaluate.py'
 
