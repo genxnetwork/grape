@@ -54,15 +54,15 @@ snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media/
 ### References
 
 1. For lifting:
-    chain = '/media/hg38ToHg19.over.chain.gz'
-    ref = '/media/human_g1k_v37.fasta', size = 3G
+    chain = '/media/ref/hg38ToHg19.over.chain.gz'
+    ref = '/media/ref/human_g1k_v37.fasta', size = 3G
 2. For phasing:
-    map = '/media/tables/genetic_map_hg19_withX.txt.gz', size = 51M
-    bcf = '/media/1000genome/bcf/1000genome_chr{1..22}.bcf', size = 14G 
+    map = '/media/ref/tables/genetic_map_hg19_withX.txt.gz', size = 51M
+    bcf = '/media/ref/1000genome/bcf/1000genome_chr{1..22}.bcf', size = 14G 
 3. For imputation:
-    m3vcf = '/media/Minimac/{1..22}.1000g.Phase3.v5.With.Parameter.Estimates.m3vcf.gz', size = 3.2G 
+    m3vcf = '/media/ref/Minimac/{1..22}.1000g.Phase3.v5.With.Parameter.Estimates.m3vcf.gz', size = 3.2G 
 4. For interpolation:
-    map = '/media/genetic_map_b37/genetic_map_chr{1..22}_combined_b37.txt', size = 120M 
+    map = '/media/ref/genetic_map_b37/genetic_map_chr{1..22}_combined_b37.txt', size = 120M 
 5. For imputation check:
-    tab = '/media/1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.only_rs.biallelic.tab', size = 12G
+    tab = '/media/ref/1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.only_rs.biallelic.tab', size = 12G
     

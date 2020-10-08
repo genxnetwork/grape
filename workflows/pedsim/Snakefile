@@ -19,7 +19,7 @@ rule intersect:
     conda: "../../envs/bcftools.yaml"
     shell:
         """
-            bcftools isec -n=2 -w1 -r {wildcards.chrom} -O v -o {output} /media/1000genome/bcf/1000genome_chr{wildcards.chrom}.bcf {input}  
+            bcftools isec -n=2 -w1 -r {wildcards.chrom} -O v -o {output} /media/ref/1000genome/bcf/1000genome_chr{wildcards.chrom}.bcf {input}  
         """
 
 
