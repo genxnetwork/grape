@@ -48,6 +48,7 @@ rule merge_background:
             bcftools concat -f {params.list} | bcftools view --force-samples --samples-file {input.eu} -O z -o {output}
         """
 
+'''
 rule prepare_map:
     output:
         "params/refined_mf.simmap"
@@ -63,11 +64,12 @@ rule prepare_map:
             done
             rm -rf Refined_genetic_map_b37
         """
+'''
 
 rule simulate:
     input:
         bg=rules.merge_background.output,
-        _map=rules.prepare_map.output,
+        _map='/media/ref/refined_mf.simmap',
         _def='params/Relatives.def',
         intf='params/nu_p_campbell.tsv'
     output:
