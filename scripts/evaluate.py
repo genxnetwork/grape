@@ -129,7 +129,7 @@ def evaluate(result, fam, plot_name, pr_plot_name, only_client=False):
         print(f'{key}\t{confusion_matrix[key]}')
 
     compare(total, correct, plot_name)
-    precision_recall(total, confusion_matrix, pr_plot_name)
+    #precision_recall(total, confusion_matrix, pr_plot_name)
 
 if __name__ == '__main__':
-    evaluate(snakemake.input['rel'], snakemake.input['fam'], snakemake.output['accuracy'], snakemake.output['pr'], only_client=True)
+    evaluate(snakemake.input['rel'], snakemake.input['fam'], snakemake.output['accuracy'], 'pr', only_client=True)
