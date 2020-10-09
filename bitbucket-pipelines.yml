@@ -4,6 +4,11 @@ pipelines:
   branches:
     develop:
     - step:
+        name: install envsubst
+        script:
+            - apt-get update && apt-get install -y gettext-base
+            - envsubst < simulation-template.sh > simulation.sh
+    - step:
         name: pull repo, build local container, and run simulation
         script:
           - pipe: atlassian/ssh-run:0.2.6
@@ -11,7 +16,7 @@ pipelines:
               SSH_USER: 'genx'
               SERVER: '40.69.200.138'
               MODE: 'script'
-              COMMAND: 'simulation.sh $BITBUCKET_COMMIT'
+              COMMAND: 'simulation.sh'
     - step:
         name: send slack notification
         script:
