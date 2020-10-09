@@ -126,7 +126,7 @@ if __name__ == '__main__':
     start_time = datetime.datetime.now()
 
     if not os.path.exists(args.directory):
-        os.mkdir(args.directory)
+        os.makedirs(args.directory)
 
     valid_commands = ['preprocess', 'find', 'simulate', 'hapmap']
     if args.command not in valid_commands:
