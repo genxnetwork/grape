@@ -1,6 +1,6 @@
 #!/bin/bash
 
-HASH=$1
+HASH=$BITBUCKET_COMMIT
 
 git clone git@bitbucket.org:genxglobal/genx-relatives-snakemake.git /media/ci/genx-relatives-snakemake-${HASH}
 cd /media/ci/genx-relatives-snakemake-${HASH}/
