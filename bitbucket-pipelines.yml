@@ -2,7 +2,7 @@ image: atlassian/default-image:2
 
 pipelines:
   branches:
-    test:
+    develop:
     - step:
         name: pull repo, build local container, and run simulation
         script:
