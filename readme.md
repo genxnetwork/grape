@@ -140,6 +140,7 @@ launcher.py find --directory /media/pipeline_data/simulation --real-run
 ### Bitbucket Pipeline
 
 We will run a simulation pipeline after the push commit into the 'develop' branch.
+It would pull the source code, build the Docker image, and run in on the server.
 
 ### Credits
 
