@@ -137,6 +137,10 @@ docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localti
 launcher.py find --directory /media/pipeline_data/simulation --real-run
 ```
 
+### Bitbucket Pipeline
+
+We will run a simulation pipeline after the push commit into the 'develop' branch.
+
 ### Credits
 
 License: GNU GPL v3
