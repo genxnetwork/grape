@@ -65,17 +65,12 @@ rule recode_vcf:
 
 rule liftover:
     input:
-        vcf=rules.recode_vcf.output['vcf'],
-        chain='/media/ref/hg38ToHg19.over.chain.gz',
-        ref='/media/ref/human_g1k_v37.fasta'
+        vcf=rules.recode_vcf.output['vcf']
     output:
         vcf="vcf/merged_lifted.vcf"
 
     singularity: "docker://alexgenx/picard:latest"
     shell:
-        """
-            #java -jar /picard/picard.jar CreateSequenceDictionary R={input.ref} 
-                 
-            java -jar /picard/picard.jar LiftoverVcf I={input.vcf} O={output.vcf} CHAIN={input.chain} REJECT=vcf/rejected.vcf R={input.ref}
-                
+        """      
+            java -jar /picard/picard.jar LiftoverVcf I={input.vcf} O={output.vcf} CHAIN={lift_chain} REJECT=vcf/rejected.vcf R={GRCh37_fasta}
         """

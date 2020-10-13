@@ -82,7 +82,9 @@ rule split_map:
         """
 
 rule interpolate:
-    input: rules.convert_to_ped.output
+    input:
+        rules.convert_to_ped.output,
+        cmmap=cmmap
     output: "cm/chr{chrom}.cm.ped"
     conda:
         "../envs/plink.yaml"
@@ -92,7 +94,7 @@ rule interpolate:
         "benchmarks/cm/interpolate-{chrom}.txt"
     shell:
         """
-        plink --file ped/imputed_chr{wildcards.chrom} --cm-map /media/ref/genetic_map_b37/genetic_map_chr{wildcards.chrom}_combined_b37.txt {wildcards.chrom} --recode --out cm/chr{wildcards.chrom}.cm | tee {log}
+        plink --file ped/imputed_chr{wildcards.chrom} --cm-map {input.cmmap} {wildcards.chrom} --recode --out cm/chr{wildcards.chrom}.cm | tee {log}
         """
 
 rule germline:

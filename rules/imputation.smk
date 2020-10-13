@@ -5,8 +5,9 @@ PLINK_FORMATS_EXT   = ['bed', 'bim', 'fam', 'log', 'nosex']
 
 rule phase:
     input:
-        vcf="vcf/merged_mapped_sorted.vcf.gz"
+        vcf="vcf/merged_mapped_sorted.vcf.gz",
         #idx="vcf/merged_mapped_sorted.vcf.gz.csi"
+        vcfRef=vcfRef
     output: "phase/chr{chrom}.phased.vcf.gz"
     threads: 1
     singularity:
@@ -17,19 +18,19 @@ rule phase:
         "benchmarks/phase/eagle-{chrom}.txt"
     shell:
         """
-        GENETIC_MAP=/media/ref/tables/genetic_map_hg19_withX.txt.gz
-
-        /usr/bin/bio-eagle --vcfRef  /media/ref/1000genome/bcf/1000genome_chr{wildcards.chrom}.bcf \
+        /usr/bin/bio-eagle --vcfRef {input.vcfRef} \
         --numThreads {threads} \
         --vcfTarget {input.vcf}  \
-        --geneticMapFile $GENETIC_MAP \
+        --geneticMapFile {GENETIC_MAP} \
         --chrom {wildcards.chrom} \
         --vcfOutFormat z \
         --outPrefix phase/chr{wildcards.chrom}.phased | tee {log}
         """
 
 rule impute:
-    input: rules.phase.output
+    input:
+        rules.phase.output,
+        refHaps=refHaps
     output: "imputed/chr{chrom}.imputed.dose.vcf.gz"
     threads: 1
     singularity:
@@ -41,7 +42,7 @@ rule impute:
     shell:
         """
         /usr/bin/minimac4 \
-        --refHaps /media/ref/Minimac/{wildcards.chrom}.1000g.Phase3.v5.With.Parameter.Estimates.m3vcf.gz \
+        --refHaps {input.refHaps} \
         --haps phase/chr{wildcards.chrom}.phased.vcf.gz \
         --format GT,GP \
         --prefix imputed/chr{wildcards.chrom}.imputed \

@@ -18,7 +18,10 @@ rule plink_filter:
         """
 
 rule pre_imputation_check:
-    input: "plink/merged_filter.bim"
+    input:
+        "plink/merged_filter.bim"
+    params:
+        SITE_1000GENOME
     output:
         "plink/merged_filter.bim.chr",
         "plink/merged_filter.bim.pos",
@@ -71,12 +74,10 @@ rule prepare_vcf:
         "benchmarks/plink/prepare_vcf.txt"
     shell:
         """
-        GRCh37_fasta=/media/ref/human_g1k_v37.fasta
-
         plink --bfile {params.input} --a1-allele plink/merged_filter.bim.force_allele --make-bed --out plink/merged_mapped_alleled | tee -a {log.plink}
         plink --bfile plink/merged_mapped_alleled --keep-allele-order --output-chr M --export vcf bgz --out vcf/merged_mapped_clean | tee -a {log.vcf}
         bcftools sort vcf/merged_mapped_clean.vcf.gz -O z -o vcf/merged_mapped_sorted.vcf.gz | tee -a {log.vcf}
         # need to check output for the potential issues
-        bcftools norm --check-ref e -f $GRCh37_fasta vcf/merged_mapped_sorted.vcf.gz -O u -o /dev/null | tee -a {log.vcf}
+        bcftools norm --check-ref e -f {GRCh37_fasta} vcf/merged_mapped_sorted.vcf.gz -O u -o /dev/null | tee -a {log.vcf}
         bcftools index -f vcf/merged_mapped_sorted.vcf.gz | tee -a {log.vcf}
         """
