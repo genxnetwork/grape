@@ -1,13 +1,13 @@
-import os,sys
-
 ATGC = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C'}
-atgc = {'A':1, 'T':1, 'G':0, 'C':0}
+atgc = {'A': 1, 'T': 1, 'G': 0, 'C': 0}
+
 
 def is_ambiguous(a1, a2):
-    """if SNP is ambiguous or not""" 
+    """if SNP is ambiguous or not"""
     if atgc[a1] == atgc[a2]:
         return True
     return False
+
 
 def match_ref(a1, a2, ref, alt):
     """Match a1, a2 with ref and alt
@@ -30,9 +30,8 @@ def match_ref(a1, a2, ref, alt):
             else:
                 return 4
 
-SITE_1000GENOME = "/media/ref/1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.only_rs.biallelic.tab"
 
-def pre_imputation_check(params, fn='./data/hapmap20', rs=True, reference=SITE_1000GENOME):
+def pre_imputation_check(params, reference, fn='./data/hapmap20', rs=True):
     """Given a plink bim file
     1. Remove SNPs can not be matched
     2. Flip SNPs that match after flip
@@ -41,8 +40,8 @@ def pre_imputation_check(params, fn='./data/hapmap20', rs=True, reference=SITE_1
     """
     # read in bim first
     prefix = params
-    fn_new = prefix #+ '_filter.bim'
-    #filter_bim(fn + '.bim', fn_new)
+    fn_new = prefix  # + '_filter.bim'
+    # filter_bim(fn + '.bim', fn_new)
     a1_a2 = {}
     for i in open(fn_new):
         items = i.split()
@@ -106,4 +105,4 @@ def pre_imputation_check(params, fn='./data/hapmap20', rs=True, reference=SITE_1
 
 
 if __name__ == "__main__":
-    pre_imputation_check(snakemake.input[0])
+    pre_imputation_check(snakemake.input[0], snakemake.params[0])
