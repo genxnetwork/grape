@@ -71,6 +71,6 @@ rule liftover:
         """
             #java -jar /picard/picard.jar CreateSequenceDictionary R={input.ref} 
                  
-            java -jar /picard/picard.jar LiftoverVcf I={input.vcf} O={output.vcf} CHAIN={input.chain} REJECT=vcf/rejected.vcf R={input.ref}
+            java -jar /picard/picard.jar LiftoverVcf I={input.vcf} O={output.vcf} CHAIN={input.chain} REJECT=vcf/rejected.vcf R={input.ref} RECOVER_SWAPPED_REF_ALT=true
                 
         """
