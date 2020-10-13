@@ -52,7 +52,7 @@ Input data is expected in 23andMe format, one file for each sample:
 | name | path |
 | --- | --- |
 | 1 | input/1.txt |
-| 2 | input/2.txt |
+| 2 | input/2.txt | 
 
 #### Console execution
 
@@ -161,7 +161,7 @@ launcher.py find --directory /media/pipeline_data/hapmap --real-run
 
 #### Evaluation results
 
-HapMap has only about close relatives presented. The pipeline determines them with 100% accuracy.
+HapMap has information only about close relatives presented. The pipeline determines them with 100% accuracy.
 
 
 ### Credits
