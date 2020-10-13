@@ -14,28 +14,47 @@ rule convert_23andme_to_plink:
     shell:
         """
         # by default plink write output in the same --out option. need to use tee to redirect
-        plink --23file {input} {params} {params} i --output-chr M --export vcf bgz --out plink/{params} | tee {log}
+        plink --23file {input} {params} {params} i --output-chr M --make-bed --out plink/{params} | tee {log}
         """
 
-rule merge_to_vcf:
+rule merge_list:
     input:
         expand("plink/{sample}.{ext}", sample=SAMPLES_NAME, ext=PLINK_FORMATS)
     output:
+        "plink/merge.list"
+    shell:
+        """
+        true > {output} && for i in {SAMPLES_NAME}; do echo "plink/$i" >> {output}; done
+        """
+
+rule merge_to_vcf:
+    input: rules.merge_list.output
+    output:
         plink_clean     = expand("plink/{i}_clean.{ext}", i=SAMPLES_NAME, ext=PLINK_FORMATS),
         plink_merged    = expand("vcf/merged.{ext}", ext=PLINK_FORMATS),
-        vcf             = "vcf/merged.vcf.gz",
-        merge_list      = "plink/merge.list"
+        vcf             = "vcf/merged.vcf.gz"
+        #merge_list      = "plink/merge_clean.list"
     conda:
-        "../envs/bcftools.yaml"
+        "../envs/plink.yaml"
     log:
-        "logs/vcf/merge_to_vcf.log"
+        "logs/plink/merge_to_vcf.log"
     benchmark:
         "benchmarks/plink/merge_to_vcf.txt"
     shell:
         """
-        true > {output.merge_list} && for i in {SAMPLES_NAME}; do echo "plink/$i" >> {output.merge_list}; done
-        # -m none creates multiple records for each new multiallelic variant
-        bcftools merge -m none --file-list {output.merge_list} -O z -o vcf/merged_mapped_sorted.vcf.gz | tee -a {log}
+        set +e
+        plink --merge-list {input} --output-chr 26 --export vcf bgz --out vcf/merged
+        exitcode=$?
+
+        if [[ -f "vcf/merged.missnp" ]]; then
+            for i in `cat {input}`;
+                do plink --bfile $i --exclude vcf/merged.missnp --make-bed --out $i\_clean;
+            done
+            true > {input} && for i in {SAMPLES_NAME}; do echo plink/$i\_clean >> {input}; done
+            plink --merge-list {input} --output-chr 26  --snps-only --export vcf bgz --out vcf/merged
+            exit 0
+        fi
+        exit 1
         """
 
 rule recode_vcf:
