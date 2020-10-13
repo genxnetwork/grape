@@ -82,14 +82,20 @@ def read_pipeline_output(fn, only_client=False):
             if only_client:
                 clients.add(f'{items[2]}_{items[3]}')
             if items[-1] != 'NA':
-                #print('items: ', items)
                 g1, g2 = f'{items[0]}_{items[1]}', f'{items[2]}_{items[3]}'
                 g.add_edge(g1, g2, ersa=items[-4], king=items[-3])
     return g, clients
 
 
-def get_kinship(pedigree):
-    """Given a networkx object, get all the pairwise relationships"""
+def get_kinship(pedigree: nx.DiGraph) -> nx.Graph:
+    """
+    Given a networkx object, get all the pairwise relationships
+
+    Args:
+        pedigree (networkx.DiGraph): directed pedigree graph with only 1st degree relations
+    Returns:
+        networkx.Graph: undirected graph with all pairwise relationships
+    """
     # get all the descendants (0 length means self)
     v_relatives_ = list(nx.shortest_path_length(pedigree))
     v_relatives = []
@@ -110,23 +116,29 @@ def get_kinship(pedigree):
                 if relatives[i][j]['degree'] > degree:
                     relatives.add_edge(i, j, common_ancestor=ancestor, degree=degree)
                 elif relatives[i][j]['degree'] == degree:
-                    pass  # below will print not only the lowest common ancestry
-                    # print("{} and {} has ancestor {} and {}".format(i, j, relatives[i][j]['common_ancestor'], ancestor))
-                    # relatives[i][j]['common_ancestor2'] = ancestor
+                    pass
             else:
                 relatives.add_edge(i, j, common_ancestor=ancestor, degree=degree)
         # add vertical relationship
         for m in descendants:
             relatives.add_edge(ancestor, m, common_ancestor=ancestor, degree=descendants[m])
 
-    return v_relatives, relatives
+    return relatives
 
 
-def read_across_kin(name):
+def read_across_kin(filepath: str) -> nx.Graph:
+    """
+    Reads king output and returns networkx.Graph with all relations found by king as nodes in the graph
+
+    Args:
+        filepath (str): full path to king output file
+    Returns:
+        networkx.Graph: relations between samples found by king
+    """
     relation = nx.Graph()
-    with open(name) as f:
-        next(f)
-        for line in f:
+    with open(filepath) as file:
+        next(file)
+        for line in file:
             items = line.strip().split(sep="\t")
             if items[-1] == 'UN':
                 continue
