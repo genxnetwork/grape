@@ -20,7 +20,7 @@ Information about stages:
 3. Phasing: Eagle 2.4.1 and 1000 Genomes reference panel.
 4. Imputation: Minimac4 and 1000 Genomes reference panel.
 5. Close Relatives: KING IBD search.
-6. IBD Search: Germline.
+6. IBD Search: Germline with merging closely located IBD segments together.
 7. Distant Relatives: ERSA with default params estimated on CEU founders.
 8. Merge: KING degree has priority over ersa degree for close relatives (degrees 1-3), otherwise, we take ERSA output.
 
@@ -39,7 +39,7 @@ Password: b2mR4wQpJJdeKdsW
 ```
 
 Compile Funnel from https://github.com/messwith/funnel with go 1.12+ and make. Then one can just use bin/funnel binary.  
-This Funnel fork simply adds ‘--privileged’ flag to all task docker commands.  
+This Funnel fork simply adds the ‘--privileged’ flag to all task docker commands.  
 Without ‘--privileged’ singularity containers do not work inside docker.
 
 ### Usage
@@ -82,7 +82,7 @@ launcher.py find --samples /media/ref/samples.tsv --input /media/ref/input --dir
 ```
 
 #### Execution by scheduler
-The pipeline can be executed using lightweight scheduler Funnel, which implements Task Execution Schema developed by GA4GH.  
+The pipeline can be executed using lightweight scheduler [Funnel](https://ohsu-comp-bio.github.io/funnel/), which implements [Task Execution Schema](https://github.com/ga4gh/task-execution-schemas) developed by [GA4GH](https://github.com/ga4gh/wiki/wiki).  
   
 During execution, incoming data for analysis can be obtained in several ways: locally, FTP, HTTPS, S3, Google, etc.  
 The resulting files can be uploaded in the same ways. It is possible to add another feature such as writing to the database, sending to the REST service.  
@@ -106,6 +106,39 @@ How to execute operational run (sample output):
 /path/to/funnel task create examples/snakemake-real-23andme.json                                                                                                                                      
 ```
 
+
+### Evaluation on Simulated Data
+
+Pedigree simulation is performed on European populations from 1KG using the `pedsim` package.  
+Pedsim can use sex-specific genetic maps and randomly assigns the sex of each parent (or uses user-specified sexes) when using such maps.  
+Sex-specific map is preferrable because men and women have different recombination rates.  
+Founders for the pedigree simulation are selected from 1000genomes HD genotype chip data, CEU population.  
+CEU data consists of trios and we select no more than one member of each trio as founder.  
+
+Visualization of structure of simulated pedigree is given below:
+
+![pedigree](https://bitbucket.org/genxglobal/genx-relatives-snakemake/downloads/pedsim.png)
+
+#### How to run simulation
+
+Use command simulate. Options --input and --samples are not needed in this case.
+
+```text
+docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
+
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
+launcher.py simulate --directory /media/pipeline_data/simulation --real-run
+
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
+launcher.py find --directory /media/pipeline_data/simulation --real-run
+```
+
+#### Results
+
+
+![results](https://bitbucket.org/genxglobal/genx-relatives-snakemake/downloads/accuracy_merged2.png)
+
+
 ### Evaluation on Hapmap Data
 
 Use command HapMap for preparing Hapmap CEU data. Options --input and --samples are not needed in this case.
@@ -121,21 +154,6 @@ docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localti
 launcher.py find --directory /media/pipeline_data/hapmap --real-run
 ```
 
-### Evaluation on Simulated Data
-
-Simulation is performed on European populations from 1KG using the `pedsim` package.
-
-Use command simulate. Options --input and --samples are not needed in this case.
-
-```text
-docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
-
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py simulate --directory /media/pipeline_data/simulation --real-run
-
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py find --directory /media/pipeline_data/simulation --real-run
-```
 
 ### Credits
 
