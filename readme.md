@@ -138,6 +138,9 @@ launcher.py find --directory /media/pipeline_data/simulation --real-run
 
 ![results](https://bitbucket.org/genxglobal/genx-relatives-snakemake/downloads/accuracy_merged2.png)
 
+The pipeline shows good accuracy for degrees from 1 to 6.  
+The results for degrees from 7 to 8 been improved by merging small IBD segments together if they are located near each other, thus,  
+it detects more than a half of pairs with those degrees of kinship.
 
 ### Evaluation on Hapmap Data
 
