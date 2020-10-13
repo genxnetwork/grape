@@ -1,8 +1,8 @@
-rule convert_23andme_to_plink:
+rule convert_23andme_to_vcf:
     input:
         get_samples_path
     output:
-        expand("plink/{{sample}}.{ext}", ext=PLINK_FORMATS)
+        expand("plink/{{sample}}.{ext}", ext=['vcf.gz'])
     params:
         get_samples_name
     conda:
@@ -17,12 +17,26 @@ rule convert_23andme_to_plink:
         plink --23file {input} {params} {params} i --output-chr M --export vcf bgz --out plink/{params} | tee {log}
         """
 
+rule index_vcf_samples:
+    input:
+        rules.convert_23andme_to_vcf.output
+    output:
+        expand("plink/{{sample}}.{ext}", ext=['vcf.gz.csi'])
+    conda:
+        "../envs/bcftools.yaml"
+    log:
+        sort = "logs/plink/sort-vcf-samples-{sample}.log",
+        index = "logs/plink/index-vcf-samples-{sample}.log"
+    shell:
+        """
+        bcftools sort -O z -o plink/{wildcards.sample}.vcf.gz plink/{wildcards.sample}.vcf.gz | tee -a {log.sort}
+        bcftools index -f plink/{wildcards.sample}.vcf.gz | tee -a {log.index}
+        """
+
 rule merge_to_vcf:
     input:
-        expand("plink/{sample}.{ext}", sample=SAMPLES_NAME, ext=PLINK_FORMATS)
+        expand("plink/{sample}.{ext}", sample=SAMPLES_NAME, ext=['vcf.gz', 'vcf.gz.csi'])
     output:
-        plink_clean     = expand("plink/{i}_clean.{ext}", i=SAMPLES_NAME, ext=PLINK_FORMATS),
-        plink_merged    = expand("vcf/merged.{ext}", ext=PLINK_FORMATS),
         vcf             = "vcf/merged.vcf.gz",
         merge_list      = "plink/merge.list"
     conda:
@@ -33,9 +47,9 @@ rule merge_to_vcf:
         "benchmarks/plink/merge_to_vcf.txt"
     shell:
         """
-        true > {output.merge_list} && for i in {SAMPLES_NAME}; do echo "plink/$i" >> {output.merge_list}; done
+        true > {output.merge_list} && for i in {SAMPLES_NAME}; do echo "plink/$i.vcf.gz" >> {output.merge_list}; done
         # -m none creates multiple records for each new multiallelic variant
-        bcftools merge -m none --file-list {output.merge_list} -O z -o vcf/merged_mapped_sorted.vcf.gz | tee -a {log}
+        bcftools merge -m none --file-list {output.merge_list} -O z -o {output.vcf} | tee -a {log}
         """
 
 rule recode_vcf:
