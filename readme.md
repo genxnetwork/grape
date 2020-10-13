@@ -49,9 +49,11 @@ The information about samples for analysis should be provided as a path to a tab
 
 Input data is expected in 23andMe format, one file for each sample:
 
-name	path
-1	input/1.txt
-2	input/2.txt
+| name | path |
+| --- | --- |
+| 1 | input/1.txt |
+| 2 | input/2.txt |
+
 #### Console execution
 
 ##### Pipeline checking
@@ -133,7 +135,7 @@ docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localti
 launcher.py find --directory /media/pipeline_data/simulation --real-run
 ```
 
-#### Results
+#### Evaluation results
 
 
 ![results](https://bitbucket.org/genxglobal/genx-relatives-snakemake/downloads/accuracy_merged2.png)
@@ -156,6 +158,10 @@ launcher.py hapmap --directory /media/pipeline_data/hapmap --real-run
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
 launcher.py find --directory /media/pipeline_data/hapmap --real-run
 ```
+
+#### Evaluation results
+
+HapMap has only about close relatives presented. The pipeline determines them with 100% accuracy.
 
 
 ### Credits
