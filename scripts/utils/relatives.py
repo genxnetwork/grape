@@ -1,6 +1,5 @@
 import os
 import glob
-import pandas
 
 import shutil
 import networkx as nx

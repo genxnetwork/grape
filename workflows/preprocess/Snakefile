@@ -24,4 +24,4 @@ rule all:
         vcf="vcf/merged_lifted.vcf",
         # rules.report_benchmark_summary.output
 
-include: "../../rules/preprocessing.smk"
+include: "../../rules/preprocessing_old.smk"
