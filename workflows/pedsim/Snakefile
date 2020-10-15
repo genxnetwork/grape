@@ -37,7 +37,7 @@ rule intersect:
     conda: "../../envs/bcftools.yaml"
     shell:
         """
-            bcftools isec -n=2 -w1 -r {wildcards.chrom} -O v -o {output} {input.vcfRef} {input.hd_genotype_chip}  
+            bcftools isec -n=2 -w1 -r {wildcards.chrom} -O z -o {output} {input.vcfRef} {input.hd_genotype_chip}  
         """
 
 
