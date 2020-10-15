@@ -142,6 +142,13 @@ if __name__ == '__main__':
 
     if args.command == 'simulate':
         copy_input('workflows/pedsim/params', args.directory, 'workflows/pedsim/ceph_unrelated.tsv')
+        # for some reason launching with docker from command line
+        # sets root directory for 'configfile' directive in Snakefile as snakemake.workdir
+        # therefore config.yaml must be in snakemake.workdir
+        shutil.copy('workflows/pedsim/config.yaml', os.path.join(args.directory, 'config.yaml'))
+
+    if args.command in ['preprocess', 'find']:
+        shutil.copy('config.yaml', os.path.join(args.directory, 'config.yaml'))
 
     snakefiles = {
         'preprocess': 'workflows/preprocess/Snakefile',
@@ -161,10 +168,13 @@ if __name__ == '__main__':
         os.environ['CONDA_PKGS_DIRS'] = '/tmp/conda/pkgs'
 
     print(os.environ)
-
+    print()
+    print(os.getcwd())
+    print()
+    print(os.listdir('.'))
     if not snakemake.snakemake(
             snakefile=snakefile,
-            configfiles=[args.configfile],
+            #configfiles=[args.configfile],
             workdir=args.directory,
             cores=args.cores,
             unlock=args.unlock,
