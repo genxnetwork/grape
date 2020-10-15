@@ -1,0 +1,6 @@
+FID1	ID1	FID2	ID2	MaxIBD1	MaxIBD2	IBD1Seg	IBD2Seg	PropIBD	InfType
+first1	g1-b1-s1	first1	g2-b1-i1	131.5	0.0	0.9908	0.0000	0.4954	PO
+first1	g1-b1-s1	first1	g2-b2-i1	131.4	4.6	0.9864	0.0028	0.4960	PO
+first1	g1-b1-s1	first1	g2-b3-i1	130.6	3.4	0.9858	0.0013	0.4942	PO
+first1	g1-b1-i1	first1	g2-b1-i1	138.0	0.0	0.9930	0.0000	0.4965	PO
+first1	g1-b1-i1	first1	g2-b2-i1	138.3	0.0	0.9913	0.0000	0.4957	PO

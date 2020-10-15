@@ -40,6 +40,11 @@ def get_parser_args():
         action="store_true")
 
     parser.add_argument(
+        "--unlock",
+        help="If this argument is present, Snakemake will simply unlock working directory without launch anything, it is False by default",
+        action="store_true")
+
+    parser.add_argument(
         "--directory",
         default=".",
         help="Snakemake working directory")
@@ -162,6 +167,7 @@ if __name__ == '__main__':
             configfiles=[args.configfile],
             workdir=args.directory,
             cores=args.cores,
+            unlock=args.unlock,
             printshellcmds=True,
             dryrun=(not args.real_run),
             targets=['all'],
