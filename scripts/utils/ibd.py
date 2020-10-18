@@ -1,6 +1,7 @@
 import numpy
 import pandas
 import os
+import gzip
 
 
 class Segment:
@@ -215,6 +216,26 @@ def merge_germline_segments(segments, gap=0.6):
     return new_segments
 
 
+def line_generator(matchfiles):
+    for i in matchfiles:
+        iterator = gzip.open(i, 'rt')
+        for line in iterator:
+            yield line
 
 
+def merge_rapid_ibd_data(matchfiles, outfile, names=None):
+    """Filter matchfile to contain shared IBD of target subjects"""
+    segments_count = 0
+    with open(outfile, 'w') as out:
+        i1, i2, c, bs, be, l = 1, 2, 0, 5, 6, 7
 
+        for line in line_generator(matchfiles):
+            items = line.split()
+            if (not names) or ((items[i1] in names) != (items[i2] in names)): # later one is a xor
+                if items[11] == 'cM':
+                    out.write("{}\t{}\t{}\t{}\t{}\t{}\n".format(
+                        items[i1], items[i2], items[c], items[bs], items[be], items[l]
+                    ))
+                segments_count += 1
+
+    return segments_count
