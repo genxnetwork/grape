@@ -116,3 +116,20 @@ rule convert_imputed_to_plink:
         """
         plink --vcf {input} --make-bed --out {params.out} | tee {log}
         """
+
+rule merge_convert_imputed_to_plink:
+    input: rules.merge_imputation_filter.output
+    output: expand("plink/{i}.{ext}", i="merged_imputed", ext=PLINK_FORMATS)
+    params:
+        out = "plink/client/merged_imputed"
+    conda:
+        "../envs/plink.yaml"
+    log:
+        "logs/plink/convert_imputed_to_plink.log"
+    benchmark:
+        "benchmarks/plink/convert_imputed_to_plink.txt"
+    shell:
+        """
+        plink --vcf {input} --make-bed --out {params.out} | tee {log}
+        plink --bfile background/merged_imputed --bmerge plink/client/merged_imputed --make-bed --out plink/merged_imputed | too {log}
+        """

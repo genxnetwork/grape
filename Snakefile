@@ -37,6 +37,11 @@ def get_samples_path(wildcards):
 
 # include: "rules/report.rule"
 
+if config["mode"] == "all":
+    ruleorder: convert_imputed_to_plink > merge_convert_imputed_to_plink
+else:
+    ruleorder: merge_convert_imputed_to_plink > convert_imputed_to_plink
+
 rule all:
     input:
         "results/relatives.tsv",
