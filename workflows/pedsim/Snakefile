@@ -130,7 +130,7 @@ rule index:
 
 include: "../../rules/imputation.smk"
 
-include: "../../rules/relatives_rapid.smk"
+include: "../../rules/relatives.smk"
 
 rule evaluate_accuracy:
     input:
@@ -145,7 +145,7 @@ rule evaluate_accuracy:
 rule evaluate_ibd:
     input:
         pedsim=rules.simulate.output['seg'],
-        rapid=rules.merge_rapid_segments.output[0]
+        germline=rules.merge_ibd_segments.output[0]
     params:
         cm_dir='cm'
     output:

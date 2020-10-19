@@ -79,7 +79,7 @@ def evaluate(result, fam, plot_name, pr_plot_name, only_client=False):
     iids, pedigree = read_pedigree(fn=fam)
     print('pedigree:')
     print(list(pedigree.edges)[:10])
-    _, kinship = get_kinship(pedigree)
+    kinship = get_kinship(pedigree)
     print('results is: ', result)
     inferred, clients = read_pipeline_output(result, only_client)
     print('inferred:')
