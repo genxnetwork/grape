@@ -135,6 +135,8 @@ rule evaluate_accuracy:
     input:
         rel=rules.merge_king_ersa.output[0],
         fam=rules.postprocess.output['fam']
+    conda:
+        '../../envs/evaluation.yaml'
     output:
         accuracy='results/accuracy.png'
         #pr='results/precision_recall.png'
@@ -151,6 +153,8 @@ rule evaluate_ibd:
         "../../envs/evaluation.yaml"
     params:
         cm_dir='cm'
+    conda:
+        '../../envs/evaluation.yaml'
     output:
         overlap='results/overlaps.tsv'
     script:
