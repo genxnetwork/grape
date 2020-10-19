@@ -1,6 +1,6 @@
 from os.path import join
 
-configfile: "workflows/pedsim/config.yaml"
+# configfile: "config.yaml"
 
 REF_DIR         = config["reference"]["ref_dir"]
 GRCh37_fasta    = join(REF_DIR, config["reference"]["GRCh37_fasta"])
@@ -138,6 +138,8 @@ rule evaluate_accuracy:
     output:
         accuracy='results/accuracy.png'
         #pr='results/precision_recall.png'
+    conda:
+        "../../envs/evaluation.yaml"
     script:
          '../../scripts/evaluate.py'
 
@@ -145,6 +147,8 @@ rule evaluate_ibd:
     input:
         pedsim=rules.simulate.output['seg'],
         germline=rules.merge_matches.output[0]
+    conda:
+        "../../envs/evaluation.yaml"
     params:
         cm_dir='cm'
     output:
