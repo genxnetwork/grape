@@ -44,10 +44,12 @@ cp -r input /media/pipeline_data/atlas40/
 cp samples.tsv /media/pipeline_data/atlas40/
 
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro alexgenx/snakemake:latest /bin/bash
+```
+
 # this is inside docker container
 
+```shell script
 snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media/singulariry_cache --singularity-args="-B /media:/media" -p --configfile config.yaml --directory /media/pipeline_data/atlas40 -n
-
 ```
 
 ### How do I trigger re-runs for rules with updated input files
