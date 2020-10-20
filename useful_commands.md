@@ -10,7 +10,7 @@
 
     snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media --singularity-args="-B /media:/media" -p all
 
-## Visualization of the DAG
+### Visualization of the DAG
 
     snakemake --dag all | dot -Tsvg > dag.svg
 
@@ -40,7 +40,6 @@ docker push alexgenx/snakemake:latest
 ### Launch using docker container
 
 ```shell script
-
 cp -r input /media/pipeline_data/atlas40/
 cp samples.tsv /media/pipeline_data/atlas40/
 
@@ -50,6 +49,13 @@ docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localti
 snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media/singulariry_cache --singularity-args="-B /media:/media" -p --configfile config.yaml --directory /media/pipeline_data/atlas40 -n
 
 ```
+
+### How do I trigger re-runs for rules with updated input files
+
+```shell script
+snakemake -n -R `snakemake --list-input-changes`
+```
+
 
 ### References
 
