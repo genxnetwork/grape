@@ -108,7 +108,7 @@ rule germline:
         "benchmarks/germline/germline-{chrom}.txt"
     shell:
         """
-        germline -input ped/imputed_chr{wildcards.chrom}.ped cm/chr{wildcards.chrom}.cm.map -homoz -min_m 2.5 -err_hom 2 -err_het 1 -output germline/chr{wildcards.chrom}.germline | tee {log}
+        germline -input ped/imputed_chr{wildcards.chrom}.ped cm/chr{wildcards.chrom}.cm.map -homoz -min_m 1.0 -err_hom 2 -err_het 1 -output germline/chr{wildcards.chrom}.germline | tee {log}
         # TODO: germline returns some length in BP instead of cM - clean up is needed
         grep -v MB germline/chr{wildcards.chrom}.germline.match > germline/chr{wildcards.chrom}.germline.match.clean && mv germline/chr{wildcards.chrom}.germline.match.clean germline/chr{wildcards.chrom}.germline.match
         """
@@ -136,7 +136,7 @@ rule merge_ibd_segments:
         germline=rules.merge_matches.output[0]
     params:
         cm_dir='cm',
-        merge_gap='0.6'
+        merge_gap='0.3'
     output:
         ibd='germline/merged_ibd.tsv'
     conda: "../envs/evaluation.yaml"
@@ -162,7 +162,6 @@ rule ersa:
         source {input.estimated}
         ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.germline} -o {output} | tee {log}
         """
-
 
 rule merge_king_ersa:
     input:

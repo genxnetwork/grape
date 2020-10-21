@@ -57,4 +57,4 @@ if __name__ == '__main__':
 
     l = 1.33
     th = 3.5
-    write_l_th(l, th, 2.5, snakemake.output[0])
+    write_l_th(l, th, 1.0, snakemake.output[0])
