@@ -1,4 +1,6 @@
 import ibd
+import tempfile
+import pandas
 
 
 def test_interpolate():
@@ -60,3 +62,10 @@ def test_total_overlap():
     assert overlaps[('id1', 'id2')]['overlap'] == 9.0
     assert overlaps[('id2', 'id3')]['overlap'] == 9.0
 
+
+def test_segments_to_germline():
+    # empty
+    records = []
+    frame = pandas.DataFrame.from_records(records)
+    with tempfile.NamedTemporaryFile('w') as tf:
+        frame.to_csv(tf, sep='\t', index=False, header=None)

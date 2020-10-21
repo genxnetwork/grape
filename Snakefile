@@ -2,6 +2,7 @@
 # TODO: add reporting https://github.com/tanaes/snarkmark/blob/master/rules/report.rule
 
 import pandas as pd
+import os
 from os.path import join
 
 configfile: "config.yaml"
@@ -19,6 +20,10 @@ hapmap_mp       = join(REF_DIR, config["reference"]["hapmap_mp"])
 hapmap_fam      = join(REF_DIR, config["reference"]["hapmap_fam"])
 hd_genotype_chip= join(REF_DIR, config["reference"]["hd_genotype_chip"])
 pedsim_map      = join(REF_DIR, config["reference"]["pedsim_map"])
+
+print('dirs:')
+print(os.getcwd())
+print(os.listdir('.'))
 
 samples_file    = config["samples_file"]
 SAMPLES         = pd.read_table(samples_file).set_index("name", drop=False)

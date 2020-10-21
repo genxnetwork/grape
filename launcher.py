@@ -170,7 +170,7 @@ if __name__ == '__main__':
     if not snakemake.snakemake(
             snakefile=snakefile,
             configfiles=[args.configfile],
-            config=['mode': 'client'] if args.client is not None else [],
+            config={'mode': 'client'} if args.client is not None else [],
             workdir=args.directory,
             cores=args.cores,
             unlock=args.unlock,

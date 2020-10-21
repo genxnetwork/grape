@@ -136,7 +136,11 @@ def read_across_kin(filepath: str) -> nx.Graph:
     """
     relation = nx.Graph()
     with open(filepath) as file:
-        next(file)
+
+        start = next(file, None)
+        if start is None:
+            return relation
+
         for line in file:
             items = line.strip().split(sep="\t")
             if items[-1] == 'UN':
