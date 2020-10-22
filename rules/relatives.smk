@@ -17,6 +17,11 @@ rule run_king:
         KING_DEGREE=4
 
         king -b {params.input}.bed --cpus {threads} --ibdseg --degree $KING_DEGREE --prefix {params.out} | tee {log}
+
+        # we need at least an empty file for the downstream analysis
+        if [ ! -f "{output}" ]; then
+            touch {output}
+        fi
         """
 
 rule index_and_split:
@@ -110,7 +115,9 @@ rule germline:
         """
         germline -input ped/imputed_chr{wildcards.chrom}.ped cm/chr{wildcards.chrom}.cm.map -homoz -min_m 2.5 -err_hom 2 -err_het 1 -output germline/chr{wildcards.chrom}.germline | tee {log}
         # TODO: germline returns some length in BP instead of cM - clean up is needed
+        set +e
         grep -v MB germline/chr{wildcards.chrom}.germline.match > germline/chr{wildcards.chrom}.germline.match.clean && mv germline/chr{wildcards.chrom}.germline.match.clean germline/chr{wildcards.chrom}.germline.match
+        set -e
         """
 
 rule ersa_params:

@@ -21,6 +21,7 @@ hapmap_fam      = join(REF_DIR, config["reference"]["hapmap_fam"])
 hd_genotype_chip= join(REF_DIR, config["reference"]["hd_genotype_chip"])
 pedsim_map      = join(REF_DIR, config["reference"]["pedsim_map"])
 
+print('execution mode is: ' + config["mode"])
 print('dirs:')
 print(os.getcwd())
 print(os.listdir('.'))

@@ -121,7 +121,8 @@ rule merge_convert_imputed_to_plink:
     input: rules.merge_imputation_filter.output
     output: expand("plink/{i}.{ext}", i="merged_imputed", ext=PLINK_FORMATS)
     params:
-        out = "plink/client/merged_imputed"
+        background  = "background/merged_imputed",
+        out         = "plink/client/merged_imputed"
     conda:
         "../envs/plink.yaml"
     log:
@@ -130,6 +131,7 @@ rule merge_convert_imputed_to_plink:
         "benchmarks/plink/convert_imputed_to_plink.txt"
     shell:
         """
+        echo "lalalala"
         plink --vcf {input} --make-bed --out {params.out} | tee {log}
-        plink --bfile background/merged_imputed --bmerge plink/client/merged_imputed --make-bed --out plink/merged_imputed | too {log}
+        plink --bfile {params.background} --bmerge {params.out} --make-bed --out plink/merged_imputed | tee {log}
         """
