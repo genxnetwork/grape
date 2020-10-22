@@ -113,16 +113,6 @@ rule germline:
         grep -v MB germline/chr{wildcards.chrom}.germline.match > germline/chr{wildcards.chrom}.germline.match.clean && mv germline/chr{wildcards.chrom}.germline.match.clean germline/chr{wildcards.chrom}.germline.match
         """
 
-rule ersa_params:
-    input:
-        king=rules.run_king.output,
-        # TODO: wildcard violation
-        # germline=rules.germline.output
-        germline=expand("germline/chr{i}.germline.match", i=CHROMOSOMES)
-    output: "ersa/params.txt"
-    conda: "../envs/ersa_params.yaml"
-    script: "../scripts/estimate_ersa_params.py"
-
 rule merge_matches:
     input:
          expand("germline/chr{chrom}.germline.match", chrom=CHROMOSOMES)
@@ -145,9 +135,9 @@ rule merge_ibd_segments:
 
 rule ersa:
     input:
-        germline=rules.merge_ibd_segments.output['ibd'],
-        estimated=rules.ersa_params.output
-    output: "ersa/relatives.tsv"
+        germline=rules.merge_ibd_segments.output['ibd']
+    output:
+        "ersa/relatives.tsv"
     singularity:
         "docker://alexgenx/ersa:stable"
     log:
@@ -156,10 +146,9 @@ rule ersa:
         "benchmarks/ersa/ersa.txt"
     shell:
         """
-        #ERSA_L=13.7
-        #ERSA_TH=3.197
-        #ERSA_T=2.5
-        source {input.estimated}
+        ERSA_L=7.5 # the average number of IBD segments in population
+        ERSA_TH=3.5 # the average length of IBD segment
+        ERSA_T=1.0 # min length of segment to be considered in segment aggregation
         ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.germline} -o {output} | tee {log}
         """
 

@@ -2,11 +2,12 @@ from utils.ibd import read_pedsim_segments, read_germline_segments, interpolate_
 import pandas
 import matplotlib.pyplot as plt
 import seaborn as sns
+import numpy
 
 
 def plot_segment_accuracy(true_segments, found_segments, plot_name):
 
-    accuracy = {'<10': [], '<100': [], '>100': []}
+    accuracy = {'<2.5': [], '<10': [], '<100': [], '>100': []}
 
     for key, true_segs in true_segments.items():
         overlap = 0.0
@@ -20,16 +21,21 @@ def plot_segment_accuracy(true_segments, found_segments, plot_name):
 
         true_len += sum([seg.cm_len for seg in true_segs])
 
-        if true_len <= 10:
+        if true_len == 0.0:
+            continue
+        if true_len <= 2.5:
+            accuracy['<2.5'].append(overlap / true_len)
+        elif true_len <= 10:
             accuracy['<10'].append(overlap/true_len)
         elif true_len <= 100:
-            accuracy['<100'].append(overlap / true_len)
+            accuracy['<100'].append(overlap/true_len)
         else:
-            accuracy['>100'].append(overlap / true_len)
+            accuracy['>100'].append(overlap/true_len)
 
-    df = pandas.DataFrame.from_dict(accuracy).mean().transpose()
-    df.columns = ['Accuracy']
-    sns.barplot(y='Accuracy', data=df, palette='muted')
+    records = {key: numpy.mean(value) for key, value in accuracy.items()}
+    df = pandas.DataFrame.from_dict(records, orient='index', columns=['Accuracy'])
+    df.reset_index(level=0, inplace=True, )
+    sns.barplot(x='index', y='Accuracy', data=df, palette='muted')
     if not plot_name:
         plt.show()
     else:
@@ -53,4 +59,5 @@ if __name__ == '__main__':
 
     frame.to_csv(snakemake.output['overlap'], sep='\t')
 
-    #plot_segment_accuracy(true_segments, germline_segments)
+    plot_name = snakemake.output['seg_accuracy']
+    plot_segment_accuracy(true_segments, germline_segments, plot_name)
