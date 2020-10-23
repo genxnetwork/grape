@@ -130,14 +130,14 @@ rule merge_ibd_segments:
         merge_gap='0.6',
         use_true_ibd=True
     output:
-        ibd='germline/merged_ibd.tsv'
+        ibd='ibd/merged_ibd.tsv'
     conda: "../envs/evaluation.yaml"
     script:
         '../scripts/merge_ibd.py'
 
 rule ersa:
     input:
-        germline=rules.merge_ibd_segments.output['ibd']
+        ibd=rules.merge_ibd_segments.output['ibd']
     output:
         "ersa/relatives.tsv"
     singularity:
@@ -148,10 +148,10 @@ rule ersa:
         "benchmarks/ersa/ersa.txt"
     shell:
         """
-        ERSA_L=1.33 # the average number of IBD segments in population
+        ERSA_L=2.0 # the average number of IBD segments in population
         ERSA_TH=1.5 # the average length of IBD segment
-        ERSA_T=2.5 # min length of segment to be considered in segment aggregation
-        ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.germline} -o {output} | tee {log}
+        ERSA_T=1.0 # min length of segment to be considered in segment aggregation
+        ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd} -o {output} | tee {log}
         """
 
 rule merge_king_ersa:

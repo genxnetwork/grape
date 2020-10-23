@@ -147,7 +147,7 @@ rule evaluate_accuracy:
 rule evaluate_ibd:
     input:
         pedsim=rules.simulate.output['seg'],
-        germline=rules.merge_ibd_segments.output[0]
+        ibd=rules.merge_ibd_segments.output[0]
     params:
         cm_dir='cm'
     output:

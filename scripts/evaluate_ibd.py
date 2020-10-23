@@ -46,7 +46,7 @@ def plot_segment_accuracy(true_segments, found_segments, plot_name):
 
 if __name__ == '__main__':
     pedsim_path = snakemake.input['pedsim']
-    germline_path = snakemake.input['germline']
+    germline_path = snakemake.input['ibd']
     map_dir = snakemake.params['cm_dir']
     true_segments = read_pedsim_segments(pedsim_path)
     germline_segments = read_germline_segments(germline_path)

@@ -61,27 +61,21 @@ rule rapid:
         "rapid -i {input.vcf} -g {input.g} -d {params.min_cm_len} -o {params.output_folder} -w {params.window_size} -r 10 -s 2"
 
 
-rule merge_rapid_segments:
+rule merge_ibd_segments:
     input:
         expand("rapid/chr{chrom}/results.max.gz", chrom=CHROMOSOMES)
     output:
-        ibd='rapid/merged_ibd.tsv'
+        ibd='ibd/merged_ibd.tsv'
     conda: "../envs/evaluation.yaml"
     script:
         '../scripts/merge_rapid_ibd.py'
 
-rule ersa_params:
-    input:
-        king=rules.run_king.output
-    output: "ersa/params.txt"
-    conda: "../envs/ersa_params.yaml"
-    script: "../scripts/estimate_ersa_params.py"
 
 rule ersa:
     input:
-        rapid=rules.merge_rapid_segments.output['ibd'],
-        estimated=rules.ersa_params.output
-    output: "ersa/relatives.tsv"
+        ibd=rules.merge_ibd_segments.output['ibd']
+    output:
+        "ersa/relatives.tsv"
     singularity:
         "docker://alexgenx/ersa:stable"
     log:
@@ -90,17 +84,16 @@ rule ersa:
         "benchmarks/ersa/ersa.txt"
     shell:
         """
-        #ERSA_L=13.7
-        #ERSA_TH=3.197
-        #ERSA_T=2.5
-        source {input.estimated}
-        ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.rapid} -o {output} | tee {log}
+        ERSA_L=1.33 # the average number of IBD segments in population
+        ERSA_TH=1.5 # the average length of IBD segment
+        ERSA_T=1.0 # min length of segment to be considered in segment aggregation
+        ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd} -o {output} | tee {log}
         """
 
 rule merge_king_ersa:
     input:
         king=rules.run_king.output,
-        germline=rules.merge_rapid_segments.output['ibd'],
+        germline=rules.merge_ibd_segments.output['ibd'],
         ersa=rules.ersa.output
     output: "results/relatives.tsv"
     conda: "../envs/evaluation.yaml"
