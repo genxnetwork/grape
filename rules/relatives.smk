@@ -108,7 +108,7 @@ rule germline:
         "benchmarks/germline/germline-{chrom}.txt"
     shell:
         """
-        germline -input ped/imputed_chr{wildcards.chrom}.ped cm/chr{wildcards.chrom}.cm.map -homoz -min_m 1.0 -err_hom 2 -err_het 1 -output germline/chr{wildcards.chrom}.germline | tee {log}
+        germline -input ped/imputed_chr{wildcards.chrom}.ped cm/chr{wildcards.chrom}.cm.map -homoz -min_m 2.5 -err_hom 2 -err_het 1 -output germline/chr{wildcards.chrom}.germline | tee {log}
         # TODO: germline returns some length in BP instead of cM - clean up is needed
         grep -v MB germline/chr{wildcards.chrom}.germline.match > germline/chr{wildcards.chrom}.germline.match.clean && mv germline/chr{wildcards.chrom}.germline.match.clean germline/chr{wildcards.chrom}.germline.match
         """
@@ -126,7 +126,7 @@ rule merge_ibd_segments:
         germline=rules.merge_matches.output[0]
     params:
         cm_dir='cm',
-        merge_gap='0.3'
+        merge_gap='0.6'
     output:
         ibd='germline/merged_ibd.tsv'
     conda: "../envs/evaluation.yaml"
@@ -146,9 +146,9 @@ rule ersa:
         "benchmarks/ersa/ersa.txt"
     shell:
         """
-        ERSA_L=7.5 # the average number of IBD segments in population
+        ERSA_L=1.33 # the average number of IBD segments in population
         ERSA_TH=3.5 # the average length of IBD segment
-        ERSA_T=1.0 # min length of segment to be considered in segment aggregation
+        ERSA_T=2.5 # min length of segment to be considered in segment aggregation
         ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.germline} -o {output} | tee {log}
         """
 
