@@ -123,10 +123,12 @@ rule merge_matches:
 
 rule merge_ibd_segments:
     input:
-        germline=rules.merge_matches.output[0]
+        germline=rules.merge_matches.output[0],
+        true_ibd=rules.simulate.output.seg
     params:
         cm_dir='cm',
-        merge_gap='0.6'
+        merge_gap='0.6',
+        use_true_ibd=True
     output:
         ibd='germline/merged_ibd.tsv'
     conda: "../envs/evaluation.yaml"
@@ -146,7 +148,7 @@ rule ersa:
         "benchmarks/ersa/ersa.txt"
     shell:
         """
-        ERSA_L=1.33 # the average number of IBD segments in population
+        ERSA_L=5.0 # the average number of IBD segments in population
         ERSA_TH=3.5 # the average length of IBD segment
         ERSA_T=2.5 # min length of segment to be considered in segment aggregation
         ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.germline} -o {output} | tee {log}

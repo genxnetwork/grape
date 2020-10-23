@@ -24,13 +24,13 @@ def precision_recall(total, confusion_matrix, plot_name=None):
             if true_degree == key[0]:
                 if true_degree - 1 <= predicted_degree <= true_degree + 1:
                     true_positives += value
-                else:
-                    false_negatives += value
+                #else:
+                #    false_negatives += value
             if key[0] == -1 and true_degree == predicted_degree:
                 false_positives += value
 
         true_total = total[true_degree]
-        false_negatives = true_total - false_negatives - true_positives
+        false_negatives = true_total - true_positives
 
         print(f'td: {true_degree}\t tp: {true_positives}\t fn: {false_negatives}\t fp: {false_positives}')
         if true_positives + false_positives == 0:
