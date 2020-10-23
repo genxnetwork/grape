@@ -148,8 +148,8 @@ rule ersa:
         "benchmarks/ersa/ersa.txt"
     shell:
         """
-        ERSA_L=5.0 # the average number of IBD segments in population
-        ERSA_TH=3.5 # the average length of IBD segment
+        ERSA_L=1.33 # the average number of IBD segments in population
+        ERSA_TH=1.5 # the average length of IBD segment
         ERSA_T=2.5 # min length of segment to be considered in segment aggregation
         ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.germline} -o {output} | tee {log}
         """
