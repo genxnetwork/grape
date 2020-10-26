@@ -15,3 +15,4 @@ reference:
     hapmap_fam: hapmap/relations.txt
     hd_genotype_chip: 1000genome/hd_genotype_chip/all.vcf.gz
     pedsim_map: refined_mf.simmap
+    beagle_map: beagle_map_b37/plink.chr{chrom}.GRCh37.map

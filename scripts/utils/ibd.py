@@ -144,6 +144,37 @@ def read_germline_segments(path):
     return segments
 
 
+def read_refined_ibd_segments(path):
+    # first3_g5-b2-s1	1	first3_g7-b3-i1	2	20	12227899	13105474	19.45	1.788
+    refined_ibd_names = [
+        'fid_iid1',
+        'haplotype1',
+        'fid_iid2',
+        'haplotype2',
+        'chrom',
+        'bp_start',
+        'bp_end',
+        'lod_score',
+        'genetic_len'
+    ]
+
+    data = pandas.read_table(path, header=None, names=refined_ibd_names)
+    segments = {}
+    for i, row in data.iterrows():
+
+        id1 = row['fid_iid1']
+        id2 = row['fid_iid2']
+
+        seg = Segment(id1, id2, row['chrom'], bp_start=row['bp_start'], bp_end=row['bp_end'])
+        key = tuple(sorted((seg.id1, seg.id2)))
+        if key not in segments:
+            segments[key] = [seg]
+        else:
+            segments[key].append(seg)
+
+    return segments
+
+
 def total_overlap(true_segments, found_segments):
 
     overlaps = {}

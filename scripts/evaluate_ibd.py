@@ -1,4 +1,4 @@
-from utils.ibd import read_pedsim_segments, read_germline_segments, interpolate_all, total_overlap
+from utils.ibd import read_pedsim_segments, read_germline_segments, interpolate_all, total_overlap, read_refined_ibd_segments
 import pandas
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -46,18 +46,23 @@ def plot_segment_accuracy(true_segments, found_segments, plot_name):
 
 if __name__ == '__main__':
     pedsim_path = snakemake.input['pedsim']
-    germline_path = snakemake.input['ibd']
+    ibd_path = snakemake.input['ibd']
     map_dir = snakemake.params['cm_dir']
+    is_refined_ibd = bool(snakemake.params['is_refined_ibd'])
+
     true_segments = read_pedsim_segments(pedsim_path)
-    germline_segments = read_germline_segments(germline_path)
+    if not is_refined_ibd:
+        found_segments = read_germline_segments(ibd_path)
+    else:
+        found_segments = read_refined_ibd_segments(ibd_path)
 
-    germline_segments = interpolate_all(germline_segments, map_dir)
+    found_segments = interpolate_all(found_segments, map_dir)
 
-    overlaps = total_overlap(true_segments, germline_segments)
+    overlaps = total_overlap(true_segments, found_segments)
 
     frame = pandas.DataFrame.from_dict(overlaps, orient='index')
 
     frame.to_csv(snakemake.output['overlap'], sep='\t')
 
     plot_name = snakemake.output['seg_accuracy']
-    plot_segment_accuracy(true_segments, germline_segments, plot_name)
+    plot_segment_accuracy(true_segments, found_segments, plot_name)
