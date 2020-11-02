@@ -47,8 +47,9 @@ rule intersect:
 
 rule merge_background:
     input:
-        data=expand("pedsim/phased/chr{chrom}.phased.vcf.gz", chrom=CHROMOSOMES),
-        eu="ceph_unrelated_all.tsv"
+        data=expand("pedsim/phased/chr{chrom}.phased.vcf.gz", chrom=CHROMOSOMES)
+         # TODO: Remove #
+        # eu="ceph_unrelated_all.tsv"
     output:
         "pedsim/phased/background.vcf.gz"
     params:
@@ -133,7 +134,7 @@ rule index:
 
 include: "../../rules/imputation.smk"
 
-include: "../../rules/relatives_druid.smk"
+include: "../../rules/relatives_rapid.smk"
 
 rule evaluate_accuracy:
     input:
@@ -148,10 +149,10 @@ rule evaluate_accuracy:
 rule evaluate_ibd:
     input:
         pedsim=rules.simulate.output['seg'],
-        ibd=rules.merge_matches.output[0]
+        ibd=rules.merge_ibd_segments.output[0]
     params:
         cm_dir='cm',
-        is_refined_ibd=True
+        is_rapid_ibd=True
     output:
         seg_accuracy='results/seg_accuracy.png',
         overlap='results/overlaps.tsv'

@@ -1,4 +1,4 @@
-from utils.ibd import read_pedsim_segments, read_germline_segments, interpolate_all, total_overlap, read_refined_ibd_segments
+from utils.ibd import read_pedsim_segments, read_germline_segments, interpolate_all, total_overlap, read_rapid_segments
 import pandas
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -48,13 +48,13 @@ if __name__ == '__main__':
     pedsim_path = snakemake.input['pedsim']
     ibd_path = snakemake.input['ibd']
     map_dir = snakemake.params['cm_dir']
-    is_refined_ibd = bool(snakemake.params['is_refined_ibd'])
+    is_rapid_ibd = bool(snakemake.params['is_rapid_ibd'])
 
     true_segments = read_pedsim_segments(pedsim_path)
-    if not is_refined_ibd:
+    if not is_rapid_ibd:
         found_segments = read_germline_segments(ibd_path)
     else:
-        found_segments = read_refined_ibd_segments(ibd_path)
+        found_segments = read_rapid_segments(ibd_path)
 
     found_segments = interpolate_all(found_segments, map_dir)
 

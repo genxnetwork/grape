@@ -30,7 +30,7 @@ rule index_and_split:
         "benchmarks/vcf/index_and_split-{chrom}.txt"
     shell:
         """
-        bcftools filter {input} -r {wildcards.chrom} -O z -o vcf/imputed_chr{wildcards.chrom}.vcf.gz | tee {log}
+        bcftools filter {input} -r {wildcards.chrom} | bcftools norm --rm-dup none -O z -o vcf/imputed_chr{wildcards.chrom}.vcf.gz | tee {log}
         """
 
 rule interpolate:
@@ -45,20 +45,32 @@ rule interpolate:
     script:
         "../scripts/interpolate.py"
 
+rule erase_dosages:
+    input:
+        vcf=rules.index_and_split.output[0]
+    output:
+        vcf='vcf/erased_chr{chrom}.vcf.gz'
+    params:
+        vcf='vcf/erased_chr{chrom}'
+    conda:
+        '../envs/bcftools.yaml'
+    shell:
+        "bcftools annotate -x 'fmt' {input.vcf} -O z -o {output.vcf}"
+
 rule rapid:
     input:
-        vcf=rules.index_and_split.output,
+        vcf=rules.erase_dosages.output['vcf'],
         g=rules.interpolate.output
     singularity:
         "docker://alexgenx/rapid:latest"
     params:
-        min_cm_len=2.5,
-        window_size=3,
+        min_cm_len=1.0,
+        window_size=50,
         output_folder='rapid/chr{chrom}'
     output:
         "rapid/chr{chrom}/results.max.gz"
     shell:
-        "rapid -i {input.vcf} -g {input.g} -d {params.min_cm_len} -o {params.output_folder} -w {params.window_size} -r 10 -s 2"
+        "rapid -i {input.vcf} -g {input.g} -d {params.min_cm_len} -o {params.output_folder} -w {params.window_size} -r 10 -s 1"
 
 
 rule merge_ibd_segments:
