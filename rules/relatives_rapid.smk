@@ -70,7 +70,7 @@ rule rapid:
     output:
         "rapid/chr{chrom}/results.max.gz"
     shell:
-        "rapid -i {input.vcf} -g {input.g} -d {params.min_cm_len} -o {params.output_folder} -w {params.window_size} -r 10 -s 1"
+        "rapid -i {input.vcf} -g {input.g} -d {params.min_cm_len} -o {params.output_folder} -w {params.window_size} -r 10 -s 6"
 
 
 rule merge_ibd_segments:
@@ -82,10 +82,23 @@ rule merge_ibd_segments:
     script:
         '../scripts/merge_rapid_ibd.py'
 
+rule rapid_to_ersa:
+    input:
+        ibd=rules.merge_ibd_segments.output['ibd'],
+        true_ibd=rules.simulate.output.seg
+    params:
+        cm_dir='cm',
+        merge_gap='0.2',
+        use_true_ibd=False
+    output:
+        ibd='ibd/ersa_ibd.tsv'
+    conda: "../envs/evaluation.yaml"
+    script:
+        '../scripts/rapid_to_ersa.py'
 
 rule ersa:
     input:
-        ibd=rules.merge_ibd_segments.output['ibd']
+        ibd=rules.rapid_to_ersa.output['ibd']
     output:
         "ersa/relatives.tsv"
     singularity:
@@ -96,7 +109,7 @@ rule ersa:
         "benchmarks/ersa/ersa.txt"
     shell:
         """
-        ERSA_L=1.33 # the average number of IBD segments in population
+        ERSA_L=5.0 # the average number of IBD segments in population
         ERSA_TH=1.5 # the average length of IBD segment
         ERSA_T=1.0 # min length of segment to be considered in segment aggregation
         ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd} -o {output} | tee {log}
@@ -105,7 +118,7 @@ rule ersa:
 rule merge_king_ersa:
     input:
         king=rules.run_king.output,
-        germline=rules.merge_ibd_segments.output['ibd'],
+        germline=rules.rapid_to_ersa.output['ibd'],
         ersa=rules.ersa.output
     output: "results/relatives.tsv"
     conda: "../envs/evaluation.yaml"

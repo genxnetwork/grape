@@ -1,6 +1,7 @@
 samples_file: samples.tsv
 vcf_file: pedsim/simulated/reheaded_data.vcf.gz
-use_simulated_ibd: 1
+use_simulated_ibd: False
+use_rapid: False
 reference:
     ref_dir: /media/ref
     GRCh37_fasta: human_g1k_v37.fasta

@@ -128,7 +128,7 @@ rule merge_ibd_segments:
     params:
         cm_dir='cm',
         merge_gap='0.6',
-        use_true_ibd=True
+        use_true_ibd=use_simulated_ibd
     output:
         ibd='ibd/merged_ibd.tsv'
     conda: "../envs/evaluation.yaml"

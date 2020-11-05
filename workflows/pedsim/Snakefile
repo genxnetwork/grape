@@ -3,6 +3,8 @@ from os.path import join
 
 configfile: "config.yaml"
 
+use_rapid       = config["use_rapid"]
+use_simulated_ibd = config["use_simulated_ibd"] if "use_simulated_ibd" in config else False
 REF_DIR         = config["reference"]["ref_dir"]
 GRCh37_fasta    = join(REF_DIR, config["reference"]["GRCh37_fasta"])
 GENETIC_MAP     = join(REF_DIR, config["reference"]["GENETIC_MAP"])
@@ -26,11 +28,12 @@ CHROMOSOMES     = [str(i) for i in range(1, 23)]
 
 rule all:
     input:
-        #"results/relatives.tsv",
-        #"results/accuracy.png",
+        "results/relatives.tsv",
+        "results/accuracy.png",
         "results/overlaps.tsv",
         "results/seg_accuracy.png",
-        #"results/precision_recall.png"
+        "results/precision_recall.png",
+        "results/total_len_accuracy.png"
 
 
 rule intersect:
@@ -134,7 +137,12 @@ rule index:
 
 include: "../../rules/imputation.smk"
 
-include: "../../rules/relatives_rapid.smk"
+if use_rapid:
+    print('I will use RaPID for IBD segments calculation')
+    include: "../../rules/relatives_rapid.smk"
+else:
+    print('I will use germline for IBD segments calculation')
+    include: "../../rules/relatives.smk"
 
 rule evaluate_accuracy:
     input:
@@ -152,9 +160,10 @@ rule evaluate_ibd:
         ibd=rules.merge_ibd_segments.output[0]
     params:
         cm_dir='cm',
-        is_rapid_ibd=True
+        is_rapid_ibd=use_rapid
     output:
         seg_accuracy='results/seg_accuracy.png',
+        total_len_accuracy='results/total_len_accuracy.png',
         overlap='results/overlaps.tsv'
     script:
         '../../scripts/evaluate_ibd.py'
