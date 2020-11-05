@@ -52,9 +52,9 @@ if __name__ == '__main__':
     #l, th = get_l_th(snakemake.input['germline'], rel_king)
 
     # best params are
+    #l = 1.33
+    #th = 3.5
+
     l = 1.33
     th = 3.5
-
-    #l = 1.33
-    #th = 4.0
-    write_l_th(l, th, 2.5, snakemake.output[0])
+    write_l_th(l, th, 1.0, snakemake.output[0])

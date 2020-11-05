@@ -113,16 +113,6 @@ rule germline:
         grep -v MB germline/chr{wildcards.chrom}.germline.match > germline/chr{wildcards.chrom}.germline.match.clean && mv germline/chr{wildcards.chrom}.germline.match.clean germline/chr{wildcards.chrom}.germline.match
         """
 
-rule ersa_params:
-    input:
-        king=rules.run_king.output,
-        # TODO: wildcard violation
-        # germline=rules.germline.output
-        germline=expand("germline/chr{i}.germline.match", i=CHROMOSOMES)
-    output: "ersa/params.txt"
-    conda: "../envs/ersa_params.yaml"
-    script: "../scripts/estimate_ersa_params.py"
-
 rule merge_matches:
     input:
          expand("germline/chr{chrom}.germline.match", chrom=CHROMOSOMES)
@@ -133,21 +123,23 @@ rule merge_matches:
 
 rule merge_ibd_segments:
     input:
-        germline=rules.merge_matches.output[0]
+        germline=rules.merge_matches.output[0],
+        true_ibd=rules.simulate.output.seg
     params:
         cm_dir='cm',
-        merge_gap='0.6'
+        merge_gap='0.6',
+        use_true_ibd=use_simulated_ibd
     output:
-        ibd='germline/merged_ibd.tsv'
+        ibd='ibd/merged_ibd.tsv'
     conda: "../envs/evaluation.yaml"
     script:
         '../scripts/merge_ibd.py'
 
 rule ersa:
     input:
-        germline=rules.merge_ibd_segments.output['ibd'],
-        estimated=rules.ersa_params.output
-    output: "ersa/relatives.tsv"
+        ibd=rules.merge_ibd_segments.output['ibd']
+    output:
+        "ersa/relatives.tsv"
     singularity:
         "docker://alexgenx/ersa:stable"
     log:
@@ -156,13 +148,11 @@ rule ersa:
         "benchmarks/ersa/ersa.txt"
     shell:
         """
-        #ERSA_L=13.7
-        #ERSA_TH=3.197
-        #ERSA_T=2.5
-        source {input.estimated}
-        ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.germline} -o {output} | tee {log}
+        ERSA_L=2.0 # the average number of IBD segments in population
+        ERSA_TH=1.5 # the average length of IBD segment
+        ERSA_T=1.0 # min length of segment to be considered in segment aggregation
+        ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd} -o {output} | tee {log}
         """
-
 
 rule merge_king_ersa:
     input:

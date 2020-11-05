@@ -4,6 +4,7 @@
 import pandas as pd
 from os.path import join
 
+
 configfile: "config.yaml"
 
 REF_DIR         = config["reference"]["ref_dir"]
@@ -28,6 +29,9 @@ SAMPLES_NAME    = SAMPLES.name.values.tolist()
 CHROMOSOMES     = [str(i) for i in range(1, 23)]
 PLINK_FORMATS   = ['bed', 'bim', 'fam', 'log']
 PLINK_FORMATS_EXT   = ['bed', 'bim', 'fam', 'log', 'nosex']
+
+print('VARABLES:')
+print(REF_DIR, cmmap, samples_file)
 
 def get_samples_name(wildcards):
     return SAMPLES.loc[int(wildcards.sample), "name"] # mind the int index

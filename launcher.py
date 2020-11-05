@@ -79,6 +79,11 @@ def get_parser_args():
         help='File for writing statistics'
     )
 
+    parser.add_argument(
+        "--sim-params-file",
+        default="params/Relatives.def",
+        help="Snakemake YAML config file path")
+
     # --singularity-prefix /tmp --singularity-args='-B /media:/media -B /tmp:/tmp -W /tmp' --conda-prefix /tmp
     parser.add_argument(
         '--singularity-prefix',
@@ -141,7 +146,14 @@ if __name__ == '__main__':
         copy_input(args.input, args.directory, args.samples)
 
     if args.command == 'simulate':
-        copy_input('workflows/pedsim/params', args.directory, 'workflows/pedsim/ceph_unrelated.tsv')
+        copy_input('workflows/pedsim/params', args.directory, 'workflows/pedsim/ceph_unrelated_all.tsv')
+        # for some reason launching with docker from command line
+        # sets root directory for 'configfile' directive in Snakefile as snakemake.workdir
+        # therefore config.yaml must be in snakemake.workdir
+        shutil.copy('workflows/pedsim/config.yaml', os.path.join(args.directory, 'config.yaml'))
+
+    if args.command in ['preprocess', 'find']:
+        shutil.copy('config.yaml', os.path.join(args.directory, 'config.yaml'))
 
     snakefiles = {
         'preprocess': 'workflows/preprocess/Snakefile',
@@ -161,10 +173,14 @@ if __name__ == '__main__':
         os.environ['CONDA_PKGS_DIRS'] = '/tmp/conda/pkgs'
 
     print(os.environ)
-
+    print()
+    print(os.getcwd())
+    print()
+    print(os.listdir('.'))
     if not snakemake.snakemake(
             snakefile=snakefile,
-            configfiles=[args.configfile],
+            #configfiles=[args.configfile],
+            config={'sim_params_file': args.sim_params_file},
             workdir=args.directory,
             cores=args.cores,
             unlock=args.unlock,
