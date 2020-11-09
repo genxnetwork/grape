@@ -58,6 +58,13 @@ snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media/
 snakemake -n -R `snakemake --list-input-changes`
 ```
 
+### Check results
+
+```shell script
+column -t -s "$(printf '\t')" /media/pipeline_data/real-data-7/results/relatives.tsv | less
+
+column -t -s "$(printf '\t')" /media/pipeline_data/sim-10/results/relatives.tsv | less
+```
 
 ### References
 
