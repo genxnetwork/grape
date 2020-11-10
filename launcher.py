@@ -35,6 +35,11 @@ def get_parser_args():
         help="Number of CPU cores to use in this pipeline run (default %(default)s)")
 
     parser.add_argument(
+        "--client",
+        help="The client mode assumes that background data is already been processed and placed in the background directory",
+        action="store_true")
+
+    parser.add_argument(
         "--real-run",
         help="If this argument is present, Snakemake will run the pipeline instead of dry-run, it is False by default",
         action="store_true")
@@ -173,14 +178,14 @@ if __name__ == '__main__':
         os.environ['CONDA_PKGS_DIRS'] = '/tmp/conda/pkgs'
 
     print(os.environ)
-    print()
-    print(os.getcwd())
-    print()
-    print(os.listdir('.'))
+
+    config_dict = {'mode': 'client'} if args.client is not None else {}
+    config_dict['sim_params_file'] = args.sim_params_file
+
     if not snakemake.snakemake(
             snakefile=snakefile,
             #configfiles=[args.configfile],
-            config={'sim_params_file': args.sim_params_file},
+            config=config_dict,
             workdir=args.directory,
             cores=args.cores,
             unlock=args.unlock,

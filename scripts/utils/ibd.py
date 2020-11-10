@@ -41,7 +41,7 @@ class Segment:
         return tuple(sorted((self.id1, self.id2)))
 
 
-def interpolate_all(segments, maps_dir):
+def interpolate_all(segments: dict, maps_dir: str) -> dict:
     chromosomes = list(range(1, 23))
     cm_maps = {}
     for chrom in chromosomes:
@@ -49,6 +49,8 @@ def interpolate_all(segments, maps_dir):
         cm_map = read_cm_map(cm_map_path)
         cm_maps[chrom] = cm_map
 
+    if len(segments) == 0:
+        return {}
     # here we group ALL segments by chromosome for faster interpolation
     chr_segments = {chrom: [] for chrom in chromosomes}
     for segs in segments.values():

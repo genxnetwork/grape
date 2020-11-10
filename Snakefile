@@ -2,6 +2,7 @@
 # TODO: add reporting https://github.com/tanaes/snarkmark/blob/master/rules/report.rule
 
 import pandas as pd
+import os
 from os.path import join
 
 
@@ -20,6 +21,10 @@ hapmap_mp       = join(REF_DIR, config["reference"]["hapmap_mp"])
 hapmap_fam      = join(REF_DIR, config["reference"]["hapmap_fam"])
 hd_genotype_chip= join(REF_DIR, config["reference"]["hd_genotype_chip"])
 pedsim_map      = join(REF_DIR, config["reference"]["pedsim_map"])
+
+print('dirs:')
+print(os.getcwd())
+print(os.listdir('.'))
 
 samples_file    = config["samples_file"]
 SAMPLES         = pd.read_table(samples_file).set_index("name", drop=False)
@@ -40,6 +45,11 @@ def get_samples_path(wildcards):
     return SAMPLES.loc[int(wildcards.sample), "path"] # mind the int index
 
 # include: "rules/report.rule"
+
+if config["mode"] == "all":
+    ruleorder: convert_imputed_to_plink > merge_convert_imputed_to_plink
+else:
+    ruleorder: merge_convert_imputed_to_plink > convert_imputed_to_plink
 
 rule all:
     input:
