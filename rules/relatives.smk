@@ -124,11 +124,11 @@ rule merge_matches:
 rule merge_ibd_segments:
     input:
         germline=rules.merge_matches.output[0],
-        true_ibd=rules.simulate.output.seg
     params:
         cm_dir='cm',
         merge_gap='0.6',
-        use_true_ibd=use_simulated_ibd
+        use_true_ibd=use_simulated_ibd,
+        true_ibd='pedsim/simulated/data.seg' # it is in the params because in the case of true data we do not have this information
     output:
         ibd='ibd/merged_ibd.tsv'
     conda: "../envs/evaluation.yaml"

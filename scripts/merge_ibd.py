@@ -6,7 +6,7 @@ if __name__ == '__main__':
     germline_path = snakemake.input['germline']
     map_dir = snakemake.params['cm_dir']
     gap = float(snakemake.params['merge_gap'])
-    pedsim_path = snakemake.input['true_ibd']
+    pedsim_path = snakemake.params['true_ibd']
 
     use_true_ibd = bool(snakemake.params['use_true_ibd'])
     if not use_true_ibd:
