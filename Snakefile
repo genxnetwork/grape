@@ -8,6 +8,8 @@ from os.path import join
 
 configfile: "config.yaml"
 
+use_rapid       = config["use_rapid"]
+use_simulated_ibd = config["use_simulated_ibd"] if "use_simulated_ibd" in config else False
 REF_DIR         = config["reference"]["ref_dir"]
 GRCh37_fasta    = join(REF_DIR, config["reference"]["GRCh37_fasta"])
 GENETIC_MAP     = join(REF_DIR, config["reference"]["GENETIC_MAP"])
@@ -59,4 +61,7 @@ rule all:
 include: "rules/preprocessing.smk"
 include: "rules/filter.smk"
 include: "rules/imputation.smk"
-include: "rules/relatives.smk"
+if use_rapid:
+    include: "rules/relatives_rapid.smk"
+else:
+    include: "rules/relatives.smk"

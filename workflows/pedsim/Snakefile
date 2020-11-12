@@ -46,7 +46,7 @@ rule intersect:
 rule merge_background:
     input:
         data=expand("pedsim/phased/chr{chrom}.phased.vcf.gz", chrom=CHROMOSOMES),
-        eu="ceph_unrelated.tsv"
+        eu="ceph_unrelated_all.tsv"
     output:
         "pedsim/phased/background.vcf.gz"
     params:
@@ -90,7 +90,7 @@ rule simulate:
     input:
         bg=rules.merge_background.output,
         _map=pedsim_map,
-        _def='params/Relatives.def',
+        _def=config['sim_params_file'],
         intf='params/nu_p_campbell.tsv'
     output:
         vcf='pedsim/simulated/data.vcf.gz',
@@ -155,6 +155,8 @@ rule evaluate_ibd:
     conda:
         '../../envs/evaluation.yaml'
     output:
-        overlap='results/overlaps.tsv'
+        overlap='results/overlaps.tsv',
+        seg_accuracy='results/seg_accuracy.png',
+        total_len_accuracy='results/total_len_accuracy.png'
     script:
         '../../scripts/evaluate_ibd.py'
