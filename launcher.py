@@ -80,8 +80,9 @@ def get_parser_args():
 
     parser.add_argument(
         '--target',
-        default='all',
-        help='Target rule, snakemake will run only rules that lead to the input of this rule'
+        default=['all'],
+        nargs='*',
+        help='Target rules, snakemake will run only rules that lead to the input of this rules'
     )
 
     parser.add_argument(
@@ -197,7 +198,7 @@ if __name__ == '__main__':
             unlock=args.unlock,
             printshellcmds=True,
             dryrun=(not args.real_run),
-            targets=[args.target],
+            targets=args.target,
             stats=args.stat_file,
             forcerun=[args.rule] if args.rule is not None else [],
             until=[args.until] if args.until is not None else [],

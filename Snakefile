@@ -50,8 +50,10 @@ def get_samples_path(wildcards):
 
 if config["mode"] == "all":
     ruleorder: convert_imputed_to_plink > merge_convert_imputed_to_plink
+    ruleorder: merge_imputation_filter > merge_imputation_filter_background
 else:
     ruleorder: merge_convert_imputed_to_plink > convert_imputed_to_plink
+    ruleorder: merge_imputation_filter_background > merge_imputation_filter
 
 rule all:
     input:

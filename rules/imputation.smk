@@ -68,38 +68,88 @@ rule imputation_filter:
         bcftools view -i 'R2>0.3 & strlen(REF)=1 & strlen(ALT)=1' imputed/chr{wildcards.chrom}.imputed.dose.vcf.gz -v snps -m 2 -M 2 -O z -o imputed/chr{wildcards.chrom}.imputed.dose.pass.vcf.gz | tee {log}
         """
 
-
-rule merge_imputation_filter:
-    input:
-        expand("imputed/chr{i}.imputed.dose.pass.vcf.gz", i=CHROMOSOMES)
-        #expand("phase/chr{chrom}.phased.vcf.gz", chrom=CHROMOSOMES)
-        # TODO: wildcard violation
-        # rules.imputation_filter.output
-    output:
-        "vcf/merged_imputed.vcf.gz"
-    params:
-        list="vcf/imputed.merge.list"
-    conda:
-        "../envs/bcftools.yaml"
-    log:
-        "logs/vcf/merge_imputation_filter.log"
-    benchmark:
-        "benchmarks/vcf/merge_imputation_filter.txt"
-    shell:
-        """
-        # for now just skip empty files
-        true > {params.list} && \
-        for i in {input}; do
-            if [ -s $i ]
+if config.mode == 'client':
+    rule merge_imputation_filter:
+        input:
+            expand("imputed/chr{i}.imputed.dose.pass.vcf.gz", i=CHROMOSOMES)
+        output:
+            "vcf/merged_imputed.vcf.gz"
+        params:
+            list="vcf/imputed.merge.list",
+            temp_output="vcf/merged_imputed_client.vcf.gz",
+            has_background=(config.mode=='client'),
+            background='background/merged_imputed.vcf.gz'
+        conda:
+            "../envs/bcftools.yaml"
+        log:
+            "logs/vcf/merge_imputation_filter.log"
+        benchmark:
+            "benchmarks/vcf/merge_imputation_filter.txt"
+        shell:
+            """
+            # for now just skip empty files
+            true > {params.list} && \
+            for i in {input}; do
+                if [ -s $i ]
+                then
+                    echo $i >> {params.list}
+                else
+                    continue
+                fi
+            done
+            bcftools concat -f {params.list} -O z -o {params.temp_output} | tee -a {log}
+            bcftools index -f {params.temp_output} | tee -a {log}
+            HAS_BACKGROUND=${params.has_background}
+            if [ $HAS_BACKGROUND ]
             then
-                echo $i >> {params.list}
+                bcftools merge -m none {params.background} {params.temp_output} -O z -o {output}
+                bcftools index -f {output} | tee -a {log}
             else
-                continue
-            fi
-        done
-        bcftools concat -f {params.list} -O z -o {output} | tee -a {log}
-        bcftools index -f {output} | tee -a {log}
-        """
+                CSI=".csi"
+                mv {params.temp_output} {output}
+                mv "{params.temp_output}$CSI" "{output}$CDI" 
+            """
+else:
+    rule merge_imputation_filter:
+        input:
+            expand("imputed/chr{i}.imputed.dose.pass.vcf.gz", i=CHROMOSOMES)
+        output:
+            "vcf/merged_imputed.vcf.gz"
+        params:
+            list="vcf/imputed.merge.list",
+            temp_output="vcf/merged_imputed_client.vcf.gz",
+            has_background=(config.mode=='client'),
+            background='background/merged_imputed.vcf.gz'
+        conda:
+            "../envs/bcftools.yaml"
+        log:
+            "logs/vcf/merge_imputation_filter.log"
+        benchmark:
+            "benchmarks/vcf/merge_imputation_filter.txt"
+        shell:
+            """
+            # for now just skip empty files
+            true > {params.list} && \
+            for i in {input}; do
+                if [ -s $i ]
+                then
+                    echo $i >> {params.list}
+                else
+                    continue
+                fi
+            done
+            bcftools concat -f {params.list} -O z -o {params.temp_output} | tee -a {log}
+            bcftools index -f {params.temp_output} | tee -a {log}
+            HAS_BACKGROUND=${params.has_background}
+            if [ $HAS_BACKGROUND ]
+            then
+                bcftools merge -m none {params.background} {params.temp_output} -O z -o {output}
+                bcftools index -f {output} | tee -a {log}
+            else
+                CSI=".csi"
+                mv {params.temp_output} {output}
+                mv "{params.temp_output}$CSI" "{output}$CDI" 
+            """
 
 rule convert_imputed_to_plink:
     input: rules.merge_imputation_filter.output
@@ -115,22 +165,4 @@ rule convert_imputed_to_plink:
     shell:
         """
         plink --vcf {input} --make-bed --out {params.out} | tee {log}
-        """
-
-rule merge_convert_imputed_to_plink:
-    input: rules.merge_imputation_filter.output
-    output: expand("plink/{i}.{ext}", i="merged_imputed", ext=PLINK_FORMATS)
-    params:
-        out = "plink/client/merged_imputed"
-    conda:
-        "../envs/plink.yaml"
-    log:
-        "logs/plink/convert_imputed_to_plink.log"
-    benchmark:
-        "benchmarks/plink/convert_imputed_to_plink.txt"
-    shell:
-        """
-        mkdir -p plink/client
-        plink --vcf {input} --make-bed --out {params.out} | tee {log}
-        plink --bfile background/merged_imputed --bmerge plink/client/merged_imputed --make-bed --out plink/merged_imputed | tee {log}
         """
