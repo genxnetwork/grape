@@ -97,6 +97,14 @@ rule merge_imputation_filter:
                 continue
             fi
         done
+
+        # check if there is a background data
+        # we need to merge separately from merge_convert_imputed_to_plink
+        # because it used in index_and_split down to germline
+        if [ -f "background/merged_imputed.vcf.gz" ]; then
+            echo "background/merged_imputed.vcf.gz" >> {params.list}
+        done
+
         bcftools concat -f {params.list} -O z -o {output} | tee -a {log}
         bcftools index -f {output} | tee -a {log}
         """
@@ -131,7 +139,7 @@ rule merge_convert_imputed_to_plink:
         "benchmarks/plink/convert_imputed_to_plink.txt"
     shell:
         """
-        echo "lalalala"
+        # please mind a merge step in merge_imputation_filter for germline
         plink --vcf {input} --make-bed --out {params.out} | tee {log}
         plink --bfile {params.background} --bmerge {params.out} --make-bed --out plink/merged_imputed | tee {log}
         """
