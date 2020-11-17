@@ -130,6 +130,7 @@ rule merge_convert_imputed_to_plink:
         "benchmarks/plink/convert_imputed_to_plink.txt"
     shell:
         """
+        mkdir -p plink/client
         plink --vcf {input} --make-bed --out {params.out} | tee {log}
-        plink --bfile background/merged_imputed --bmerge plink/client/merged_imputed --make-bed --out plink/merged_imputed | too {log}
+        plink --bfile background/merged_imputed --bmerge plink/client/merged_imputed --make-bed --out plink/merged_imputed | tee {log}
         """
