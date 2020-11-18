@@ -3,6 +3,7 @@ from os.path import join
 configfile: "config.yaml"
 
 use_rapid       = config["use_rapid"]
+is_client       = False
 use_simulated_ibd = config["use_simulated_ibd"] if "use_simulated_ibd" in config else False
 REF_DIR         = config["reference"]["ref_dir"]
 GRCh37_fasta    = join(REF_DIR, config["reference"]["GRCh37_fasta"])

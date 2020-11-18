@@ -9,6 +9,7 @@ from os.path import join
 configfile: "config.yaml"
 
 use_rapid       = config["use_rapid"]
+is_client       = config["mode"] == "client"
 use_simulated_ibd = config["use_simulated_ibd"] if "use_simulated_ibd" in config else False
 REF_DIR         = config["reference"]["ref_dir"]
 GRCh37_fasta    = join(REF_DIR, config["reference"]["GRCh37_fasta"])
@@ -47,13 +48,6 @@ def get_samples_path(wildcards):
     return SAMPLES.loc[int(wildcards.sample), "path"] # mind the int index
 
 # include: "rules/report.rule"
-
-if config["mode"] == "all":
-    ruleorder: convert_imputed_to_plink > merge_convert_imputed_to_plink
-    ruleorder: merge_imputation_filter > merge_imputation_filter_background
-else:
-    ruleorder: merge_convert_imputed_to_plink > convert_imputed_to_plink
-    ruleorder: merge_imputation_filter_background > merge_imputation_filter
 
 rule all:
     input:

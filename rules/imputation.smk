@@ -68,7 +68,7 @@ rule imputation_filter:
         bcftools view -i 'R2>0.3 & strlen(REF)=1 & strlen(ALT)=1' imputed/chr{wildcards.chrom}.imputed.dose.vcf.gz -v snps -m 2 -M 2 -O z -o imputed/chr{wildcards.chrom}.imputed.dose.pass.vcf.gz | tee {log}
         """
 
-if config.mode == 'client':
+if not is_client:
     rule merge_imputation_filter:
         input:
             expand("imputed/chr{i}.imputed.dose.pass.vcf.gz", i=CHROMOSOMES)
@@ -76,9 +76,6 @@ if config.mode == 'client':
             "vcf/merged_imputed.vcf.gz"
         params:
             list="vcf/imputed.merge.list",
-            temp_output="vcf/merged_imputed_client.vcf.gz",
-            has_background=(config.mode=='client'),
-            background='background/merged_imputed.vcf.gz'
         conda:
             "../envs/bcftools.yaml"
         log:
@@ -97,17 +94,8 @@ if config.mode == 'client':
                     continue
                 fi
             done
-            bcftools concat -f {params.list} -O z -o {params.temp_output} | tee -a {log}
-            bcftools index -f {params.temp_output} | tee -a {log}
-            HAS_BACKGROUND=${params.has_background}
-            if [ $HAS_BACKGROUND ]
-            then
-                bcftools merge -m none {params.background} {params.temp_output} -O z -o {output}
-                bcftools index -f {output} | tee -a {log}
-            else
-                CSI=".csi"
-                mv {params.temp_output} {output}
-                mv "{params.temp_output}$CSI" "{output}$CDI" 
+            bcftools concat -f {params.list} -O z -o {output} | tee -a {log}
+            bcftools index -f {output} | tee -a {log}
             """
 else:
     rule merge_imputation_filter:
@@ -118,7 +106,6 @@ else:
         params:
             list="vcf/imputed.merge.list",
             temp_output="vcf/merged_imputed_client.vcf.gz",
-            has_background=(config.mode=='client'),
             background='background/merged_imputed.vcf.gz'
         conda:
             "../envs/bcftools.yaml"
@@ -140,15 +127,8 @@ else:
             done
             bcftools concat -f {params.list} -O z -o {params.temp_output} | tee -a {log}
             bcftools index -f {params.temp_output} | tee -a {log}
-            HAS_BACKGROUND=${params.has_background}
-            if [ $HAS_BACKGROUND ]
-            then
-                bcftools merge -m none {params.background} {params.temp_output} -O z -o {output}
-                bcftools index -f {output} | tee -a {log}
-            else
-                CSI=".csi"
-                mv {params.temp_output} {output}
-                mv "{params.temp_output}$CSI" "{output}$CDI" 
+            bcftools merge -m none {params.background} {params.temp_output} | bcftools view --max-alleles 2 -O z -o {output} 
+            bcftools index -f {output} | tee -a {log}
             """
 
 rule convert_imputed_to_plink:
