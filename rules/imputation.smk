@@ -68,68 +68,47 @@ rule imputation_filter:
         bcftools view -i 'R2>0.3 & strlen(REF)=1 & strlen(ALT)=1' imputed/chr{wildcards.chrom}.imputed.dose.vcf.gz -v snps -m 2 -M 2 -O z -o imputed/chr{wildcards.chrom}.imputed.dose.pass.vcf.gz | tee {log}
         """
 
-if not is_client:
-    rule merge_imputation_filter:
-        input:
-            expand("imputed/chr{i}.imputed.dose.pass.vcf.gz", i=CHROMOSOMES)
-        output:
-            "vcf/merged_imputed.vcf.gz"
-        params:
-            list="vcf/imputed.merge.list",
-        conda:
-            "../envs/bcftools.yaml"
-        log:
-            "logs/vcf/merge_imputation_filter.log"
-        benchmark:
-            "benchmarks/vcf/merge_imputation_filter.txt"
-        shell:
-            """
-            # for now just skip empty files
-            true > {params.list} && \
-            for i in {input}; do
-                if [ -s $i ]
-                then
-                    echo $i >> {params.list}
-                else
-                    continue
-                fi
-            done
-            bcftools concat -f {params.list} -O z -o {output} | tee -a {log}
+
+rule merge_imputation_filter:
+    input:
+        expand("imputed/chr{i}.imputed.dose.pass.vcf.gz", i=CHROMOSOMES)
+        #expand("phase/chr{chrom}.phased.vcf.gz", chrom=CHROMOSOMES)
+        # TODO: wildcard violation
+        # rules.imputation_filter.output
+    output:
+        "vcf/merged_imputed.vcf.gz"
+    params:
+        list="vcf/imputed.merge.list",
+        mode=config["mode"]
+    conda:
+        "../envs/bcftools.yaml"
+    log:
+        "logs/vcf/merge_imputation_filter.log"
+    benchmark:
+        "benchmarks/vcf/merge_imputation_filter.txt"
+    shell:
+        """
+        # for now just skip empty files
+        true > {params.list} && \
+        for i in {input}; do
+            if [ -s $i ]
+            then
+                echo $i >> {params.list}
+            else
+                continue
+            fi
+        done
+
+        bcftools concat -f {params.list} -O z -o {output} | tee -a {log}
+        bcftools index -f {output} | tee -a {log}
+
+        # check if there is a background data and merge it
+        if [ -f "background/merged_imputed.vcf.gz" && {params.mode} = "all" ]; then
+            mv {output} {output}.client
+            bcftools merge --force-samples background/merged_imputed.vcf.gz {output}.client -O z -o {output} | tee -a {log}
             bcftools index -f {output} | tee -a {log}
-            """
-else:
-    rule merge_imputation_filter:
-        input:
-            expand("imputed/chr{i}.imputed.dose.pass.vcf.gz", i=CHROMOSOMES)
-        output:
-            "vcf/merged_imputed.vcf.gz"
-        params:
-            list="vcf/imputed.merge.list",
-            temp_output="vcf/merged_imputed_client.vcf.gz",
-            background='background/merged_imputed.vcf.gz'
-        conda:
-            "../envs/bcftools.yaml"
-        log:
-            "logs/vcf/merge_imputation_filter.log"
-        benchmark:
-            "benchmarks/vcf/merge_imputation_filter.txt"
-        shell:
-            """
-            # for now just skip empty files
-            true > {params.list} && \
-            for i in {input}; do
-                if [ -s $i ]
-                then
-                    echo $i >> {params.list}
-                else
-                    continue
-                fi
-            done
-            bcftools concat -f {params.list} -O z -o {params.temp_output} | tee -a {log}
-            bcftools index -f {params.temp_output} | tee -a {log}
-            bcftools merge -m none {params.background} {params.temp_output} | bcftools view --max-alleles 2 -O z -o {output} 
-            bcftools index -f {output} | tee -a {log}
-            """
+        done
+        """
 
 rule convert_imputed_to_plink:
     input: rules.merge_imputation_filter.output
@@ -145,4 +124,24 @@ rule convert_imputed_to_plink:
     shell:
         """
         plink --vcf {input} --make-bed --out {params.out} | tee {log}
+        """
+
+# no need it bc it was done earlier in merge_imputation_filter
+rule merge_convert_imputed_to_plink:
+    input: rules.merge_imputation_filter.output
+    output: expand("plink/{i}.{ext}", i="merged_imputed", ext=PLINK_FORMATS)
+    params:
+        background  = "background/merged_imputed",
+        out         = "plink/client/merged_imputed"
+    conda:
+        "../envs/plink.yaml"
+    log:
+        "logs/plink/convert_imputed_to_plink.log"
+    benchmark:
+        "benchmarks/plink/convert_imputed_to_plink.txt"
+    shell:
+        """
+        # please mind a merge step in merge_imputation_filter for germline
+        plink --vcf {input} --make-bed --out {params.out} | tee {log}
+        plink --bfile {params.background} --bmerge {params.out} --make-bed --out plink/merged_imputed | tee {log}
         """

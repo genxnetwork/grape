@@ -25,6 +25,7 @@ hapmap_fam      = join(REF_DIR, config["reference"]["hapmap_fam"])
 hd_genotype_chip= join(REF_DIR, config["reference"]["hd_genotype_chip"])
 pedsim_map      = join(REF_DIR, config["reference"]["pedsim_map"])
 
+print('execution mode is: ' + config["mode"])
 print('dirs:')
 print(os.getcwd())
 print(os.listdir('.'))
@@ -38,9 +39,6 @@ CHROMOSOMES     = [str(i) for i in range(1, 23)]
 PLINK_FORMATS   = ['bed', 'bim', 'fam', 'log']
 PLINK_FORMATS_EXT   = ['bed', 'bim', 'fam', 'log', 'nosex']
 
-print('VARABLES:')
-print(REF_DIR, cmmap, samples_file)
-
 def get_samples_name(wildcards):
     return SAMPLES.loc[int(wildcards.sample), "name"] # mind the int index
 
@@ -48,6 +46,11 @@ def get_samples_path(wildcards):
     return SAMPLES.loc[int(wildcards.sample), "path"] # mind the int index
 
 # include: "rules/report.rule"
+
+# if config["mode"] == "all":
+#     ruleorder: convert_imputed_to_plink > merge_convert_imputed_to_plink
+# else:
+#     ruleorder: merge_convert_imputed_to_plink > convert_imputed_to_plink
 
 rule all:
     input:

@@ -174,6 +174,10 @@ if __name__ == '__main__':
         'hapmap': 'workflows/hapmap/Snakefile'
     }
 
+    if args.client:
+        if not os.path.exists('background/merged_imputed.bed'):
+            raise RuntimeError(f'Background data is missing for the client mode')
+
     if not args.snakefile:
         snakefile = snakefiles[args.command]
     else:

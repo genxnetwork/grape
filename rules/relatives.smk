@@ -17,6 +17,11 @@ rule run_king:
         KING_DEGREE=4
 
         king -b {params.input}.bed --cpus {threads} --ibdseg --degree $KING_DEGREE --prefix {params.out} | tee {log}
+
+        # we need at least an empty file for the downstream analysis
+        if [ ! -f "{output}" ]; then
+            touch {output}
+        fi
         """
 
 rule index_and_split:
@@ -108,22 +113,11 @@ rule germline:
         "benchmarks/germline/germline-{chrom}.txt"
     shell:
         """
-        set +e
-        germline -input ped/imputed_chr{wildcards.chrom}.ped cm/chr{wildcards.chrom}.cm.map -homoz -min_m 2.5 -err_hom 2 -err_het 1 -output germline/chr{wildcards.chrom}.germline 2>&1 | tee {log}
+        germline -input ped/imputed_chr{wildcards.chrom}.ped cm/chr{wildcards.chrom}.cm.map -homoz -min_m 2.5 -err_hom 2 -err_het 1 -output germline/chr{wildcards.chrom}.germline | tee {log}
         # TODO: germline returns some length in BP instead of cM - clean up is needed
-        exitcode=$?
-        if [ $exitcode -eq 0 ]
-        then
-            exit $exitcode
-        fi
+        set +e
         grep -v MB germline/chr{wildcards.chrom}.germline.match > germline/chr{wildcards.chrom}.germline.match.clean && mv germline/chr{wildcards.chrom}.germline.match.clean germline/chr{wildcards.chrom}.germline.match
-        exitcode=$?
-        if [ $exitcode -gt 1 ]
-        then
-            exit $exitcode
-        else
-            exit 0
-        fi
+        set -e
         """
 
 rule merge_matches:
@@ -136,7 +130,7 @@ rule merge_matches:
 
 rule merge_ibd_segments:
     input:
-        germline=rules.merge_matches.output[0],
+        germline=rules.merge_matches.output[0]
     params:
         cm_dir='cm',
         merge_gap='0.6',
@@ -166,6 +160,7 @@ rule ersa:
         ERSA_T=1.0 # min length of segment to be considered in segment aggregation
         ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd} -o {output} | tee {log}
         """
+
 
 rule merge_king_ersa:
     input:
