@@ -103,11 +103,11 @@ rule merge_imputation_filter:
         bcftools index -f {output} | tee -a {log}
 
         # check if there is a background data and merge it
-        if [ -f "background/merged_imputed.vcf.gz" && {params.mode} = "all" ]; then
+        if [ -f "background/merged_imputed.vcf.gz" && {params.mode} = "client" ]; then
             mv {output} {output}.client
             bcftools merge --force-samples background/merged_imputed.vcf.gz {output}.client -O z -o {output} | tee -a {log}
             bcftools index -f {output} | tee -a {log}
-        done
+        fi
         """
 
 rule convert_imputed_to_plink:
