@@ -78,7 +78,8 @@ rule merge_imputation_filter:
     output:
         "vcf/merged_imputed.vcf.gz"
     params:
-        list="vcf/imputed.merge.list"
+        list="vcf/imputed.merge.list",
+        mode=config["mode"]
     conda:
         "../envs/bcftools.yaml"
     log:
@@ -98,15 +99,15 @@ rule merge_imputation_filter:
             fi
         done
 
-        # check if there is a background data
-        # we need to merge separately from merge_convert_imputed_to_plink
-        # because it used in index_and_split down to germline
-        if [ -f "background/merged_imputed.vcf.gz" ]; then
-            echo "background/merged_imputed.vcf.gz" >> {params.list}
-        done
-
         bcftools concat -f {params.list} -O z -o {output} | tee -a {log}
         bcftools index -f {output} | tee -a {log}
+
+        # check if there is a background data and merge it
+        if [ -f "background/merged_imputed.vcf.gz" && {params.mode} = "all" ]; then
+            mv {output} {output}.client
+            bcftools merge --force-samples background/merged_imputed.vcf.gz {output}.client -O z -o {output} | tee -a {log}
+            bcftools index -f {output} | tee -a {log}
+        done
         """
 
 rule convert_imputed_to_plink:
@@ -125,6 +126,7 @@ rule convert_imputed_to_plink:
         plink --vcf {input} --make-bed --out {params.out} | tee {log}
         """
 
+# no need it bc it was done earlier in merge_imputation_filter
 rule merge_convert_imputed_to_plink:
     input: rules.merge_imputation_filter.output
     output: expand("plink/{i}.{ext}", i="merged_imputed", ext=PLINK_FORMATS)
