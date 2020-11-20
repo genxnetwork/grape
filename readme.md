@@ -107,7 +107,56 @@ How to execute operational run (sample output):
 ```text 
 /path/to/funnel task create examples/snakemake-real-23andme.json                                                                                                                                      
 ```
+#### Standalone version (not recommended)
 
+It is possible to run the pipeline using standalone version. First, you need to clone the repository and setup the references as described above.
+
+The main idea of using Docker containers that you no need configure your execution environment manually. You need to do it before you can run the pipeliune in the standalone mode.
+
+Assuming that you use Ubuntu 18 the following steps are needed to run the pipeline:
+
+1. Docker
+
+https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-18-04
+
+It is recomended to move docker storage from /var to some other partition with enought free space:
+https://www.guguweb.com/2019/02/07/how-to-move-docker-data-directory-to-another-location-on-ubuntu/
+
+2. Singularity
+
+You need to compile at least version 3.x from https://github.com/hpcng/singularity/releases/
+Please note that you need Go compiler in order to do so https://golang.org/dl/
+
+3. Conda
+
+Snakemake pipeline can use Singularity containers (same as Docker but working from user space) as well as Conda wrapped tools for the virtualization of the execution steps.
+
+https://www.digitalocean.com/community/tutorials/how-to-install-the-anaconda-python-distribution-on-ubuntu-18-04
+
+4. Snakemake
+
+https://snakemake.readthedocs.io/en/stable/getting_started/installation.html
+
+5. Setup env vars for temp / cache directories for Singularity:
+
+export SINGULARITY_TMPDIR=/media/tmp
+export SINGULARITY_CACHEDIR=/media/tmp
+
+You can also pass this values using Snakemake:
+--singularity-prefix DIR
+--singularity-args ARGS
+
+6. Launch
+
+```text
+snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media --singularity-args="-B /media:/media" -p all -n
+```
+
+Please mind '-n' flag for dry-run
+
+7. Usefull commands
+
+Please see useful_commands.md.
 
 ### Evaluation on Simulated Data
 

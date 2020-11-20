@@ -58,6 +58,13 @@ snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media/
 snakemake -n -R `snakemake --list-input-changes`
 ```
 
+### Clean-up Snakemake working dir
+
+If you want to use the same working directory for different input files it is better to clean-up it first
+
+```shell script
+snakemake --delete-all-outputs --cores 1
+```
 
 ### References
 
