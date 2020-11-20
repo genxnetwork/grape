@@ -137,7 +137,7 @@ https://www.digitalocean.com/community/tutorials/how-to-install-the-anaconda-pyt
 
 https://snakemake.readthedocs.io/en/stable/getting_started/installation.html
 
-5. Setup env vars for temp / cache directories for Singularity:
+5. Setup env vars for temp / cache directories for Singularity, ex:
 
 export SINGULARITY_TMPDIR=/media/tmp
 export SINGULARITY_CACHEDIR=/media/tmp
