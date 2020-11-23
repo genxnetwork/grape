@@ -43,7 +43,7 @@ This Funnel fork simply adds the ‘--privileged’ flag to all task docker comm
 Without ‘--privileged’ singularity containers do not work inside docker.
 
 ### Usage
-#### Input data format
+#### Input data format: 23andme
 
 The information about samples for analysis should be provided as a path to a tab-separated text file (samples.tsv).
 
@@ -53,6 +53,11 @@ Input data is expected in 23andMe format, one file for each sample:
 | --- | --- |
 | 1 | input/1.txt |
 | 2 | input/2.txt | 
+
+#### Input data format: vcf
+
+Another option is using gzipped vcf file format. If vcf file is in hg38 assembly, then you can just use `vcf` command 
+with the `--vcf-file <path>` option. If vcf file is in hg37, you should pass `--assembly hg37` to the `vcf` command.   
 
 #### Console execution
 
@@ -74,10 +79,18 @@ launcher.py find --samples /media/ref/samples.tsv --input /media/ref/input --dir
 
 docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
 
+# if input data is in 23andme format
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
 launcher.py preprocess --samples /media/ref/samples.tsv --input /media/ref/input --directory /media/pipeline_data/real-data \
 --real-run
 
+# else if input data is in vcf format
+# use --assembly hg37 if vcf file is in hg37 and not in hg38 
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
+launcher.py vcf --vcf-file /media/ref/input.vcf.gz --directory /media/pipeline_data/real-data \
+--real-run
+
+# now we can find relatives
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
 launcher.py find --samples /media/ref/samples.tsv --input /media/ref/input --directory /media/pipeline_data/real-data \
 --real-run
