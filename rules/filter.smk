@@ -1,6 +1,6 @@
 
 rule plink_filter:
-    input: rules.liftover.output
+    input: "vcf/merged_lifted.vcf"
     output: expand("plink/merged_filter.{ext}", ext=PLINK_FORMATS)
     conda:
         "../envs/plink.yaml"

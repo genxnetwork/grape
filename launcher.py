@@ -67,6 +67,18 @@ def get_parser_args():
     )
 
     parser.add_argument(
+        '--assembly',
+        default='hg38',
+        help='Name of genome assembly. Default is hg38, the only other possible value is hg37. Hg38 data will be lifted to hg37'
+    )
+
+    parser.add_argument(
+        '--vcf-file',
+        default='input.vcf',
+        help='Path to the input vcf file for "vcf" command only'
+    )
+
+    parser.add_argument(
         '--rule',
         default=None,
         help='Rule which will be rerun forcefully'
@@ -150,7 +162,7 @@ if __name__ == '__main__':
     if not os.path.exists(args.directory):
         os.makedirs(args.directory)
 
-    valid_commands = ['preprocess', 'find', 'simulate', 'hapmap']
+    valid_commands = ['preprocess', 'find', 'simulate', 'hapmap', 'vcf']
     if args.command not in valid_commands:
         raise RuntimeError(f'command {args.command} not in list of valid commands: {valid_commands}')
 
@@ -164,11 +176,15 @@ if __name__ == '__main__':
         # therefore config.yaml must be in snakemake.workdir
         shutil.copy('workflows/pedsim/config.yaml', os.path.join(args.directory, 'config.yaml'))
 
-    if args.command in ['preprocess', 'find']:
+    if args.command == 'vcf':
+        shutil.copy(args.vcf_file, os.path.join(args.directory, 'input.vcf'))
+
+    if args.command in ['preprocess', 'find', 'vcf']:
         shutil.copy('config.yaml', os.path.join(args.directory, 'config.yaml'))
 
     snakefiles = {
         'preprocess': 'workflows/preprocess/Snakefile',
+        'vcf': 'workflows/preprocess_vcf/Snakefile',
         'find': 'Snakefile',
         'simulate': 'workflows/pedsim/Snakefile',
         'hapmap': 'workflows/hapmap/Snakefile'
@@ -193,6 +209,7 @@ if __name__ == '__main__':
 
     config_dict = {'mode': 'client'} if args.client is not None else {}
     config_dict['sim_params_file'] = args.sim_params_file
+    config_dict['assembly'] = args.assembly
 
     if not snakemake.snakemake(
             snakefile=snakefile,
