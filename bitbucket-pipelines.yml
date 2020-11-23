@@ -11,6 +11,8 @@ pipelines:
     - step:
         name: pull repo, build local container, and run simulation
         script:
+          - apt-get update && apt-get install -y gettext-base
+          - envsubst < simulation.sh > simulation-hash.sh
           - pipe: atlassian/ssh-run:0.2.6
             variables:
               SSH_USER: 'genx'

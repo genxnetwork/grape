@@ -1,0 +1,42 @@
+from os.path import join
+
+configfile: "config.yaml"
+
+CHROMOSOMES     = [str(i) for i in range(1, 23)]
+PLINK_FORMATS   = ['bed', 'bim', 'fam', 'log']
+PLINK_FORMATS_EXT   = ['bed', 'bim', 'fam', 'log', 'nosex']
+
+REF_DIR         = config["reference"]["ref_dir"]
+lift_chain      = join(REF_DIR, config["reference"]["lift_chain"])
+GRCh37_fasta    = join(REF_DIR, config["reference"]["GRCh37_fasta"])
+
+assembly = config['assembly']
+
+
+rule all:
+    input:
+        vcf="vcf/merged_lifted.vcf",
+        # rules.report_benchmark_summary.output
+
+
+rule recode_vcf:
+    input: vcf='input.vcf'
+    output: vcf = "vcf/merged_recoded.vcf.gz"
+    conda: "../../envs/plink.yaml"
+    shell: "plink --vcf {input.vcf} --snps-only just-acgt --output-chr M --not-chr XY,MT --export vcf bgz --out vcf/merged_recoded"
+
+
+rule liftover:
+    input:
+        vcf=rules.recode_vcf.output['vcf']
+    output:
+        vcf="vcf/merged_lifted.vcf"
+    singularity: "docker://alexgenx/picard:latest"
+    shell:
+        """
+            if [[ "{assembly}" == "hg38" ]]; then
+                java -jar /picard/picard.jar LiftoverVcf I={input.vcf} O={output.vcf} CHAIN={lift_chain} REJECT=vcf/rejected.vcf R={GRCh37_fasta}
+            else
+                cp {input.vcf} {output.vcf}
+            fi
+        """

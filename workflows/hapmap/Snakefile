@@ -1,4 +1,20 @@
-#configfile: "workflows/pedsim/config.yaml"
+from os.path import join
+
+configfile: "workflows/pedsim/config.yaml"
+
+REF_DIR         = config["reference"]["ref_dir"]
+GRCh37_fasta    = join(REF_DIR, config["reference"]["GRCh37_fasta"])
+GENETIC_MAP     = join(REF_DIR, config["reference"]["GENETIC_MAP"])
+vcfRef          = join(REF_DIR, config["reference"]["vcfRef"])
+refHaps         = join(REF_DIR, config["reference"]["refHaps"])
+lift_chain      = join(REF_DIR, config["reference"]["lift_chain"])
+cmmap           = join(REF_DIR, config["reference"]["cmmap"])
+SITE_1000GENOME = join(REF_DIR, config["reference"]["SITE_1000GENOME"])
+hapmap_ped      = join(REF_DIR, config["reference"]["hapmap_ped"])
+hapmap_mp       = join(REF_DIR, config["reference"]["hapmap_mp"])
+hapmap_fam      = join(REF_DIR, config["reference"]["hapmap_fam"])
+hd_genotype_chip= join(REF_DIR, config["reference"]["hd_genotype_chip"])
+pedsim_map      = join(REF_DIR, config["reference"]["pedsim_map"])
 
 CHROMOSOMES     = [str(i) for i in range(1, 23)]
 
@@ -13,8 +29,8 @@ rule all:
 
 rule recode_vcf:
     input:
-        ped='/media/ref/hapmap/ceu.ped',
-        mp='/media/ref/hapmap/ceu.map'
+        ped=hapmap_ped,
+        mp=hapmap_mp
     output:
         vcf='vcf/merged_recoded.vcf.gz'
     params:
@@ -26,7 +42,7 @@ rule recode_vcf:
 rule postprocess:
     input:
         vcf=rules.recode_vcf.output['vcf'],
-        fam='/media/ref/hapmap/relations.txt'
+        fam=hapmap_fam
     output:
         kin='kinship/reheaded_data.kinship',
         vcf='vcf/merged_sorted.vcf.gz',
@@ -39,8 +55,8 @@ rule postprocess:
 rule liftover:
     input:
         vcf=rules.postprocess.output['vcf'],
-        chain='/media/ref/hg18ToHg19.over.chain.gz',
-        ref='/media/ref/human_g1k_v37.fasta'
+        chain=lift_chain,
+        ref=GRCh37_fasta
     output:
         vcf="vcf/merged_mapped_sorted.vcf.gz"
 

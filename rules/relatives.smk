@@ -17,6 +17,11 @@ rule run_king:
         KING_DEGREE=4
 
         king -b {params.input}.bed --cpus {threads} --ibdseg --degree $KING_DEGREE --prefix {params.out} | tee {log}
+
+        # we need at least an empty file for the downstream analysis
+        if [ ! -f "{output}" ]; then
+            touch {output}
+        fi
         """
 
 rule index_and_split:
@@ -82,7 +87,9 @@ rule split_map:
         """
 
 rule interpolate:
-    input: rules.convert_to_ped.output
+    input:
+        rules.convert_to_ped.output,
+        cmmap=cmmap
     output: "cm/chr{chrom}.cm.ped"
     conda:
         "../envs/plink.yaml"
@@ -92,7 +99,7 @@ rule interpolate:
         "benchmarks/cm/interpolate-{chrom}.txt"
     shell:
         """
-        plink --file ped/imputed_chr{wildcards.chrom} --cm-map /media/ref/genetic_map_b37/genetic_map_chr{wildcards.chrom}_combined_b37.txt {wildcards.chrom} --recode --out cm/chr{wildcards.chrom}.cm | tee {log}
+        plink --file ped/imputed_chr{wildcards.chrom} --cm-map {input.cmmap} {wildcards.chrom} --recode --out cm/chr{wildcards.chrom}.cm | tee {log}
         """
 
 rule germline:
@@ -108,18 +115,10 @@ rule germline:
         """
         germline -input ped/imputed_chr{wildcards.chrom}.ped cm/chr{wildcards.chrom}.cm.map -homoz -min_m 2.5 -err_hom 2 -err_het 1 -output germline/chr{wildcards.chrom}.germline | tee {log}
         # TODO: germline returns some length in BP instead of cM - clean up is needed
+        set +e
         grep -v MB germline/chr{wildcards.chrom}.germline.match > germline/chr{wildcards.chrom}.germline.match.clean && mv germline/chr{wildcards.chrom}.germline.match.clean germline/chr{wildcards.chrom}.germline.match
+        set -e
         """
-
-rule ersa_params:
-    input:
-        king=rules.run_king.output,
-        # TODO: wildcard violation
-        # germline=rules.germline.output
-        germline=expand("germline/chr{i}.germline.match", i=CHROMOSOMES)
-    output: "ersa/params.txt"
-    conda: "../envs/ersa_params.yaml"
-    script: "../scripts/estimate_ersa_params.py"
 
 rule merge_matches:
     input:
@@ -134,18 +133,20 @@ rule merge_ibd_segments:
         germline=rules.merge_matches.output[0]
     params:
         cm_dir='cm',
-        merge_gap='0.6'
+        merge_gap='0.6',
+        use_true_ibd=use_simulated_ibd,
+        true_ibd='pedsim/simulated/data.seg' # it is in the params because in the case of true data we do not have this information
     output:
-        ibd='germline/merged_ibd.tsv'
+        ibd='ibd/merged_ibd.tsv'
     conda: "../envs/evaluation.yaml"
     script:
         '../scripts/merge_ibd.py'
 
 rule ersa:
     input:
-        germline=rules.merge_ibd_segments.output['ibd'],
-        estimated=rules.ersa_params.output
-    output: "ersa/relatives.tsv"
+        ibd=rules.merge_ibd_segments.output['ibd']
+    output:
+        "ersa/relatives.tsv"
     singularity:
         "docker://alexgenx/ersa:stable"
     log:
@@ -154,11 +155,10 @@ rule ersa:
         "benchmarks/ersa/ersa.txt"
     shell:
         """
-        #ERSA_L=13.7
-        #ERSA_TH=3.197
-        #ERSA_T=2.5
-        source {input.estimated}
-        ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.germline} -o {output} | tee {log}
+        ERSA_L=2.0 # the average number of IBD segments in population
+        ERSA_TH=1.5 # the average length of IBD segment
+        ERSA_T=1.0 # min length of segment to be considered in segment aggregation
+        ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd} -o {output} | tee {log}
         """
 
 

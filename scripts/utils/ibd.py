@@ -1,6 +1,7 @@
 import numpy
 import pandas
 import os
+import gzip
 
 
 class Segment:
@@ -40,7 +41,7 @@ class Segment:
         return tuple(sorted((self.id1, self.id2)))
 
 
-def interpolate_all(segments, maps_dir):
+def interpolate_all(segments: dict, maps_dir: str) -> dict:
     chromosomes = list(range(1, 23))
     cm_maps = {}
     for chrom in chromosomes:
@@ -48,6 +49,8 @@ def interpolate_all(segments, maps_dir):
         cm_map = read_cm_map(cm_map_path)
         cm_maps[chrom] = cm_map
 
+    if len(segments) == 0:
+        return {}
     # here we group ALL segments by chromosome for faster interpolation
     chr_segments = {chrom: [] for chrom in chromosomes}
     for segs in segments.values():
@@ -92,12 +95,14 @@ def read_cm_map(path):
     return cm_map
 
 
-def read_pedsim_segments(path):
+def read_pedsim_segments(path: str) -> dict:
     # first1_g1-b1-s1	first1_g2-b1-i1	1	752721	249170711	IBD1	0.000000	261.713366	261.713366
     data = pandas.read_table(path, header=None, names=['id1', 'id2', 'chrom', 'gen_start', 'gen_end', 'ibd_type', 'cm_start', 'cm_end', 'cm_len'])
     segments = {}
     for i, row in data.iterrows():
-        seg = Segment(row['id1'], row['id2'], row['chrom'], cm_start=row['cm_start'], cm_end=row['cm_end'])
+        seg = Segment(row['id1'], row['id2'], row['chrom'],
+                      cm_start=row['cm_start'], cm_end=row['cm_end'],
+                      bp_start=row['gen_start'], bp_end=row['gen_end'])
         key = tuple(sorted((seg.id1, seg.id2)))
         if key not in segments:
             segments[key] = [seg]
@@ -132,6 +137,65 @@ def read_germline_segments(path):
 
         bp_start, bp_end = [int(b) for b in row['start_end_bp'].split()]
         seg = Segment(id1, id2, row['chrom'], bp_start=bp_start, bp_end=bp_end)
+        key = tuple(sorted((seg.id1, seg.id2)))
+        if key not in segments:
+            segments[key] = [seg]
+        else:
+            segments[key].append(seg)
+
+    return segments
+
+
+def read_refined_ibd_segments(path):
+    # first3_g5-b2-s1	1	first3_g7-b3-i1	2	20	12227899	13105474	19.45	1.788
+    refined_ibd_names = [
+        'fid_iid1',
+        'haplotype1',
+        'fid_iid2',
+        'haplotype2',
+        'chrom',
+        'bp_start',
+        'bp_end',
+        'lod_score',
+        'genetic_len'
+    ]
+
+    data = pandas.read_table(path, header=None, names=refined_ibd_names)
+    segments = {}
+    for i, row in data.iterrows():
+
+        id1 = row['fid_iid1']
+        id2 = row['fid_iid2']
+
+        seg = Segment(id1, id2, row['chrom'], bp_start=row['bp_start'], bp_end=row['bp_end'])
+        key = tuple(sorted((seg.id1, seg.id2)))
+        if key not in segments:
+            segments[key] = [seg]
+        else:
+            segments[key].append(seg)
+
+    return segments
+
+
+def read_rapid_segments(path):
+    # first3_g5-b2-s1	1	first3_g7-b3-i1	2	20	12227899	13105474	19.45	1.788
+    refined_ibd_names = [
+        'fid_iid1',
+        'fid_iid2',
+        'chrom',
+        'bp_start',
+        'bp_end',
+        'genetic_len'
+    ]
+
+    data = pandas.read_table(path, header=None, names=refined_ibd_names)
+    segments = {}
+    for i, row in data.iterrows():
+
+        id1 = row['fid_iid1']
+        id2 = row['fid_iid2']
+
+        seg = Segment(id1, id2, row['chrom'], bp_start=row['bp_start'], bp_end=row['bp_end'])
         key = tuple(sorted((seg.id1, seg.id2)))
         if key not in segments:
             segments[key] = [seg]
@@ -215,6 +279,25 @@ def merge_germline_segments(segments, gap=0.6):
     return new_segments
 
 
+def line_generator(matchfiles):
+    for i in matchfiles:
+        iterator = gzip.open(i, 'rt')
+        for line in iterator:
+            yield line
 
 
+def merge_rapid_ibd_data(matchfiles, outfile, names=None):
+    """Filter matchfile to contain shared IBD of target subjects"""
+    segments_count = 0
+    with open(outfile, 'w') as out:
+        i1, i2, c, bs, be, l = 1, 2, 0, 5, 6, 7
 
+        for line in line_generator(matchfiles):
+            items = line.split()
+            if (not names) or ((items[i1] in names) != (items[i2] in names)): # later one is a xor
+                out.write("{}\t{}\t{}\t{}\t{}\t{}\n".format(
+                    items[i1], items[i2], items[c], items[bs], items[be], items[l]
+                ))
+                segments_count += 1
+
+    return segments_count

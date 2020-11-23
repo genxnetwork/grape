@@ -24,17 +24,23 @@ def precision_recall(total, confusion_matrix, plot_name=None):
             if true_degree == key[0]:
                 if true_degree - 1 <= predicted_degree <= true_degree + 1:
                     true_positives += value
-                else:
-                    false_negatives += value
+                #else:
+                #    false_negatives += value
             if key[0] == -1 and true_degree == predicted_degree:
                 false_positives += value
 
         true_total = total[true_degree]
-        false_negatives = true_total - false_negatives - true_positives
+        false_negatives = true_total - true_positives
 
         print(f'td: {true_degree}\t tp: {true_positives}\t fn: {false_negatives}\t fp: {false_positives}')
-        data['Precision'].append(true_positives / (true_positives + false_positives))
-        data['Recall'].append(true_positives / (true_positives + false_negatives))
+        if true_positives + false_positives == 0:
+            data['Precision'].append(0.0)
+        else:
+            data['Precision'].append(true_positives / (true_positives + false_positives))
+        if true_positives + false_negatives == 0:
+            data['Recall'].append(0.0)
+        else:
+            data['Recall'].append(true_positives / (true_positives + false_negatives))
         data['True Degree'].append(true_degree)
 
     df = pd.DataFrame.from_dict(data)
@@ -79,7 +85,7 @@ def evaluate(result, fam, plot_name, pr_plot_name, only_client=False):
     iids, pedigree = read_pedigree(fn=fam)
     print('pedigree:')
     print(list(pedigree.edges)[:10])
-    _, kinship = get_kinship(pedigree)
+    kinship = get_kinship(pedigree)
     print('results is: ', result)
     inferred, clients = read_pipeline_output(result, only_client)
     print('inferred:')
@@ -129,7 +135,8 @@ def evaluate(result, fam, plot_name, pr_plot_name, only_client=False):
         print(f'{key}\t{confusion_matrix[key]}')
 
     compare(total, correct, plot_name)
-    #precision_recall(total, confusion_matrix, pr_plot_name)
+    precision_recall(total, confusion_matrix, pr_plot_name)
+
 
 if __name__ == '__main__':
-    evaluate(snakemake.input['rel'], snakemake.input['fam'], snakemake.output['accuracy'], 'pr', only_client=True)
+    evaluate(snakemake.input['rel'], snakemake.input['fam'], snakemake.output['accuracy'], snakemake.output['pr'], only_client=True)

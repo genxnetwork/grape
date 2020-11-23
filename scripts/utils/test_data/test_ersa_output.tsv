@@ -1,0 +1,7 @@
+Indv_1              	Indv_2              	Rel_est1  	Rel_est2  	     d_est	     N_seg	    Tot_cM
+first1_g5-b3-i1     	first1_g6-b6-i1     	Sibling   	Sibling   	         1	        90	  3,266.40
+first1_g2-b3-s1     	first1_g7-b6-i1     	2nd Cousin Once Removed	2nd Cousin Once Removed	         6	        15	    100.53
+first1_g4-b3-i1     	first1_g7-b6-i1     	1st Cousin	1st Cousin	         3	        43	    767.97
+first1_g2-b3-s1     	first1_g3-b3-i1     	Sibling   	Sibling   	         1	       267	  2,493.59
+first1_g2-b3-s1     	first1_g4-b3-i1     	1st Cousin	1st Cousin	         3	       145	  1,289.59
+first1_g1-b1-i1     	first1_g1-b4-i1     	NA        	NA        	        NA	         2	      6.25
