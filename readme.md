@@ -202,7 +202,7 @@ Please mind '-n' flag for dry-run
 <a name="commands"></a>
 ### Usefull commands
 
-Please see useful_commands.md.
+Please see [useful_commands.md](useful_commands.md).
 
 <a name="simulation"></a>
 ### Evaluation on Simulated Data
