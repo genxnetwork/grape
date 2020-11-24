@@ -2,14 +2,14 @@
 
 ## Table of contents
 
-1. [ Description. ] (#description)
-2. [ Installation. ] (#installation)
-3. [ Usage. ] (#usage)
-4. [ Usefull commands. ] (#commands)
-5. [ Evaluation on Simulated Data. ] (#simulation)
-6. [ Evaluation on Hapmap Data. ] (#hapmap)
+1. [ Description. ](#description)
+2. [ Installation. ](#installation)
+3. [ Usage. ](#usage)
+4. [ Usefull commands. ](#commands)
+5. [ Evaluation on Simulated Data. ](#simulation)
+6. [ Evaluation on Hapmap Data. ](#hapmap)
 
-<a name="description"></a>
+<a name="description"/>
 ### Description
 
 The project intends to implement best-practices of estimation of recent shared ancestry in a production-ready way.
