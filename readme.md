@@ -2,14 +2,8 @@
 
 ## Table of contents
 
-1. [ Description. ](#description)
-2. [ Installation. ](#installation)
-3. [ Usage. ](#usage)
-4. [ Usefull commands. ](#commands)
-5. [ Evaluation on Simulated Data. ](#simulation)
-6. [ Evaluation on Hapmap Data. ](#hapmap)
+[TOC]
 
-<a name="description"/>
 ### Description
 
 The project intends to implement best-practices of estimation of recent shared ancestry in a production-ready way.
@@ -33,7 +27,6 @@ Multi-core parallelization is highly utilized due to the ability to split input 
 7. Distant Relatives: ERSA with default params estimated on CEU founders.
 8. Merge: KING degree has priority over ersa degree for close relatives (degrees 1-3), otherwise, we take ERSA output.
 
-<a name="installation"></a>
 ### Installation
 
 Clone the repository:
@@ -58,7 +51,6 @@ To run it in
 (Optional) Compile Funnel from https://github.com/messwith/funnel with go 1.12+ and make. Then one can just use bin/funnel binary.  
 In this Funnel fork we simply added the ‘--privileged’ flag to all task docker commands because w/o this flag  singularity containers do not work inside docker.
 
-<a name="description"></a>
 ### Usage
 
 At the moment, pipeline supports 23andme (separate files) and VCF (single) as an input.
@@ -199,12 +191,10 @@ snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media 
 
 Please mind '-n' flag for dry-run
 
-<a name="commands"></a>
 ### Usefull commands
 
 Please see [useful_commands.md](useful_commands.md).
 
-<a name="simulation"></a>
 ### Evaluation on Simulated Data
 
 Pedigree simulation is performed on European populations from 1KG using the `pedsim` package.  
@@ -240,7 +230,6 @@ The pipeline shows good accuracy for degrees from 1 to 6.
 The results for degrees from 7 to 8 been improved by merging small IBD segments together if they are located near each other, thus,  
 it detects more than a half of pairs with those degrees of kinship.
 
-<a name="hapmap"></a>
 ### Evaluation on Hapmap Data
 
 Use command HapMap for preparing Hapmap CEU data. Options --input and --samples are not needed in this case.
