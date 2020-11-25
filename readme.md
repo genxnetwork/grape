@@ -1,22 +1,25 @@
-# Degree of kinship estimation pipeline
-
-## Table of contents
-
 [TOC]
+
+## Degree of kinship estimation pipeline
 
 ### Description
 
-The project intends to implement best-practices of estimation of recent shared ancestry in a production-ready way.
+This project is intended to implement best-practices of estimation of recent shared ancestry in a production-ready way.
 
 #### Overview
 
-The pipeline is implemented with the Snakemake framework. All used components are wrapped in Singularity containers or isolated in a Conda environment.
+The pipeline is implemented with the Snakemake workflow management system. All internal tools needed for execution are wrapped in Singularity containers or isolated in a Conda environment. We recommend using it with the provided Docker image, which already possesses all the needed dependencies.
 
-The visualisation of execution graph: [svg](https://bitbucket.org/genxglobal/genx-relatives-snakemake/raw/077f33cfdd421ae17b5c02a3a5f8eb34bd20e1fd/dag.svg).
+You should have the following datasets in place in order to run the pipeline:
 
-Multi-core parallelization is highly utilized due to the ability to split input data by each sample/chromosome.
+* input samples in one of the formats:
+  * 23andme (multiple) along with the samples desctiption (see bellow for details)
+  * VCF (single)
+* reference genome and associated files (genetic map, lift chain, sites, etc)
 
 #### Information about stages
+
+The main worklfow steps
 
 1. Preprocessing: we remove all multiallelic variants and indels.
 2. Liftover: we use picard tools and lift data from hg38 to hg37.
@@ -27,9 +30,13 @@ Multi-core parallelization is highly utilized due to the ability to split input 
 7. Distant Relatives: ERSA with default params estimated on CEU founders.
 8. Merge: KING degree has priority over ersa degree for close relatives (degrees 1-3), otherwise, we take ERSA output.
 
+The visualisation of execution graph: [svg](https://bitbucket.org/genxglobal/genx-relatives-snakemake/raw/077f33cfdd421ae17b5c02a3a5f8eb34bd20e1fd/dag.svg).
+
+Multi-core parallelization is highly utilized due to the ability to split input data by each sample/chromosome.
+
 ### Installation
 
-Clone the repository:
+1. Clone the repository:
 
 ```text
 
@@ -37,7 +44,7 @@ git clone git@bitbucket.org:genxglobal/genx-relatives-snakemake.git
 
 ```
 
-Download reference datasets (in our examples is `/media/ref`) folder using the following credentials:
+2. Download reference datasets (in our examples is `/media/ref`) folder using the following credentials:
 
 ```text
 
@@ -46,9 +53,7 @@ Password: b2mR4wQpJJdeKdsW
 
 ```
 
-To run it in 
-
-(Optional) Compile Funnel from https://github.com/messwith/funnel with go 1.12+ and make. Then one can just use bin/funnel binary.  
+3. (Optional) Compile Funnel from https://github.com/messwith/funnel with go 1.12+ and make. Then one can just use bin/funnel binary.  
 In this Funnel fork we simply added the ‘--privileged’ flag to all task docker commands because w/o this flag  singularity containers do not work inside docker.
 
 ### Usage
