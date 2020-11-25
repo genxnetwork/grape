@@ -13,11 +13,11 @@ The pipeline is implemented with the Snakemake workflow management system. All i
 You should have the following datasets in place in order to run the pipeline:
 
 * input samples in one of the formats:
-  * 23andme (multiple) along with the samples desctiption (see bellow for details)
-  * VCF (single)
+    * 23andme (multiple) along with the samples desctiption (see bellow for details)
+    * VCF (single)
 * reference genome and associated files (genetic map, lift chain, sites, etc)
 
-#### Information about stages
+#### Information about processing stages
 
 The main worklfow steps
 
@@ -32,7 +32,7 @@ The main worklfow steps
 
 The visualisation of execution graph: [svg](https://bitbucket.org/genxglobal/genx-relatives-snakemake/raw/077f33cfdd421ae17b5c02a3a5f8eb34bd20e1fd/dag.svg).
 
-Multi-core parallelization is highly utilized due to the ability to split input data by each sample/chromosome.
+Snakemake can utilize multi-cores (--cores flag) as well as an ability to split input data by each sample/chromosome for parallelization of execution.
 
 ### Installation
 
@@ -58,42 +58,86 @@ In this Funnel fork we simply added the ‘--privileged’ flag to all task dock
 
 ### Usage
 
-At the moment, pipeline supports 23andme (separate files) and VCF (single) as an input.
+At the moment, the pipeline supports 23andme (separate files) and VCF (single) as an input.
 
 #### Input data format: 23andme
 
-The information about samples for analysis should be provided as a path to a tab-separated text file (samples.tsv).
-
-Input data is expected in 23andMe format, one file for each sample:
+The information about samples for analysis should be provided in tab-separated text file (samples.tsv) containing sample name and path, one for each line:
 
 | name | path |
 | --- | --- |
 | 1 | input/1.txt |
 | 2 | input/2.txt | 
 
+Data is expecting in hg38 assembly.
+
 #### Input data format: vcf
 
-Another option is using gzipped vcf file format. If vcf file is in hg38 assembly, then you can just use `vcf` command 
-with the `--vcf-file <path>` option. If vcf file is in hg37, you should pass `--assembly hg37` to the `vcf` command.   
+Another option is to use a single gzipped vcf file format contained all samples. 
+If vcf file is in hg38 assembly, then you can just use `vcf` command with the `--vcf-file <path>` option. If vcf file is in hg37, you should pass `--assembly hg37` to the `vcf` command.   
 
 #### Console execution
 
-##### Pipeline checking
+##### Pipeline dry-run
 
-First, it is suggested to run pipeline in dry-run mode (w/o --real-run flag) to check if Snakemake correctly sees input files:
+Build the Docker container
 
 ```text
 
 docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
+
+```
+
+Run the pipeline in dry-run mode (w/o --real-run flag) to check if Snakemake correctly sees input files:
+
+```text
 
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
 launcher.py find --samples /media/ref/samples.tsv --input /media/ref/input --directory /media/pipeline_data/real-data
 
 ```
 
+After succesfull dry-run you should see something like this:
+
+```text
+
+...
+Job counts:
+        count   jobs
+        1       all
+        40      convert_23andme_to_plink
+        1       convert_imputed_to_plink
+        22      convert_to_hap
+        22      convert_to_ped
+        1       ersa
+        1       ersa_params
+        22      germline
+        22      imputation_filter
+        22      impute
+        22      index_and_split
+        22      interpolate
+        1       liftover
+        1       merge_ibd_segments
+        1       merge_imputation_filter
+        1       merge_king_ersa
+        1       merge_list
+        1       merge_matches
+        1       merge_to_vcf
+        22      phase
+        1       plink_clean_up
+        1       plink_filter
+        1       pre_imputation_check
+        1       prepare_vcf
+        1       recode_vcf
+        1       run_king
+        233
+This was a dry-run (flag -n). The order of jobs does not reflect the order of execution.
+
+```
+
 ##### How to run full pipeline
 
-Add --real-run flag after succesfull dry-run for the production run
+Add --real-run flag for the production run
 
 ```text
 
@@ -102,7 +146,7 @@ docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB 
 # if input data is in 23andme format
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
 launcher.py preprocess --samples /media/ref/samples.tsv --input /media/ref/input --directory /media/pipeline_data/real-data \
---real-run
+**--real-run**
 
 # if input data is in vcf format the execution is in two steps
 # first, prepare the input vcf file
