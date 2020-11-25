@@ -34,14 +34,14 @@ rule impute:
     output: "imputed/chr{chrom}.imputed.dose.vcf.gz"
     threads: 1
     singularity:
-        "docker://biocontainers/minimac4:v1.0.0-2-deb_cv1"
+        "docker://alexgenx/minimac4:stable"
     log:
         "logs/impute/minimac4-{chrom}.log"
     benchmark:
         "benchmarks/impute/minimac4-{chrom}.txt"
     shell:
         """
-        /usr/bin/minimac4 \
+        minimac4 \
         --refHaps {input.refHaps} \
         --haps phase/chr{wildcards.chrom}.phased.vcf.gz \
         --format GT,GP \
