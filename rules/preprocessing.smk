@@ -43,7 +43,7 @@ rule merge_to_vcf:
         set +e
         plink --merge-list {input} --output-chr 26 --export vcf bgz --out vcf/merged
         exitcode=$?
-
+        
         if [[ -f "vcf/merged.missnp" ]]; then
             for i in `cat {input}`;
                 do plink --bfile $i --exclude vcf/merged.missnp --make-bed --out $i\_clean;
@@ -52,7 +52,7 @@ rule merge_to_vcf:
             plink --merge-list {input} --output-chr 26  --snps-only --export vcf bgz --out vcf/merged
             exit 0
         fi
-        exit 1
+        exit $exitcode
         """
 
 rule recode_vcf:
