@@ -16,7 +16,7 @@ rule run_king:
         # TODO: add cores
         KING_DEGREE=4
 
-        king -b {params.input}.bed --cpus {threads} --ibdseg --degree $KING_DEGREE --prefix {params.out} | tee {log}
+        king -b {params.input}.bed --cpus {threads} --ibdseg --degree $KING_DEGREE --prefix {params.out} |& tee {log}
 
         # we need at least an empty file for the downstream analysis
         if [ ! -f "{output}" ]; then
@@ -37,7 +37,7 @@ rule index_and_split:
         "benchmarks/vcf/index_and_split-{chrom}.txt"
     shell:
         """
-        bcftools filter {input} -r {wildcards.chrom} -O z -o vcf/imputed_chr{wildcards.chrom}.vcf.gz | tee {log}
+        bcftools filter {input} -r {wildcards.chrom} -O z -o vcf/imputed_chr{wildcards.chrom}.vcf.gz |& tee {log}
         """
 
 rule convert_to_hap:
@@ -53,8 +53,8 @@ rule convert_to_hap:
         "benchmarks/vcf/convert_to_hap-{chrom}.txt"
     shell:
         """
-        bcftools convert vcf/imputed_chr{wildcards.chrom}.vcf.gz --hapsample hap/imputed_chr{wildcards.chrom} | tee {log}
-        gunzip -f hap/imputed_chr{wildcards.chrom}.hap.gz | tee -a {log}
+        bcftools convert vcf/imputed_chr{wildcards.chrom}.vcf.gz --hapsample hap/imputed_chr{wildcards.chrom} |& tee {log}
+        gunzip -f hap/imputed_chr{wildcards.chrom}.hap.gz |& tee -a {log}
         """
 
 rule convert_to_ped:
@@ -68,7 +68,7 @@ rule convert_to_ped:
         "benchmarks/ped/convert_to_ped-{chrom}.txt"
     shell:
         """
-        impute_to_ped hap/imputed_chr{wildcards.chrom}.hap hap/imputed_chr{wildcards.chrom}.sample ped/imputed_chr{wildcards.chrom} | tee {log}
+        impute_to_ped hap/imputed_chr{wildcards.chrom}.hap hap/imputed_chr{wildcards.chrom}.sample ped/imputed_chr{wildcards.chrom} |& tee {log}
         """
 
 # TODO: skip this step for now
@@ -99,7 +99,7 @@ rule interpolate:
         "benchmarks/cm/interpolate-{chrom}.txt"
     shell:
         """
-        plink --file ped/imputed_chr{wildcards.chrom} --cm-map {input.cmmap} {wildcards.chrom} --recode --out cm/chr{wildcards.chrom}.cm | tee {log}
+        plink --file ped/imputed_chr{wildcards.chrom} --cm-map {input.cmmap} {wildcards.chrom} --recode --out cm/chr{wildcards.chrom}.cm |& tee {log}
         """
 
 rule germline:
@@ -113,7 +113,7 @@ rule germline:
         "benchmarks/germline/germline-{chrom}.txt"
     shell:
         """
-        germline -input ped/imputed_chr{wildcards.chrom}.ped cm/chr{wildcards.chrom}.cm.map -homoz -min_m 2.5 -err_hom 2 -err_het 1 -output germline/chr{wildcards.chrom}.germline | tee {log}
+        germline -input ped/imputed_chr{wildcards.chrom}.ped cm/chr{wildcards.chrom}.cm.map -homoz -min_m 2.5 -err_hom 2 -err_het 1 -output germline/chr{wildcards.chrom}.germline |& tee {log}
         # TODO: germline returns some length in BP instead of cM - clean up is needed
         set +e
         grep -v MB germline/chr{wildcards.chrom}.germline.match > germline/chr{wildcards.chrom}.germline.match.clean && mv germline/chr{wildcards.chrom}.germline.match.clean germline/chr{wildcards.chrom}.germline.match
@@ -158,7 +158,7 @@ rule ersa:
         ERSA_L=2.0 # the average number of IBD segments in population
         ERSA_TH=1.5 # the average length of IBD segment
         ERSA_T=1.0 # min length of segment to be considered in segment aggregation
-        ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd} -o {output} | tee {log}
+        ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd} -o {output} |& tee {log}
         """
 
 

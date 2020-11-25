@@ -14,7 +14,7 @@ rule plink_filter:
     shell:
         """
         plink --vcf {input} --freqx --out plink/{params.out}
-        plink --vcf {input} --geno 0.5 --maf 1e-5 --mac 1 --hwe 0 --make-bed --keep-allele-order --out plink/{params.out} | tee {log}
+        plink --vcf {input} --geno 0.5 --maf 1e-5 --mac 1 --hwe 0 --make-bed --keep-allele-order --out plink/{params.out} |& tee {log}
         """
 
 rule pre_imputation_check:
@@ -53,10 +53,10 @@ rule plink_clean_up:
         "benchmarks/plink/plink_clean_up.txt"
     shell:
         """
-        plink --bfile {params.input}         --extract       plink/merged_filter.bim.chr     --make-bed --out plink/merged_extracted    | tee -a {log}
-        plink --bfile plink/merged_extracted --flip          plink/merged_filter.bim.flip    --make-bed --out plink/merged_flipped      | tee -a {log}
-        plink --bfile plink/merged_flipped   --update-chr    plink/merged_filter.bim.chr     --make-bed --out plink/merged_chroped      | tee -a {log}
-        plink --bfile plink/merged_chroped   --update-map    plink/merged_filter.bim.pos     --make-bed --out {params.out}              | tee -a {log}
+        plink --bfile {params.input}         --extract       plink/merged_filter.bim.chr     --make-bed --out plink/merged_extracted    |& tee -a {log}
+        plink --bfile plink/merged_extracted --flip          plink/merged_filter.bim.flip    --make-bed --out plink/merged_flipped      |& tee -a {log}
+        plink --bfile plink/merged_flipped   --update-chr    plink/merged_filter.bim.chr     --make-bed --out plink/merged_chroped      |& tee -a {log}
+        plink --bfile plink/merged_chroped   --update-map    plink/merged_filter.bim.pos     --make-bed --out {params.out}              |& tee -a {log}
         """
 
 rule prepare_vcf:
@@ -74,10 +74,10 @@ rule prepare_vcf:
         "benchmarks/plink/prepare_vcf.txt"
     shell:
         """
-        plink --bfile {params.input} --a1-allele plink/merged_filter.bim.force_allele --make-bed --out plink/merged_mapped_alleled | tee -a {log.plink}
-        plink --bfile plink/merged_mapped_alleled --keep-allele-order --output-chr M --export vcf bgz --out vcf/merged_mapped_clean | tee -a {log.vcf}
-        bcftools sort vcf/merged_mapped_clean.vcf.gz -O z -o vcf/merged_mapped_sorted.vcf.gz | tee -a {log.vcf}
+        plink --bfile {params.input} --a1-allele plink/merged_filter.bim.force_allele --make-bed --out plink/merged_mapped_alleled |& tee -a {log.plink}
+        plink --bfile plink/merged_mapped_alleled --keep-allele-order --output-chr M --export vcf bgz --out vcf/merged_mapped_clean |& tee -a {log.vcf}
+        bcftools sort vcf/merged_mapped_clean.vcf.gz -O z -o vcf/merged_mapped_sorted.vcf.gz |& tee -a {log.vcf}
         # need to check output for the potential issues
-        bcftools norm --check-ref e -f {GRCh37_fasta} vcf/merged_mapped_sorted.vcf.gz -O u -o /dev/null | tee -a {log.vcf}
+        bcftools norm --check-ref e -f {GRCh37_fasta} vcf/merged_mapped_sorted.vcf.gz -O u -o /dev/null |& tee -a {log.vcf}
         bcftools index -f vcf/merged_mapped_sorted.vcf.gz | tee -a {log.vcf}
         """

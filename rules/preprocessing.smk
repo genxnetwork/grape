@@ -14,7 +14,7 @@ rule convert_23andme_to_plink:
     shell:
         """
         # by default plink write output in the same --out option. need to use tee to redirect
-        plink --23file {input} {params} {params} i --output-chr M --make-bed --out plink/{params} | tee {log}
+        plink --23file {input} {params} {params} i --output-chr M --make-bed --out plink/{params} |& tee {log}
         """
 
 rule merge_list:
@@ -36,8 +36,6 @@ rule merge_to_vcf:
         #merge_list      = "plink/merge_clean.list"
     conda:
         "../envs/plink.yaml"
-    log:
-        "logs/plink/merge_to_vcf.log"
     benchmark:
         "benchmarks/plink/merge_to_vcf.txt"
     shell:
@@ -68,9 +66,9 @@ rule liftover:
         vcf=rules.recode_vcf.output['vcf']
     output:
         vcf="vcf/merged_lifted.vcf"
-
+    log: 'logs/liftover/merged_lifted.log'
     singularity: "docker://alexgenx/picard:latest"
     shell:
         """      
-            java -jar /picard/picard.jar LiftoverVcf I={input.vcf} O={output.vcf} CHAIN={lift_chain} REJECT=vcf/rejected.vcf R={GRCh37_fasta}
+            java -jar /picard/picard.jar LiftoverVcf I={input.vcf} O={output.vcf} CHAIN={lift_chain} REJECT=vcf/rejected.vcf R={GRCh37_fasta} |& tee {log}
         """

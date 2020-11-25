@@ -1,6 +1,6 @@
 CHROMOSOMES     = [str(i) for i in range(1, 23)]
-PLINK_FORMATS   = ['bed', 'bim', 'fam', 'log']
-PLINK_FORMATS_EXT   = ['bed', 'bim', 'fam', 'log', 'nosex']
+PLINK_FORMATS   = ['bed', 'bim', 'fam', ]
+PLINK_FORMATS_EXT   = ['bed', 'bim', 'fam', 'nosex']
 
 
 rule phase:
@@ -24,7 +24,7 @@ rule phase:
         --geneticMapFile {GENETIC_MAP} \
         --chrom {wildcards.chrom} \
         --vcfOutFormat z \
-        --outPrefix phase/chr{wildcards.chrom}.phased | tee {log}
+        --outPrefix phase/chr{wildcards.chrom}.phased |& tee {log}
         """
 
 rule impute:
@@ -46,7 +46,7 @@ rule impute:
         --haps phase/chr{wildcards.chrom}.phased.vcf.gz \
         --format GT,GP \
         --prefix imputed/chr{wildcards.chrom}.imputed \
-        --cpus {threads} | tee {log}
+        --cpus {threads} |& tee {log}
         """
 
 
@@ -65,7 +65,7 @@ rule imputation_filter:
         """
         FILTER="'R2>0.3 & strlen(REF)=1 & strlen(ALT)=1'"
 
-        bcftools view -i 'R2>0.3 & strlen(REF)=1 & strlen(ALT)=1' imputed/chr{wildcards.chrom}.imputed.dose.vcf.gz -v snps -m 2 -M 2 -O z -o imputed/chr{wildcards.chrom}.imputed.dose.pass.vcf.gz | tee {log}
+        bcftools view -i 'R2>0.3 & strlen(REF)=1 & strlen(ALT)=1' imputed/chr{wildcards.chrom}.imputed.dose.vcf.gz -v snps -m 2 -M 2 -O z -o imputed/chr{wildcards.chrom}.imputed.dose.pass.vcf.gz |& tee {log}
         """
 
 
@@ -99,14 +99,14 @@ rule merge_imputation_filter:
             fi
         done
 
-        bcftools concat -f {params.list} -O z -o {output} | tee -a {log}
-        bcftools index -f {output} | tee -a {log}
+        bcftools concat -f {params.list} -O z -o {output} |& tee -a {log}
+        bcftools index -f {output} |& tee -a {log}
 
         # check if there is a background data and merge it
         if [ -f "background/merged_imputed.vcf.gz" && {params.mode} = "client" ]; then
             mv {output} {output}.client
-            bcftools merge --force-samples background/merged_imputed.vcf.gz {output}.client -O z -o {output} | tee -a {log}
-            bcftools index -f {output} | tee -a {log}
+            bcftools merge --force-samples background/merged_imputed.vcf.gz {output}.client -O z -o {output} |& tee -a {log}
+            bcftools index -f {output} |& tee -a {log}
         fi
         """
 
@@ -123,7 +123,7 @@ rule convert_imputed_to_plink:
         "benchmarks/plink/convert_imputed_to_plink.txt"
     shell:
         """
-        plink --vcf {input} --make-bed --out {params.out} | tee {log}
+        plink --vcf {input} --make-bed --out {params.out} |& tee {log}
         """
 
 # no need it bc it was done earlier in merge_imputation_filter
@@ -143,5 +143,5 @@ rule merge_convert_imputed_to_plink:
         """
         # please mind a merge step in merge_imputation_filter for germline
         plink --vcf {input} --make-bed --out {params.out} | tee {log}
-        plink --bfile {params.background} --bmerge {params.out} --make-bed --out plink/merged_imputed | tee {log}
+        plink --bfile {params.background} --bmerge {params.out} --make-bed --out plink/merged_imputed |& tee {log}
         """

@@ -31,8 +31,8 @@ print(os.getcwd())
 print(os.listdir('.'))
 
 CHROMOSOMES     = [str(i) for i in range(1, 23)]
-PLINK_FORMATS   = ['bed', 'bim', 'fam', 'log']
-PLINK_FORMATS_EXT   = ['bed', 'bim', 'fam', 'log', 'nosex']
+PLINK_FORMATS   = ['bed', 'bim', 'fam']
+PLINK_FORMATS_EXT   = ['bed', 'bim', 'fam', 'nosex']
 
 
 # include: "rules/report.rule"
