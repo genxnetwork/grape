@@ -47,7 +47,7 @@ rule intersect:
 rule merge_background:
     input:
         data=expand("pedsim/phased/chr{chrom}.phased.vcf.gz", chrom=CHROMOSOMES),
-        eu="ceph_unrelated_all.tsv"
+        eu=config['sim_samples_file']
     output:
         "pedsim/phased/background.vcf.gz"
     params:

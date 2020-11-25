@@ -108,6 +108,11 @@ def get_parser_args():
         default="params/Relatives.def",
         help="Snakemake YAML config file path")
 
+    parser.add_argument(
+        "--sim-samples-file",
+        default="ceph_unrelated_all.tsv",
+        help="List of samples from 1000genomes for pedsim to use as founders. You can choose only from 'ceph_unrelated_all.tsv', 'all.tsv'")
+
     # --singularity-prefix /tmp --singularity-args='-B /media:/media -B /tmp:/tmp -W /tmp' --conda-prefix /tmp
     parser.add_argument(
         '--singularity-prefix',
@@ -170,7 +175,7 @@ if __name__ == '__main__':
         copy_input(args.input, args.directory, args.samples)
 
     if args.command == 'simulate':
-        copy_input('workflows/pedsim/params', args.directory, 'workflows/pedsim/ceph_unrelated_all.tsv')
+        copy_input('workflows/pedsim/params', args.directory, os.path.join('workflows/pedsim/', args.sim_samples_file))
         # for some reason launching with docker from command line
         # sets root directory for 'configfile' directive in Snakefile as snakemake.workdir
         # therefore config.yaml must be in snakemake.workdir
@@ -209,6 +214,7 @@ if __name__ == '__main__':
 
     config_dict = {'mode': 'client'} if args.client is not None else {}
     config_dict['sim_params_file'] = args.sim_params_file
+    config_dict['sim_samples_file'] = args.sim_samples_file
     config_dict['assembly'] = args.assembly
 
     if not snakemake.snakemake(
