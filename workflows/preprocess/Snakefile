@@ -9,8 +9,8 @@ SAMPLES_PATH    = SAMPLES.path.values.tolist()
 SAMPLES_NAME    = SAMPLES.name.values.tolist()
 
 CHROMOSOMES     = [str(i) for i in range(1, 23)]
-PLINK_FORMATS   = ['bed', 'bim', 'fam', 'log']
-PLINK_FORMATS_EXT   = ['bed', 'bim', 'fam', 'log', 'nosex']
+PLINK_FORMATS   = ['bed', 'bim', 'fam']
+PLINK_FORMATS_EXT   = ['bed', 'bim', 'fam', 'nosex']
 
 REF_DIR         = config["reference"]["ref_dir"]
 lift_chain      = join(REF_DIR, config["reference"]["lift_chain"])
