@@ -30,7 +30,6 @@ rule merge_list:
 rule merge_to_vcf:
     input: rules.merge_list.output
     output:
-        plink_clean     = expand("plink/{i}_clean.{ext}", i=SAMPLES_NAME, ext=PLINK_FORMATS),
         plink_merged    = expand("vcf/merged.{ext}", ext=PLINK_FORMATS),
         vcf             = "vcf/merged.vcf.gz"
         #merge_list      = "plink/merge_clean.list"
