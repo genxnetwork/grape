@@ -32,7 +32,15 @@ The main worklfow steps
 
 The visualisation of execution graph: [svg](https://bitbucket.org/genxglobal/genx-relatives-snakemake/raw/077f33cfdd421ae17b5c02a3a5f8eb34bd20e1fd/dag.svg).
 
-Snakemake can utilize multi-cores (--cores flag) as well as an ability to split input data by each sample/chromosome for parallelization of execution.
+#### Resource allocation
+
+Snakemake can utilize multi-cores (--cores flag) as well as an ability to split input data by each sample/chromosome for parallelization of execution. It works the same with 'launcher.py' and equal to TOTAL_CPU-1 by default.
+
+Please also consider '-m' flag during 'docker build' to constrain the memory available to a container.
+
+#### Perfomance
+
+We tested it on 40 samples on 8 cores with 8GB RAM and the whole run (copying reference data and analysis) took ~2 hours.
 
 ### Installation
 
@@ -165,7 +173,7 @@ launcher.py find --samples /media/ref/samples.tsv --input /media/ref/input --dir
 
 #### Execution by scheduler
 
-The pipeline can be executed using lightweight scheduler [Funnel](https://ohsu-comp-bio.github.io/funnel/), which implements [Task Execution Schema](https://github.com/ga4gh/task-execution-schemas) and developed by [GA4GH](https://github.com/ga4gh/wiki/wiki).  
+The pipeline can be executed using a lightweight scheduler [Funnel](https://ohsu-comp-bio.github.io/funnel/), which implements [Task Execution Schema](https://github.com/ga4gh/task-execution-schemas) and developed by [GA4GH](https://github.com/ga4gh/wiki/wiki).  
   
 During execution, incoming data for analysis can be obtained in several ways: locally, FTP, HTTPS, S3, Google, etc.  
 The resulting files can be uploaded in the same ways. It is possible to add another feature such as writing to the database, sending to the REST service.  
@@ -201,29 +209,29 @@ The main idea of using Docker containers that you no need configure your executi
 
 Assuming that you use Ubuntu 18 the following steps are needed to run the pipeline:
 
-1. Docker
+    1. Docker
 
 https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-18-04
 
 It is recomended to move docker storage from /var to some other partition with enought free space:
 https://www.guguweb.com/2019/02/07/how-to-move-docker-data-directory-to-another-location-on-ubuntu/
 
-2. Singularity
+    2. Singularity
 
 You need to compile at least version 3.x from https://github.com/hpcng/singularity/releases/
 Please note that you need Go compiler in order to do so https://golang.org/dl/
 
-3. Conda
+    3. Conda
 
 Snakemake pipeline can use Singularity containers (same as Docker but working from user space) as well as Conda wrapped tools for the virtualization of the execution steps.
 
 https://www.digitalocean.com/community/tutorials/how-to-install-the-anaconda-python-distribution-on-ubuntu-18-04
 
-4. Snakemake
+    4. Snakemake
 
 https://snakemake.readthedocs.io/en/stable/getting_started/installation.html
 
-5. Setup env vars for temp / cache directories for Singularity, ex:
+    5. Setup env vars for temp / cache directories for Singularity, ex:
 
 export SINGULARITY_TMPDIR=/media/tmp
 export SINGULARITY_CACHEDIR=/media/tmp
@@ -235,7 +243,9 @@ You can also pass this values using Snakemake:
 6. Launch
 
 ```text
+
 snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media --singularity-args="-B /media:/media" -p all -n
+
 ```
 
 Please mind '-n' flag for dry-run
@@ -255,6 +265,10 @@ CEU data consists of trios and we select no more than one member of each trio as
 Visualization of structure of simulated pedigree is given below:
 
 ![pedigree](https://bitbucket.org/genxglobal/genx-relatives-snakemake/downloads/pedsim.png)
+
+#### Define families for the simulation
+
+Description of the .def files are provided on the [ped-sim](https://github.com/williamslab/ped-sim#def-file) GitHub page
 
 #### How to run simulation
 
@@ -298,6 +312,13 @@ launcher.py find --directory /media/pipeline_data/hapmap --real-run
 
 HapMap has information only about close relatives presented. The pipeline determines them with 100% accuracy.
 
+#### Tools comparison
+
+##### Baseline
+
+##### DRUID
+
+##### RaPID
 
 ### Credits
 

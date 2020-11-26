@@ -4,68 +4,95 @@
 
 ```text
 
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
+launcher.py find --samples /media/ref/samples.tsv --input /media/ref/input --directory /media/pipeline_data/real-data
+
 ```
 
 ### Snakemake launch
 
-    snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media --singularity-args="-B /media:/media" -p all
+```text
+
+snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media --singularity-args="-B /media:/media" -p all
+
+```
 
 ### Visualization of the DAG
 
+```text
+
+
     snakemake --dag all | dot -Tsvg > dag.svg
 
-```shell script
+```
+
+```text
+
 snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media --singularity-args="-B /media:/media" -p all
+
 ```
 
 ### Force-launch single rule
 
-```shell script
+```text
+
 snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media --singularity-args="-B /media:/media" -R somerule --until somerule
+
 ```
 
 ### Simulate data
 
-```shell script
+```text
+
 snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media --singularity-args="-B /media:/media" -p -s workflows/pedsim/Snakefile
+
 ```
 
 ### Build snakemake docker container
 
-```shell script
+```text
+
 docker build -t alexgenx/snakemake:latest -f containers/snakemake/Dockerfile -m 4GB .
 docker push alexgenx/snakemake:latest
+
 ```
 
 ### Launch using docker container
 
-```shell script
+```text
+
 cp -r input /media/pipeline_data/atlas40/
 cp samples.tsv /media/pipeline_data/atlas40/
 
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro alexgenx/snakemake:latest /bin/bash
+
 ```
 
 # this is inside docker container
 
-```shell script
+```text
+
 snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media/singulariry_cache --singularity-args="-B /media:/media" -p --configfile config.yaml --directory /media/pipeline_data/atlas40 -n
+
 ```
 
 ### How do I trigger re-runs for rules with updated input files
 
-```shell script
+```text
+
 snakemake -n -R `snakemake --list-input-changes`
+
 ```
 
 ### Clean-up Snakemake working dir
 
 If you want to use the same working directory for different input files it is better to clean-up it first
 
-```shell script
-snakemake --delete-all-outputs --cores 1
-```
+```text
 
+snakemake --delete-all-outputs --cores 1
+
+```
 
 ### References
 
