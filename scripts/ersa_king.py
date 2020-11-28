@@ -44,7 +44,11 @@ def ersa_king(rel_ersa, rel_king, segments_graph, outname):
         fid1, iid1 = sample_id.split('_')
         if sample_id in rel_ersa:
             for i, n in enumerate(rel_ersa.neighbors(sample_id)):
+
                 fid2, iid2 = n.split('_')
+                if fid1 == fid2 and iid1 == iid2:
+                    # we do not write relative degree of samples with themselves
+                    continue
                 segs = segments_graph.edges.get((sample_id, n), {})
                 # for duplicate values both in target and background
                 fid2 = fid2.replace('2:', '')
