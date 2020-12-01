@@ -37,58 +37,69 @@ rule index_and_split:
         "benchmarks/vcf/index_and_split-{chrom}.txt"
     shell:
         """
-        bcftools filter {input} -r {wildcards.chrom} -O z -o vcf/imputed_chr{wildcards.chrom}.vcf.gz |& tee {log}
+        bcftools filter {input} -r {wildcards.chrom} | bcftools norm --rm-dup none -O z -o vcf/imputed_chr{wildcards.chrom}.vcf.gz |& tee {log}
         """
 
-rule convert_to_hap:
-    input: rules.index_and_split.output
-    output: "hap/imputed_chr{chrom}.hap"
+
+rule vcf_to_ped:
+    # --a2-allele <uncompressed VCF filename> 4 3 '#'
+    input:
+        vcf=rules.index_and_split.output
+    output:
+        ped="ped/imputed_chr{chrom}.ped"
+    params:
+        zarr="zarr/imputed_chr{chrom}.zarr"
     conda:
-        "../envs/bcftools.yaml"
-    # TODO: because "The option is currently used only for the compression of the output stream"
-    # threads: workflow.cores
+        "../envs/vcf_to_ped.yaml"
     log:
-        "logs/vcf/convert_to_hap-{chrom}.log"
+        "logs/ped/vcf_to_ped-{chrom}.log"
     benchmark:
-        "benchmarks/vcf/convert_to_hap-{chrom}.txt"
-    shell:
-        """
-        bcftools convert vcf/imputed_chr{wildcards.chrom}.vcf.gz --hapsample hap/imputed_chr{wildcards.chrom} |& tee {log}
-        gunzip -f hap/imputed_chr{wildcards.chrom}.hap.gz |& tee -a {log}
-        """
+        "benchmarks/vcf/vcf_to_ped-{chrom}.txt"
+    script:
+        "../scripts/vcf_to_ped.py"
 
-rule convert_to_ped:
-    input: rules.convert_to_hap.output
-    output: "ped/imputed_chr{chrom}.ped"
+
+'''
+rule vcf_to_bed:
+    input: rules.index_and_split.output
+    output: expand("bed/imputed_chr{{chrom}}.{ext}", ext=PLINK_FORMATS)
+    params:
+        out="bed/imputed_chr{chrom}",
+        vcf="vcf/temp_imputed_chr{chrom}.vcf"
     singularity:
-        "docker://alexgenx/germline:stable"
+        "docker://alexgenx/plink2:stable"
     log:
-        "logs/ped/convert_to_ped-{chrom}.log"
+        "logs/vcf/vcf_to_ped-{chrom}.log"
     benchmark:
-        "benchmarks/ped/convert_to_ped-{chrom}.txt"
+        "benchmarks/vcf/vcf_to_ped-{chrom}.txt"
     shell:
         """
-        impute_to_ped hap/imputed_chr{wildcards.chrom}.hap hap/imputed_chr{wildcards.chrom}.sample ped/imputed_chr{wildcards.chrom} |& tee {log}
+        zcat {input} > {params.vcf}
+        plink2 --vcf {input} --ref-allele {params.vcf} 4 3 '#' --make-bed --out {params.out} |& tee {log}
+        rm {params.vcf}
         """
 
-# TODO: skip this step for now
-rule split_map:
-    input: rules.convert_to_ped.output
-    output: expand("chr{i}.map", i=CHROMOSOMES)
+rule bed_to_ped:
+    input: rules.vcf_to_bed.output
+    output: "ped/imputed_chr{chrom}.ped"
+    params:
+        input="bed/imputed_chr{chrom}",
+        out="ped/imputed_chr{chrom}"
+    conda:
+        "../envs/plink.yaml"
+    log:
+        "logs/bed/bed_to_ped-{chrom}.log"
+    benchmark:
+        "benchmarks/bed/bed_to_ped-{chrom}.txt"
     shell:
         """
-        echo parallel -k -j 100% \
-        grep ^{{}} {{}}.map '>' chr{{}}.map \
-        ::: `seq 1 22`
-
-        for i in {output}; do
-            touch $i;
-        done
+        plink --bfile {params.input} --keep-allele-order --recode --out {params.out} |& tee {log}
         """
+'''
 
 rule interpolate:
     input:
-        rules.convert_to_ped.output,
+        rules.vcf_to_ped.output,
         cmmap=cmmap
     output: "cm/chr{chrom}.cm.ped"
     conda:
@@ -99,7 +110,7 @@ rule interpolate:
         "benchmarks/cm/interpolate-{chrom}.txt"
     shell:
         """
-        plink --file ped/imputed_chr{wildcards.chrom} --cm-map {input.cmmap} {wildcards.chrom} --recode --out cm/chr{wildcards.chrom}.cm |& tee {log}
+        plink --file ped/imputed_chr{wildcards.chrom} --keep-allele-order --cm-map {input.cmmap} {wildcards.chrom} --recode --out cm/chr{wildcards.chrom}.cm |& tee {log}
         """
 
 rule germline:

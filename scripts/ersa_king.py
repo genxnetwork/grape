@@ -41,10 +41,11 @@ def ersa_king(rel_ersa, rel_king, segments_graph, outname):
     w.write(
         "Target_FID1\tTarget_IID1\tBackground_FID2\tBackground_IID2\tRel_est1\tRel_est2\tDegree\tKing_est\tTotal_seg_num\tTotal_seg_len\n")
     for sample_id in segments_graph:
+        # print('sample_id 1 is: ', sample_id)
         fid1, iid1 = sample_id.split('_')
         if sample_id in rel_ersa:
             for i, n in enumerate(rel_ersa.neighbors(sample_id)):
-
+                # print('rel-ersa is ', n)
                 fid2, iid2 = n.split('_')
                 if fid1 == fid2 and iid1 == iid2:
                     # we do not write relative degree of samples with themselves
@@ -55,7 +56,7 @@ def ersa_king(rel_ersa, rel_king, segments_graph, outname):
                 dc = rel_ersa[sample_id][n]
                 dst = dc.get('d_est', 'NA')
                 dst_k = dc.get('King_est', "NA")
-                #print(iid1, iid2, dst, dst_k)
+                # print(iid1, iid2, dst, dst_k)
                 if dst_k != 'NA':
                     if dst_k == 'PO':
                         dst = 1
@@ -91,9 +92,9 @@ def ersa_king(rel_ersa, rel_king, segments_graph, outname):
 
 if __name__ == '__main__':
     rel_king = read_king(snakemake.input['king'][0])
-    print(rel_king.nodes)
-    print()
-    print(rel_king.edges)
+    # print(rel_king.nodes)
+    # print()
+    # print(rel_king.edges)
     degrees = {}
     for (u, v, deg) in rel_king.edges.data('degree', default='NA'):
         degrees[deg] = degrees.get(deg, 0) + 1
@@ -102,4 +103,5 @@ if __name__ == '__main__':
     segments_graph = read_segments_graph(snakemake.input['germline'])
     rel_ersa = read_ersa(snakemake.input['ersa'][0])
     ersa_king(rel_ersa, rel_king, segments_graph, snakemake.output[0])
+    print('merged king and ersa output')
 

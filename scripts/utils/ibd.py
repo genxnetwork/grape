@@ -113,7 +113,7 @@ def read_pedsim_segments(path: str) -> dict:
 
 
 def read_germline_segments(path):
-    # first1_g6-b4-s1 first1_g6-b4-s1	first1_g7-b4-i1 first1_g7-b4-i1	1	752721 2352280	1:752721_A_G 1:2352280_G_A	896	2.643	cM	0	0	0
+    # 0 first1_g2-b1-i1       0 first1_g2-b2-i1       1       102586656 120506032     1:102586656:T:C 1:120506032:G:A 4416019.386  cM      0       0       0
     germline_names = [
         'fid_iid1',
         'fid_iid2',
@@ -132,7 +132,7 @@ def read_germline_segments(path):
     segments = {}
     for i, row in data[data.len_units == 'cM'].iterrows():
 
-        id1 = row['fid_iid1'].split()[0]
+        id1 = row['fid_iid1'].split()[1]
         id2 = row['fid_iid2'].split()[1]
 
         bp_start, bp_end = [int(b) for b in row['start_end_bp'].split()]
