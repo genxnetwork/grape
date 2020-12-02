@@ -13,8 +13,7 @@ rule run_king:
         "benchmarks/king/run_king.txt"
     shell:
         """
-        # TODO: add cores
-        KING_DEGREE=4
+        KING_DEGREE=3
 
         king -b {params.input}.bed --cpus {threads} --ibdseg --degree $KING_DEGREE --prefix {params.out} |& tee {log}
 
