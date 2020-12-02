@@ -3,7 +3,8 @@ rule run_king:
     output: "king/merged_imputed_king.seg"
     params:
         input = "plink/merged_imputed",
-        out = "king/merged_imputed_king"
+        out = "king/merged_imputed_king",
+        kin = "king/merged_imputed_kinship"
     threads: workflow.cores
     singularity:
         "docker://lifebitai/king:latest"
@@ -13,10 +14,10 @@ rule run_king:
         "benchmarks/king/run_king.txt"
     shell:
         """
-        # TODO: add cores
-        KING_DEGREE=4
+        KING_DEGREE=3
 
         king -b {params.input}.bed --cpus {threads} --ibdseg --degree $KING_DEGREE --prefix {params.out} |& tee {log}
+        king -b {params.input}.bed --cpus {threads} --kinship --degree $KING_DEGREE --prefix {params.kin} |& tee -a {log}
 
         # we need at least an empty file for the downstream analysis
         if [ ! -f "{output}" ]; then

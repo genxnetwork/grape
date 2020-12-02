@@ -16,6 +16,7 @@ assembly = config['assembly']
 rule all:
     input:
         vcf="vcf/merged_lifted.vcf",
+        stats="stats/lifted_vcf.txt"
         # rules.report_benchmark_summary.output
 
 
@@ -40,3 +41,19 @@ rule liftover:
                 cp {input.vcf} {output.vcf}
             fi
         """
+
+rule vcf_stats:
+    input:
+        vcf=rules.liftover.output['vcf']
+    output:
+        stats="stats/lifted_vcf.txt"
+    params:
+        samples="vcf/merged_lifted.vcf.samples"
+    conda:
+        "../../envs/bcftools.yaml"
+    shell:
+         """
+            bcftools query --list-samples {input.vcf} > {params.samples}
+            bcftools stats -S {params.samples} {input.vcf} > {output.stats} 
+         """
+
