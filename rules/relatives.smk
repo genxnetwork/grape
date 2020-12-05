@@ -47,7 +47,8 @@ rule vcf_to_ped:
     input:
         vcf=rules.index_and_split.output
     output:
-        ped="ped/imputed_chr{chrom}.ped"
+        ped="ped/imputed_chr{chrom}.ped",
+        map_file="ped/imputed_chr{chrom}.map"
     params:
         zarr="zarr/imputed_chr{chrom}.zarr"
     conda:
