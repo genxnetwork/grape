@@ -1,6 +1,38 @@
 
+rule vcf_stats:
+    input:
+        vcf="vcf/merged_lifted.vcf"
+    output:
+        stats="stats/lifted_vcf.txt",
+        psc="stats/lifted_vcf.psc"
+    params:
+        samples="vcf/merged_lifted.vcf.samples"
+    conda:
+        "../envs/bcftools.yaml"
+    shell:
+        """
+            bcftools query --list-samples {input.vcf} > {params.samples}
+            bcftools stats -S {params.samples} {input.vcf} > {output.stats}
+            # PSC means per-sample counts 
+            cat {output.stats} | grep "^PSC" > {output.psc}  
+        """
+
+rule select_bad_samples:
+    input:
+        psc=rules.vcf_stats.output.psc
+    output:
+        bad_samples="vcf/lifted_vcf.badsamples"
+    params:
+        samples="vcf/merged_lifted.vcf.samples"
+    conda:
+        "../envs/evaluation.yaml"
+    script:
+        "../scripts/select_bad_samples.py"
+
 rule plink_filter:
-    input: "vcf/merged_lifted.vcf"
+    input:
+        vcf="vcf/merged_lifted.vcf",
+        bad_samples=rules.select_bad_samples.output.bad_samples
     output: expand("plink/merged_filter.{ext}", ext=PLINK_FORMATS)
     conda:
         "../envs/plink.yaml"
@@ -13,8 +45,8 @@ rule plink_filter:
         "benchmarks/plink/plink_filter.txt"
     shell:
         """
-        plink --vcf {input} --freqx --out plink/{params.out}
-        plink --vcf {input} --geno 0.5 --maf 1e-5 --mac 1 --hwe 0 --make-bed --keep-allele-order --out plink/{params.out} |& tee {log}
+        plink --vcf {input.vcf} --freqx --out plink/{params.out}
+        plink --vcf {input.vcf} --remove {input.bad_samples} --geno 0.5 --maf 1e-5 --mac 1 --hwe 0 --make-bed --keep-allele-order --out plink/{params.out} |& tee {log}
         """
 
 rule pre_imputation_check:
