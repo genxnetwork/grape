@@ -5,7 +5,7 @@ import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
 
-from utils.relatives import get_kinship, read_pedigree, read_pipeline_output
+from utils.relatives import get_kinship, read_pedigree, relatives_to_graph
 
 
 def precision_recall(total, confusion_matrix, plot_name=None):
@@ -84,15 +84,15 @@ def evaluate(result, fam, plot_name, pr_plot_name, only_client=False):
     """If only_client=True, all pairwise relatives between client are evaluated"""
     iids, pedigree = read_pedigree(fn=fam)
     print('pedigree:')
-    print(list(pedigree.edges)[:10])
+    print(list(pedigree.edges)[:5])
     kinship = get_kinship(pedigree)
     print('results is: ', result)
-    inferred, clients = read_pipeline_output(result, only_client)
+    inferred, clients = relatives_to_graph(result, only_client)
     print('inferred:')
-    print(len(inferred), list(inferred.edges)[:10])
+    print(len(inferred), list(inferred.edges)[:5])
     print('*'*100)
     print('kinship:')
-    print(len(kinship), list(kinship.edges)[:10])
+    print(len(kinship), list(kinship.edges)[:5])
     confusion_matrix = {}
     total = {}
     correct = {}
