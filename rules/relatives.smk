@@ -193,4 +193,5 @@ rule merge_king_ersa:
         kinship0=rules.run_king.output['kinship0']
     output: "results/relatives.tsv"
     conda: "../envs/evaluation.yaml"
+    log: "logs/merge/merge-king-ersa.log"
     script: "../scripts/merge_king_ersa.py"

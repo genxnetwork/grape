@@ -1,6 +1,7 @@
 import pandas
 import numpy
 import os
+import sys
 
 
 def is_non_zero_file(fpath):
@@ -65,6 +66,7 @@ def read_kinship(kinship_path, kinship0_path):
         within.loc[:, 'id2'] = within.FID + '_' + within.ID2
         within.rename({'Kinship': 'kinship'}, axis=1, inplace=True)
         within = within.loc[:, ['id1', 'id2', 'kinship']].set_index(['id1', 'id2'])
+        print(f'loaded {within.shape[0]} pairs from within-families kinship estimatino results')
 
     # FID1    ID1     FID2    ID2     N_SNP   HetHet  IBS0    Kinship
     if is_non_zero_file(kinship0_path):
@@ -73,6 +75,7 @@ def read_kinship(kinship_path, kinship0_path):
         across.loc[:, 'id2'] = across.FID2 + '_' + across.ID2
         across.rename({'Kinship': 'kinship'}, axis=1, inplace=True)
         across = across.loc[:, ['id1', 'id2', 'kinship']].set_index(['id1', 'id2'])
+        print(f'loaded {within.shape[0]} pairs from across-families kinship estimatino results')
 
     if within is None and across is None:
         return None
@@ -81,7 +84,7 @@ def read_kinship(kinship_path, kinship0_path):
     elif within is not None and across is None:
         return within
     else:
-        pandas.concat([within, across], axis=0)
+        return pandas.concat([within, across], axis=0)
 
 
 def read_ersa(ersa_path):
@@ -123,16 +126,20 @@ if __name__ == '__main__':
     kinship0_path = snakemake.input['kinship0']
     ersa_path = snakemake.input['ersa']
 
+
     ibd = read_germline(ibd_path)
     king = read_king(king_path)
     kinship = read_kinship(kinship_path, kinship0_path)
     ersa = read_ersa(ersa_path)
 
     if kinship is not None:
+        print(f'kinship is not none')
+        print(kinship.columns)
         relatives = ibd.merge(king, how='outer', left_index=True, right_index=True).\
             merge(kinship, how='outer', left_index=True, right_index=True).\
             merge(ersa, how='outer', left_index=True, right_index=True)
     else:
+        print('kinship is none')
         relatives = ibd.merge(king, how='outer', left_index=True, right_index=True).\
             merge(ersa, how='outer', left_index=True, right_index=True)
 
