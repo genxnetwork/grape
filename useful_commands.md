@@ -72,7 +72,7 @@ docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localti
 
 ```text
 
-snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media/singulariry_cache --singularity-args="-B /media:/media" -p --configfile config.yaml --directory /media/pipeline_data/atlas40 -n
+snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media/singularity_cache --singularity-args="-B /media:/media" -p --configfile config.yaml --directory /media/pipeline_data/atlas40 -n
 
 ```
 
