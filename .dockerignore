@@ -15,4 +15,5 @@ phased
 references
 results
 vcf
+test_data
 .snakemake

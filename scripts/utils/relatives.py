@@ -3,6 +3,7 @@ import glob
 
 import shutil
 import networkx as nx
+import pandas
 
 from itertools import combinations
 
@@ -69,6 +70,19 @@ def read_pedigree(fn):
     return iids, pedigree
 
 
+def relatives_to_graph(path, only_client=False):
+    # id1     id2     total_seg_len   seg_count       king_degree     ersa_degree     final_degree
+    g = nx.Graph()
+
+    relatives = pandas.read_table(path)
+    clients = set(relatives.id1)
+    if only_client:
+        clients |= set(relatives.id2)
+    edges = [(r['id1'], r['id2'], {'ersa': r['ersa_degree'], 'king': r['king_degree']}) for _, r in relatives.iterrows()]
+    g.add_edges_from(edges)
+    return g, clients
+
+
 def read_pipeline_output(fn, only_client=False):
     """Given our pipeline output, return a networkx object"""
     clients = set()
@@ -77,9 +91,9 @@ def read_pipeline_output(fn, only_client=False):
         next(f)
         for line in f:
             items = line.strip().split(sep="\t")
-            clients.add(f'{items[0]}_{items[1]}')
+            clients.add(items[0])
             if only_client:
-                clients.add(f'{items[2]}_{items[3]}')
+                clients.add(items[1])
             if items[-1] != 'NA':
                 g1, g2 = f'{items[0]}_{items[1]}', f'{items[2]}_{items[3]}'
                 g.add_edge(g1, g2, ersa=items[-4], king=items[-3])

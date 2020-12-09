@@ -1,9 +1,13 @@
 rule run_king:
     input: rules.convert_imputed_to_plink.output
-    output: "king/merged_imputed_king.seg"
+    output:
+        king="king/merged_imputed_king.seg",
+        kinship="king/merged_imputed_kinship.kin",
+        kinship0="king/merged_imputed_kinship.kin0"
     params:
         input = "plink/merged_imputed",
-        out = "king/merged_imputed_king"
+        out = "king/merged_imputed_king",
+        kin = "king/merged_imputed_kinship"
     threads: workflow.cores
     singularity:
         "docker://lifebitai/king:latest"
@@ -16,10 +20,17 @@ rule run_king:
         KING_DEGREE=3
 
         king -b {params.input}.bed --cpus {threads} --ibdseg --degree $KING_DEGREE --prefix {params.out} |& tee {log}
+        king -b {params.input}.bed --cpus {threads} --kinship --degree $KING_DEGREE --prefix {params.kin} |& tee -a {log}
 
         # we need at least an empty file for the downstream analysis
-        if [ ! -f "{output}" ]; then
-            touch {output}
+        if [ ! -f "{output.king}" ]; then
+            touch {output.king}
+        fi
+        if [ ! -f "{output.kinship}" ]; then
+            touch {output.kinship}
+        fi
+        if [ ! -f "{output.kinship0}" ]; then
+            touch {output.kinship0}
         fi
         """
 
@@ -45,7 +56,8 @@ rule vcf_to_ped:
     input:
         vcf=rules.index_and_split.output
     output:
-        ped="ped/imputed_chr{chrom}.ped"
+        ped="ped/imputed_chr{chrom}.ped",
+        map_file="ped/imputed_chr{chrom}.map"
     params:
         zarr="zarr/imputed_chr{chrom}.zarr"
     conda:
@@ -174,9 +186,12 @@ rule ersa:
 
 rule merge_king_ersa:
     input:
-        king=rules.run_king.output,
-        germline=rules.merge_ibd_segments.output['ibd'],
-        ersa=rules.ersa.output
+        king=rules.run_king.output['king'],
+        ibd=rules.merge_ibd_segments.output['ibd'],
+        ersa=rules.ersa.output[0],
+        kinship=rules.run_king.output['kinship'],
+        kinship0=rules.run_king.output['kinship0']
     output: "results/relatives.tsv"
     conda: "../envs/evaluation.yaml"
-    script: "../scripts/ersa_king.py"
+    log: "logs/merge/merge-king-ersa.log"
+    script: "../scripts/merge_king_ersa.py"

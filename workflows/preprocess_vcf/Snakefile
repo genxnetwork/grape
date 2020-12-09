@@ -15,7 +15,7 @@ assembly = config['assembly']
 
 rule all:
     input:
-        vcf="vcf/merged_lifted.vcf",
+        vcf="vcf/merged_lifted.vcf"
         # rules.report_benchmark_summary.output
 
 
@@ -40,3 +40,4 @@ rule liftover:
                 cp {input.vcf} {output.vcf}
             fi
         """
+
