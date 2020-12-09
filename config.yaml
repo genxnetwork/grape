@@ -8,7 +8,7 @@ reference:
   ref_dir: /media/ref
   GRCh37_fasta: human_g1k_v37.fasta
   GENETIC_MAP: tables/genetic_map_hg19_withX.txt.gz
-  genetic_map_GRCh37: genetic_map_GRCh37/genetic_map_GRCh37_chr{1..22}.txt /media/ref/genetic_map_GRCh37/genetic_map_GRCh37_chrX.txt
+  genetic_map_GRCh37: genetic_map_GRCh37/genetic_map_GRCh37_chr{1..22}.txt
   vcfRef: 1000genome/bcf/1000genome_chr{chrom}.bcf
   refHaps: Minimac/{chrom}.1000g.Phase3.v5.With.Parameter.Estimates.m3vcf.gz
   lift_chain: hg38ToHg19.over.chain.gz

@@ -16,6 +16,8 @@ germline/*
 hap/*
 ped/*
 ersa/*
+ibis/*
+stats/*
 dag.png
 .idea
 results/relatives.tsv

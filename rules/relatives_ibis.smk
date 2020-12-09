@@ -4,14 +4,16 @@ rule convert_mapped_to_plink:
     params:
         out = "plink/merged_ibis"
     conda:
-        "../envs/plink.yaml"
+        "../envs/bcf_plink.yaml"
     log:
         "logs/plink/convert_mapped_to_plink.log"
     benchmark:
         "benchmarks/plink/convert_mapped_to_plink.txt"
     shell:
         """
-        plink --vcf {input} --make-bed --out {params.out} |& tee {log}
+        # leave only chr1..22 because we need to map it later
+        bcftools view {input} --regions 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 -O z -o vcf/merged_mapped_sorted_22.vcf.gz
+        plink --vcf vcf/merged_mapped_sorted_22.vcf.gz --make-bed --out {params.out} |& tee {log}
         """
 
 rule run_king:
@@ -44,7 +46,6 @@ rule ibis:
         "docker://alexgenx/ibis:stable"
     output:
         ibd     = "ibis/merged_ibis.seg",
-        coef    = "ibis/merged_ibis.coef",
         germline= "ibis/merged_ibis.germline"
     shell:
         """
@@ -52,12 +53,12 @@ rule ibis:
         # use default params
         ibis {params.input}.bed plink/merged_ibis_mapped.bim {params.input}.fam -f ibis/merged_ibis
 
-        cat ibis/merged_mapped | awk -v OFS='\t' '{{sub(":", "_", $1); sub(":", "_", $2); print $1, $1, $2, $2, $3, $4, $5, 0, 0, $10, $9, "cM", 0, 0, 0}};' > ibis/merged_mapped.germline
+        cat ibis/merged_ibis.seg | awk -v OFS='\t' '{{sub(":", "_", $1); sub(":", "_", $2); print $1, $1, $2, $2, $3, $4, $5, 0, 0, $10, $9, "cM", 0, 0, 0}};' > ibis/merged_ibis.germline
         """
 
 rule ersa:
     input:
-        ibd=rules.ibis.output['ibd']
+        ibd=rules.ibis.output['germline']
     output:
         "ersa/relatives.tsv"
     singularity:
