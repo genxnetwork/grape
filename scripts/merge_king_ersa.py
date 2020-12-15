@@ -97,13 +97,12 @@ def read_ersa(ersa_path):
     data.loc[:, 'id2'] = data.id2.str.strip()
     data.loc[:, 'ersa_degree'] = pandas.to_numeric(data.ersa_degree.str.strip(), errors='coerce').astype(pandas.Int32Dtype())
 
-
     print(f'read {data.shape[0]} pairs from ersa output')
     #print(data.iloc[0, :])
 
     print(len(numpy.unique(data.id1)), len(numpy.unique(data.id2)))
 
-    return data.loc[:, ['id1', 'id2', 'ersa_degree']].set_index(['id1', 'id2'])
+    return data.loc[data.id1 != data.id2, ['id1', 'id2', 'ersa_degree']].set_index(['id1', 'id2'])
 
 
 if __name__ == '__main__':
@@ -125,7 +124,6 @@ if __name__ == '__main__':
     # across families
     kinship0_path = snakemake.input['kinship0']
     ersa_path = snakemake.input['ersa']
-
 
     ibd = read_germline(ibd_path)
     king = read_king(king_path)
