@@ -157,8 +157,7 @@ rule evaluate_accuracy:
 rule evaluate_ibd:
     input:
         pedsim=rules.simulate.output['seg'],
-        ibd="ibd/merged_ibd.tsv",
-        cm=rules.split_map.output
+        ibd="ibd/merged_ibd.tsv"
     params:
         cm_dir='cm',
         is_rapid_ibd=use_rapid

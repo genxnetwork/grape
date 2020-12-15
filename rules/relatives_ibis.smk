@@ -70,7 +70,8 @@ rule split_map:
 
 rule ersa:
     input:
-        ibd=rules.ibis.output['germline']
+        ibd=rules.ibis.output['germline'],
+        cm=expand("cm/chr{chrom}.cm.map", chrom=CHROMOSOMES) # it does not really need it, just to invoke split_map
     output:
         "ersa/relatives.tsv"
     singularity:
