@@ -97,13 +97,34 @@ def read_ersa(ersa_path):
     data.loc[:, 'id2'] = data.id2.str.strip()
     data.loc[:, 'ersa_degree'] = pandas.to_numeric(data.ersa_degree.str.strip(), errors='coerce').astype(pandas.Int32Dtype())
 
-
     print(f'read {data.shape[0]} pairs from ersa output')
     #print(data.iloc[0, :])
 
     print(len(numpy.unique(data.id1)), len(numpy.unique(data.id2)))
 
     return data.loc[:, ['id1', 'id2', 'ersa_degree']].set_index(['id1', 'id2'])
+
+
+def read_ersa2(ersa_path):
+    # individual_1    individual_2    est_number_of_shared_ancestors  est_degree_of_relatedness       0.95 CI_2p_lower
+    # 2p_upper     1p_lower 1p_upper        0p_lower        0p_upper        maxlnl_relatedness      maxlnl_unrelatednes
+    data = pandas.read_table(ersa_path, comment='#')
+
+    data = data.loc[data.est_degree_of_relatedness != 'no_sig_rel', :]
+    data.rename({'individual_1': 'id1', 'individual_2': 'id2'}, axis=1, inplace=True)
+    data.loc[:, 'ersa_degree'] = pandas.to_numeric(data['est_degree_of_relatedness'], errors='coerce').\
+        astype(pandas.Int32Dtype())
+    data.loc[:, 'ersa_lower_bound'] = pandas.to_numeric(data['0.99 CI_2p_lower'], errors='coerce'). \
+        astype(pandas.Int32Dtype())
+    data.loc[:, 'ersa_upper_bound'] = pandas.to_numeric(data['2p_upper'], errors='coerce'). \
+        astype(pandas.Int32Dtype())
+
+    print(f'read {data.shape[0]} pairs from ersa output')
+    print(data.iloc[0, :])
+
+    print(len(numpy.unique(data.id1)), len(numpy.unique(data.id2)))
+    cols = ['id1', 'id2', 'ersa_degree', 'ersa_lower_bound', 'ersa_upper_bound']
+    return data.loc[data.id1 != data.id2, cols].set_index(['id1', 'id2'])
 
 
 if __name__ == '__main__':
@@ -126,11 +147,10 @@ if __name__ == '__main__':
     kinship0_path = snakemake.input['kinship0']
     ersa_path = snakemake.input['ersa']
 
-
     ibd = read_germline(ibd_path)
     king = read_king(king_path)
     kinship = read_kinship(kinship_path, kinship0_path)
-    ersa = read_ersa(ersa_path)
+    ersa = read_ersa2(ersa_path)
 
     if kinship is not None:
         print(f'kinship is not none')

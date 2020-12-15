@@ -155,7 +155,7 @@ rule merge_ibd_segments:
         germline=rules.merge_matches.output[0]
     params:
         cm_dir='cm',
-        merge_gap='0.6',
+        merge_gap='0.1',
         use_true_ibd=use_simulated_ibd,
         true_ibd='pedsim/simulated/data.seg' # it is in the params because in the case of true data we do not have this information
     output:
@@ -169,18 +169,18 @@ rule ersa:
         ibd=rules.merge_ibd_segments.output['ibd']
     output:
         "ersa/relatives.tsv"
-    singularity:
-        "docker://alexgenx/ersa:stable"
     log:
         "logs/ersa/ersa.log"
     benchmark:
         "benchmarks/ersa/ersa.txt"
+    singularity:
+        "docker://alexgenx/ersa2:stable"
+
     shell:
         """
-        ERSA_L=2.0 # the average number of IBD segments in population
-        ERSA_TH=1.5 # the average length of IBD segment
-        ERSA_T=1.0 # min length of segment to be considered in segment aggregation
-        ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd} -o {output} |& tee {log}
+            # exp_mean - mean of shared segment size
+            # pois_mean - mean number of shared segments
+            /ersa/ersa --segment_files={input.ibd} --exp_mean 4.06 --pois_mean 1.43 --confidence_level 0.99 --output_file {output} |& tee {log}
         """
 
 
