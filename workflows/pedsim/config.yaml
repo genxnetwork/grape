@@ -1,6 +1,6 @@
 samples_file: samples.tsv
 vcf_file: pedsim/simulated/reheaded_data.vcf.gz
-use_simulated_ibd: False
+use_simulated_ibd: True
 use_rapid: False
 use_ibis: True
 reference:

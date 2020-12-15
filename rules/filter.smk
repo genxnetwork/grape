@@ -96,7 +96,8 @@ rule prepare_vcf:
     output:
         "vcf/merged_mapped_sorted.vcf.gz"
     params:
-        input = "plink/merged_mapped"
+        input   = "plink/merged_mapped",
+        vcf     = 'vcf/merged_mapped_sorted.vcf.gz'
     conda:
          "../envs/bcf_plink.yaml"
     log:
