@@ -1,5 +1,5 @@
 rule convert_mapped_to_plink:
-    input: rules.prepare_vcf.output
+    input: "vcf/merged_mapped_sorted.vcf.gz"
     output: expand("plink/{i}.{ext}", i="merged_ibis", ext=PLINK_FORMATS)
     params:
         out = "plink/merged_ibis"
@@ -15,6 +15,7 @@ rule convert_mapped_to_plink:
         bcftools view {input} --regions 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 -O z -o vcf/merged_mapped_sorted_22.vcf.gz
         plink --vcf vcf/merged_mapped_sorted_22.vcf.gz --make-bed --out {params.out} |& tee {log}
         """
+
 
 rule run_king:
     input: rules.convert_mapped_to_plink.output
@@ -46,15 +47,25 @@ rule ibis:
         "docker://alexgenx/ibis:stable"
     output:
         ibd     = "ibis/merged_ibis.seg",
-        germline= "ibis/merged_ibis.germline"
+        germline= "ibd/merged_ibd.tsv"
     shell:
         """
         add-map-plink.pl {params.input}.bim {genetic_map_GRCh37} > plink/merged_ibis_mapped.bim
         # use default params
         ibis {params.input}.bed plink/merged_ibis_mapped.bim {params.input}.fam -f ibis/merged_ibis
 
-        cat ibis/merged_ibis.seg | awk -v OFS='\t' '{{sub(":", "_", $1); sub(":", "_", $2); print $1, $1, $2, $2, $3, $4, $5, 0, 0, $10, $9, "cM", 0, 0, 0}};' > ibis/merged_ibis.germline
+        cat ibis/merged_ibis.seg | awk -v OFS='\t' '{{sub(":", "_", $1); sub(":", "_", $2); print $1, $1, $2, $2, $3, $4, $5, 0, 0, $10, $9, "cM", 0, 0, 0}};' > {output.germline}
         """
+
+rule split_map:
+    input: "plink/merged_ibis_mapped.bim"
+    output: expand("cm/chr{chrom}.cm.map", chrom=CHROMOSOMES)
+    params:
+        cm_dir='cm'
+    conda:
+        "../envs/evaluation.yaml"
+    script:
+        "../scripts/split_map.py"
 
 rule ersa:
     input:
