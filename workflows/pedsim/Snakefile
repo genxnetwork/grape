@@ -3,11 +3,13 @@ from os.path import join
 configfile: "config.yaml"
 
 use_rapid       = config["use_rapid"]
+use_ibis        = config["use_ibis"]
 is_client       = False
 use_simulated_ibd = config["use_simulated_ibd"] if "use_simulated_ibd" in config else False
 REF_DIR         = config["reference"]["ref_dir"]
 GRCh37_fasta    = join(REF_DIR, config["reference"]["GRCh37_fasta"])
 GENETIC_MAP     = join(REF_DIR, config["reference"]["GENETIC_MAP"])
+genetic_map_GRCh37=join(REF_DIR, config["reference"]["genetic_map_GRCh37"])
 vcfRef          = join(REF_DIR, config["reference"]["vcfRef"])
 refHaps         = join(REF_DIR, config["reference"]["refHaps"])
 lift_chain      = join(REF_DIR, config["reference"]["lift_chain"])
@@ -21,6 +23,8 @@ pedsim_map      = join(REF_DIR, config["reference"]["pedsim_map"])
 
 SAMPLES = [str(s) for s in range(10)]
 CHROMOSOMES     = [str(i) for i in range(1, 23)]
+
+PLINK_FORMATS   = ['bed', 'bim', 'fam']
 
 #CHIP_DATA_LINK = 'ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.chip.omni_broad_sanger_combined.20140818.snps.genotypes.vcf.gz'
 #CHIP_INDEX_LINK = 'ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.chip.omni_broad_sanger_combined.20140818.snps.genotypes.vcf.gz.tbi'
@@ -120,19 +124,23 @@ rule postprocess:
     script:
         "../../scripts/postprocess.py"
 
-rule index:
+rule prepare_vcf:
     input:
-        vcf=rules.postprocess.output['vcf'],
+        vcf=rules.postprocess.output['vcf']
     output:
         idx='vcf/merged_mapped_sorted.vcf.gz.csi'
+    params:
+        vcf='vcf/merged_mapped_sorted.vcf.gz'
     conda:
         '../../envs/bcftools.yaml'
     shell:
         "bcftools index {input}"
 
-include: "../../rules/imputation.smk"
-
-include: "../../rules/relatives.smk"
+if use_ibis:
+    include: "../../rules/relatives_ibis.smk"
+else:
+    include: "../../rules/imputation.smk"
+    include: "../../rules/relatives.smk"
 
 rule evaluate_accuracy:
     input:
@@ -149,7 +157,7 @@ rule evaluate_accuracy:
 rule evaluate_ibd:
     input:
         pedsim=rules.simulate.output['seg'],
-        ibd=rules.merge_ibd_segments.output[0]
+        ibd="ibd/merged_ibd.tsv"
     params:
         cm_dir='cm',
         is_rapid_ibd=use_rapid

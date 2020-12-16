@@ -1,5 +1,5 @@
 rule convert_mapped_to_plink:
-    input: rules.prepare_vcf.output
+    input: rules.prepare_vcf.params['vcf']
     output: expand("plink/{i}.{ext}", i="merged_ibis", ext=PLINK_FORMATS)
     params:
         out = "plink/merged_ibis"
@@ -46,19 +46,32 @@ rule ibis:
         "docker://alexgenx/ibis:stable"
     output:
         ibd     = "ibis/merged_ibis.seg",
-        germline= "ibis/merged_ibis.germline"
+        germline= "ibd/merged_ibd.tsv",
+        plink   = "plink/merged_ibis_mapped.bim"
     shell:
         """
         add-map-plink.pl {params.input}.bim {genetic_map_GRCh37} > plink/merged_ibis_mapped.bim
         # use default params
         ibis {params.input}.bed plink/merged_ibis_mapped.bim {params.input}.fam -f ibis/merged_ibis
 
-        cat ibis/merged_ibis.seg | awk -v OFS='\t' '{{sub(":", "_", $1); sub(":", "_", $2); print $1, $1, $2, $2, $3, $4, $5, 0, 0, $10, $9, "cM", 0, 0, 0}};' > ibis/merged_ibis.germline
+        cat ibis/merged_ibis.seg | awk '{{sub(":", "_", $1); sub(":", "_", $2); print $1, $1, $2, $2 "\t" $3 "\t" $4, $5 "\t" 0, 0 "\t" $10 "\t" $9 "\t" "cM" "\t" 0 "\t" 0 "\t" 0}};' > {output.germline}
         """
+
+rule split_map:
+    input:
+        bim = "plink/merged_ibis_mapped.bim"
+    output: expand("cm/chr{chrom}.cm.map", chrom=CHROMOSOMES)
+    params:
+        cm_dir='cm'
+    conda:
+        "../envs/evaluation.yaml"
+    script:
+        "../scripts/split_map.py"
 
 rule ersa:
     input:
-        ibd=rules.ibis.output['germline']
+        ibd=rules.ibis.output['germline'],
+        cm=expand("cm/chr{chrom}.cm.map", chrom=CHROMOSOMES) # it does not really need it, just to invoke split_map
     output:
         "ersa/relatives.tsv"
     singularity:
