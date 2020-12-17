@@ -98,6 +98,12 @@ def get_parser_args():
     )
 
     parser.add_argument(
+        '--flow',
+        default='germline',
+        help='How to find ibd segments: values are germline, ibis, rapid'
+    )
+
+    parser.add_argument(
         '--stat-file',
         default='stat_file.txt',
         help='File for writing statistics'
@@ -216,6 +222,10 @@ if __name__ == '__main__':
     config_dict['sim_params_file'] = args.sim_params_file
     config_dict['sim_samples_file'] = args.sim_samples_file
     config_dict['assembly'] = args.assembly
+    if args.flow == 'ibis':
+        config_dict['use_ibis'] = True
+    elif args.flow == 'rapid':
+        config_dict['use_rapid'] = True
 
     if not snakemake.snakemake(
             snakefile=snakefile,

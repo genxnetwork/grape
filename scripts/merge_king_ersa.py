@@ -34,6 +34,7 @@ def read_germline(ibd_path):
 
 def map_king_degree(king_degree):
     degree_map = {
+        'Dup/MZ': 0,
         'PO': 1,
         'FS': 2,
         '2nd': 2,
@@ -47,8 +48,8 @@ def map_king_degree(king_degree):
 def read_king(king_path):
     # FID1    ID1     FID2    ID2     MaxIBD1 MaxIBD2 IBD1Seg IBD2Seg PropIBD InfType
     data = pandas.read_table(king_path)
-    data.loc[:, 'id1'] = data.FID1 + '_' + data.ID1
-    data.loc[:, 'id2'] = data.FID2 + '_' + data.ID2
+    data.loc[:, 'id1'] = data.FID1.astype(str) + '_' + data.ID1.astype(str)
+    data.loc[:, 'id2'] = data.FID2.astype(str) + '_' + data.ID2.astype(str)
 
     data.loc[:, 'king_degree'] = map_king_degree(data.InfType)
     data.loc[:, 'king_degree'] = data.king_degree.astype(float).astype(pandas.Int32Dtype())
@@ -62,8 +63,8 @@ def read_kinship(kinship_path, kinship0_path):
     within, across = None, None
     if is_non_zero_file(kinship_path):
         within = pandas.read_table(kinship_path)
-        within.loc[:, 'id1'] = within.FID + '_' + within.ID1
-        within.loc[:, 'id2'] = within.FID + '_' + within.ID2
+        within.loc[:, 'id1'] = within.FID.astype(str) + '_' + within.ID1.astype(str)
+        within.loc[:, 'id2'] = within.FID.astype(str) + '_' + within.ID2.astype(str)
         within.rename({'Kinship': 'kinship'}, axis=1, inplace=True)
         within = within.loc[:, ['id1', 'id2', 'kinship']].set_index(['id1', 'id2'])
         print(f'loaded {within.shape[0]} pairs from within-families kinship estimatino results')
@@ -71,11 +72,11 @@ def read_kinship(kinship_path, kinship0_path):
     # FID1    ID1     FID2    ID2     N_SNP   HetHet  IBS0    Kinship
     if is_non_zero_file(kinship0_path):
         across = pandas.read_table(kinship0_path)
-        across.loc[:, 'id1'] = across.FID1 + '_' + across.ID1
-        across.loc[:, 'id2'] = across.FID2 + '_' + across.ID2
+        across.loc[:, 'id1'] = across.FID1.astype(str) + '_' + across.ID1.astype(str)
+        across.loc[:, 'id2'] = across.FID2.astype(str) + '_' + across.ID2.astype(str)
         across.rename({'Kinship': 'kinship'}, axis=1, inplace=True)
         across = across.loc[:, ['id1', 'id2', 'kinship']].set_index(['id1', 'id2'])
-        print(f'loaded {within.shape[0]} pairs from across-families kinship estimatino results')
+        print(f'loaded {across.shape[0]} pairs from across-families kinship estimatino results')
 
     if within is None and across is None:
         return None
@@ -98,9 +99,6 @@ def read_ersa(ersa_path):
     data.loc[:, 'ersa_degree'] = pandas.to_numeric(data.ersa_degree.str.strip(), errors='coerce').astype(pandas.Int32Dtype())
 
     print(f'read {data.shape[0]} pairs from ersa output')
-    #print(data.iloc[0, :])
-
-    print(len(numpy.unique(data.id1)), len(numpy.unique(data.id2)))
 
     return data.loc[data.id1 != data.id2, ['id1', 'id2', 'ersa_degree']].set_index(['id1', 'id2'])
 

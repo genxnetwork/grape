@@ -3,7 +3,7 @@ samples_file: samples.tsv
 vcf_file: vcf/merged.vcf.gz
 use_simulated_ibd: False
 use_rapid: False
-use_ibis: True
+use_ibis: False
 reference:
   ref_dir: /media/ref
   GRCh37_fasta: human_g1k_v37.fasta

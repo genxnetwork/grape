@@ -157,7 +157,8 @@ rule evaluate_accuracy:
 rule evaluate_ibd:
     input:
         pedsim=rules.simulate.output['seg'],
-        ibd="ibd/merged_ibd.tsv"
+        ibd="ibd/merged_ibd.tsv",
+        cm=expand("cm/chr{chrom}.cm.map", chrom=CHROMOSOMES)
     params:
         cm_dir='cm',
         is_rapid_ibd=use_rapid

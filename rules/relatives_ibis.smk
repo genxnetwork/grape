@@ -18,10 +18,14 @@ rule convert_mapped_to_plink:
 
 rule run_king:
     input: rules.convert_mapped_to_plink.output
-    output: "king/merged_ibis_king.seg"
+    output:
+        king="king/merged_imputed_king.seg",
+        kinship="king/merged_imputed_kinship.kin",
+        kinship0="king/merged_imputed_kinship.kin0"
     params:
         input = "plink/merged_ibis",
-        out = "king/merged_ibis_king"
+        out = "king/merged_imputed_king",
+        kin = "king/merged_imputed_kinship"
     threads: workflow.cores
     singularity:
         "docker://lifebitai/king:latest"
@@ -31,10 +35,21 @@ rule run_king:
         "benchmarks/king/run_king.txt"
     shell:
         """
-        # TODO: add cores
-        KING_DEGREE=4
+        KING_DEGREE=3
 
         king -b {params.input}.bed --cpus {threads} --ibdseg --degree $KING_DEGREE --prefix {params.out} |& tee {log}
+        king -b {params.input}.bed --cpus {threads} --kinship --degree $KING_DEGREE --prefix {params.kin} |& tee -a {log}
+
+        # we need at least an empty file for the downstream analysis
+        if [ ! -f "{output.king}" ]; then
+            touch {output.king}
+        fi
+        if [ ! -f "{output.kinship}" ]; then
+            touch {output.kinship}
+        fi
+        if [ ! -f "{output.kinship0}" ]; then
+            touch {output.kinship0}
+        fi
         """
 
 rule ibis:
@@ -54,7 +69,7 @@ rule ibis:
         # use default params
         ibis {params.input}.bed plink/merged_ibis_mapped.bim {params.input}.fam -f ibis/merged_ibis
 
-        cat ibis/merged_ibis.seg | awk '{{sub(":", "_", $1); sub(":", "_", $2); print $1, $1, $2, $2 "\t" $3 "\t" $4, $5 "\t" 0, 0 "\t" $10 "\t" $9 "\t" "cM" "\t" 0 "\t" 0 "\t" 0}};' > {output.germline}
+        cat ibis/merged_ibis.seg | awk '{{sub(":", "_", $1); sub(":", "_", $2); print $1, $1 "\t" $2, $2 "\t" $3 "\t" $4, $5 "\t" 0, 0 "\t" $10 "\t" $9 "\t" "cM" "\t" 0 "\t" 0 "\t" 0}};' > {output.germline}
         """
 
 rule split_map:
@@ -83,16 +98,19 @@ rule ersa:
     shell:
         """
         ERSA_L=5.0 # the average number of IBD segments in population
-        ERSA_TH=1.5 # the average length of IBD segment
-        ERSA_T=1.0 # min length of segment to be considered in segment aggregation
+        ERSA_TH=2.5 # the average length of IBD segment
+        ERSA_T=2.5 # min length of segment to be considered in segment aggregation
         ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd} -o {output} |& tee {log}
         """
 
 rule merge_king_ersa:
     input:
-        king=rules.run_king.output,
-        germline=rules.ibis.output['germline'],
-        ersa=rules.ersa.output
+        king=rules.run_king.output['king'],
+        ibd=rules.ibis.output['germline'],
+        ersa=rules.ersa.output[0],
+        kinship=rules.run_king.output['kinship'],
+        kinship0=rules.run_king.output['kinship0']
     output: "results/relatives.tsv"
     conda: "../envs/evaluation.yaml"
-    script: "../scripts/ersa_king.py"
+    log: "logs/merge/merge-king-ersa.log"
+    script: "../scripts/merge_king_ersa.py"

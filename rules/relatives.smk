@@ -112,7 +112,7 @@ rule interpolate:
     input:
         rules.vcf_to_ped.output,
         cmmap=cmmap
-    output: "cm/chr{chrom}.cm.ped"
+    output: "cm/chr{chrom}.cm.map"
     conda:
         "../envs/plink.yaml"
     log:
