@@ -96,6 +96,19 @@ launcher.py find --samples /media/ref/samples.tsv --input /media/ref/input --dir
 --real-run
 ```
 
+##### Very fast relatives detection using king and ibis
+
+You should just add ```--flow ibis``` to the ```find``` command of ```launcher.py```.
+
+```text
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
+launcher.py find --samples /media/ref/samples.tsv --input /media/ref/input --directory /media/pipeline_data/real-data \
+--flow ibis --real-run 
+```
+
+In this case, nothing will be phased or imputed. Slight loss of accuracy is possible for degrees 8-10, 
+especially if you use different chips in the same batch
+
 #### Execution by scheduler
 The pipeline can be executed using lightweight scheduler [Funnel](https://ohsu-comp-bio.github.io/funnel/), which implements [Task Execution Schema](https://github.com/ga4gh/task-execution-schemas) developed by [GA4GH](https://github.com/ga4gh/wiki/wiki).  
   
