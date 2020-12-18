@@ -69,7 +69,7 @@ rule ibis:
         "benchmarks/ibis/run_ibis.txt"
     shell:
         """
-        add-map-plink.pl {params.input}.bim {genetic_map_GRCh37} > plink/merged_ibis_mapped.bim |& tee -a {log}
+        (add-map-plink.pl {params.input}.bim {genetic_map_GRCh37} > plink/merged_ibis_mapped.bim) |& tee -a {log}
         # use default params
         ibis {params.input}.bed plink/merged_ibis_mapped.bim {params.input}.fam -f ibis/merged_ibis |& tee -a {log}
 
