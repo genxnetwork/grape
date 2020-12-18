@@ -63,11 +63,15 @@ rule ibis:
         ibd     = "ibis/merged_ibis.seg",
         germline= "ibd/merged_ibd.tsv",
         plink   = "plink/merged_ibis_mapped.bim"
+    log:
+        "logs/ibis/run_ibis.log"
+    benchmark:
+        "benchmarks/ibis/run_ibis.txt"
     shell:
         """
-        add-map-plink.pl {params.input}.bim {genetic_map_GRCh37} > plink/merged_ibis_mapped.bim
+        add-map-plink.pl {params.input}.bim {genetic_map_GRCh37} > plink/merged_ibis_mapped.bim |& tee -a {log}
         # use default params
-        ibis {params.input}.bed plink/merged_ibis_mapped.bim {params.input}.fam -f ibis/merged_ibis
+        ibis {params.input}.bed plink/merged_ibis_mapped.bim {params.input}.fam -f ibis/merged_ibis |& tee -a {log}
 
         cat ibis/merged_ibis.seg | awk '{{sub(":", "_", $1); sub(":", "_", $2); print $1, $1 "\t" $2, $2 "\t" $3 "\t" $4, $5 "\t" 0, 0 "\t" $10 "\t" $9 "\t" "cM" "\t" 0 "\t" 0 "\t" 0}};' > {output.germline}
         """
