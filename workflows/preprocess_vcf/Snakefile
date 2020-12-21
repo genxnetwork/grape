@@ -12,6 +12,11 @@ GRCh37_fasta    = join(REF_DIR, config["reference"]["GRCh37_fasta"])
 
 assembly = config['assembly']
 
+_IDEAL_LARGE_MEM_GB = 20
+
+# if available, return the ideal pretty-large amount for most jobs (20GB)
+def _mem_gb_for_ram_hungry_jobs():
+  return min(_IDEAL_LARGE_MEM_GB, config["mem_gb"])
 
 rule all:
     input:
@@ -31,11 +36,18 @@ rule liftover:
         vcf=rules.recode_vcf.output['vcf']
     output:
         vcf="vcf/merged_lifted.vcf"
-    singularity: "docker://alexgenx/picard:latest"
+    singularity:
+        "docker://alexgenx/picard:latest"
+    log:
+        "logs/liftover/liftover.log"
+    params:
+        mem_gb = _mem_gb_for_ram_hungry_jobs()
+    resources:
+        mem_mb = _mem_gb_for_ram_hungry_jobs() * 1024
     shell:
         """
             if [[ "{assembly}" == "hg38" ]]; then
-                java -jar /picard/picard.jar LiftoverVcf I={input.vcf} O={output.vcf} CHAIN={lift_chain} REJECT=vcf/rejected.vcf R={GRCh37_fasta}
+                java -Xmx{params.mem_gb}g -jar /picard/picard.jar LiftoverVcf MAX_RECORDS_IN_RAM=100000 I={input.vcf} O={output.vcf} CHAIN={lift_chain} REJECT=vcf/rejected.vcf R={GRCh37_fasta} |& tee -a {log}
             else
                 cp {input.vcf} {output.vcf}
             fi
