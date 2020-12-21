@@ -47,7 +47,7 @@ rule liftover:
     shell:
         """
             if [[ "{assembly}" == "hg38" ]]; then
-                java -Xmx{params.mem_gb}g -jar /picard/picard.jar LiftoverVcf MAX_RECORDS_IN_RAM=100000 I={input.vcf} O={output.vcf} CHAIN={lift_chain} REJECT=vcf/rejected.vcf R={GRCh37_fasta} |& tee -a {log}
+                java -Xmx{params.mem_gb}g -jar /picard/picard.jar LiftoverVcf WARN_ON_MISSING_CONTIG=true MAX_RECORDS_IN_RAM=100000 I={input.vcf} O={output.vcf} CHAIN={lift_chain} REJECT=vcf/rejected.vcf R={GRCh37_fasta} |& tee -a {log}
             else
                 cp {input.vcf} {output.vcf}
             fi
