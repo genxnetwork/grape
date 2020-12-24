@@ -27,8 +27,9 @@ rule all:
 rule recode_vcf:
     input: vcf='input.vcf'
     output: vcf = "vcf/merged_recoded.vcf.gz"
+    log: "logs/plink/recode_vcf.log"
     conda: "../../envs/plink.yaml"
-    shell: "plink --vcf {input.vcf} --chr 1-22 --snps-only just-acgt --output-chr M --not-chr XY,MT --export vcf bgz --out vcf/merged_recoded"
+    shell: "plink --vcf {input.vcf} --chr 1-22 --snps-only just-acgt --output-chr M --not-chr XY,MT --export vcf bgz --out vcf/merged_recoded |& tee {log}"
 
 
 rule liftover:
