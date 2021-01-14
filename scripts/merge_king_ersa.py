@@ -98,7 +98,7 @@ def read_kinship(kinship_path, kinship0_path):
         within.loc[:, 'id2'] = within.FID.astype(str) + '_' + within.ID2.astype(str)
         within.rename({'Kinship': 'kinship'}, axis=1, inplace=True)
         within = within.loc[:, ['id1', 'id2', 'kinship']].set_index(['id1', 'id2'])
-        print(f'loaded {within.shape[0]} pairs from within-families kinship estimatino results')
+        print(f'loaded {within.shape[0]} pairs from within-families kinship estimation results')
 
     # FID1    ID1     FID2    ID2     N_SNP   HetHet  IBS0    Kinship
     if is_non_zero_file(kinship0_path):
@@ -159,7 +159,7 @@ if __name__ == '__main__':
     ersa_path = snakemake.input['ersa']
     map_dir = snakemake.params['cm_dir']
     output_path = snakemake.output[0]
-    
+
     ibd = read_germline(ibd_path)
     king = read_king(king_path)
     kinship = read_kinship(kinship_path, kinship0_path)

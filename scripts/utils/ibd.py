@@ -97,7 +97,7 @@ def read_cm_map(path):
 
 def read_king_segments(path):
     # FID1    ID1     FID2    ID2     IBDType Chr StartMB StopMB StartSNP StopSNP N_SNP Length
-    data = pandas.read_table(path, compression='gzip')
+    data = pandas.read_table(path, compression='gzip', dtype={'FID1': str, 'ID1': str, 'FID2': str, 'ID2': str})
     segments = {}
     for i, row in data.iterrows():
         id1 = row['FID1'] + '_' + row['ID1']
