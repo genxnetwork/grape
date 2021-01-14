@@ -5,6 +5,10 @@ import argparse
 import shutil
 import os
 
+# Returns an integer value for total available memory, in GB.
+def total_memory_gb():
+    n_bytes = psutil.virtual_memory().total
+    return int(n_bytes / (1024 * 1024 * 1024))
 
 def get_parser_args():
     parser = argparse.ArgumentParser()
@@ -33,6 +37,12 @@ def get_parser_args():
         default=max(1, psutil.cpu_count() - 1),
         type=int,
         help="Number of CPU cores to use in this pipeline run (default %(default)s)")
+
+    parser.add_argument(
+        "--memory",
+        default=max(1, total_memory_gb() - 1),
+        type=int,
+        help="Total memory (in GB) allowed for use by the Snakemake scheduler (default %(default)s)")
 
     parser.add_argument(
         "--client",
@@ -222,6 +232,7 @@ if __name__ == '__main__':
     config_dict['sim_params_file'] = args.sim_params_file
     config_dict['sim_samples_file'] = args.sim_samples_file
     config_dict['assembly'] = args.assembly
+    config_dict['mem_gb'] = args.memory
     if args.flow == 'ibis':
         config_dict['use_ibis'] = True
     elif args.flow == 'rapid':
