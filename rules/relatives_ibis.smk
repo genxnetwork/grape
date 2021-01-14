@@ -21,7 +21,8 @@ rule run_king:
     output:
         king="king/merged_imputed_king.seg",
         kinship="king/merged_imputed_kinship.kin",
-        kinship0="king/merged_imputed_kinship.kin0"
+        kinship0="king/merged_imputed_kinship.kin0",
+        segments="king/merged_imputed_king.segments.gz"
     params:
         input = "plink/merged_ibis",
         out = "king/merged_imputed_king",
@@ -110,10 +111,13 @@ rule ersa:
 rule merge_king_ersa:
     input:
         king=rules.run_king.output['king'],
+        king_segments=rules.run_king.output['segments'],
         ibd=rules.ibis.output['germline'],
         ersa=rules.ersa.output[0],
         kinship=rules.run_king.output['kinship'],
         kinship0=rules.run_king.output['kinship0']
+    params:
+        cm_dir='cm'
     output: "results/relatives.tsv"
     conda: "../envs/evaluation.yaml"
     log: "logs/merge/merge-king-ersa.log"

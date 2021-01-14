@@ -95,6 +95,24 @@ def read_cm_map(path):
     return cm_map
 
 
+def read_king_segments(path):
+    # FID1    ID1     FID2    ID2     IBDType Chr StartMB StopMB StartSNP StopSNP N_SNP Length
+    data = pandas.read_table(path, compression='gzip')
+    segments = {}
+    for i, row in data.iterrows():
+        id1 = row['FID1'] + '_' + row['ID1']
+        id2 = row['FID2'] + '_' + row['ID2']
+        seg = Segment(id1, id2, row['Chr'],
+                      bp_start=row['StartMB']*1e+6, bp_end=row['StopMB']*1e+6)
+        key = tuple(sorted((seg.id1, seg.id2)))
+        if key not in segments:
+            segments[key] = [seg]
+        else:
+            segments[key].append(seg)
+
+    return segments
+
+
 def read_pedsim_segments(path: str) -> dict:
     # first1_g1-b1-s1	first1_g2-b1-i1	1	752721	249170711	IBD1	0.000000	261.713366	261.713366
     data = pandas.read_table(path, header=None, names=['id1', 'id2', 'chrom', 'gen_start', 'gen_end', 'ibd_type', 'cm_start', 'cm_end', 'cm_len'])
