@@ -1,0 +1,184 @@
+# snakemake --cores 1 -s workflows/reference/Snakefile -r -p --use-conda
+
+from os.path import join
+
+configfile: "config.yaml"
+
+# read reference directory from config
+# it's where they will be stored ~40G
+REF_DIR         = config["reference"]["ref_dir"]
+GRCh37_fasta    = join(REF_DIR, config["reference"]["GRCh37_fasta"])
+GENETIC_MAP     = join(REF_DIR, config["reference"]["GENETIC_MAP"])
+genetic_map_GRCh37=join(REF_DIR, config["reference"]["genetic_map_GRCh37"])
+vcfRef          = join(REF_DIR, config["reference"]["vcfRef"])
+refHaps         = join(REF_DIR, config["reference"]["refHaps"])
+lift_chain      = join(REF_DIR, config["reference"]["lift_chain"])
+cmmap           = join(REF_DIR, config["reference"]["cmmap"])
+SITE_1000GENOME = join(REF_DIR, config["reference"]["SITE_1000GENOME"])
+hapmap_ped      = join(REF_DIR, config["reference"]["hapmap_ped"])
+hapmap_mp       = join(REF_DIR, config["reference"]["hapmap_mp"])
+hapmap_fam      = join(REF_DIR, config["reference"]["hapmap_fam"])
+hd_genotype_chip= join(REF_DIR, config["reference"]["hd_genotype_chip"])
+pedsim_map      = join(REF_DIR, config["reference"]["pedsim_map"])
+
+CHROMOSOMES     = [str(i) for i in range(1, 23)]
+
+rule all:
+    input:
+        GRCh37_fasta = GRCh37_fasta,
+        GENETIC_MAP = GENETIC_MAP,
+        genetic_map_GRCh37 = expand("{REF_DIR}/genetic_map_GRCh37/genetic_map_GRCh37_chr{i}.txt", i=CHROMOSOMES, REF_DIR=REF_DIR),
+        cmmap = expand("{REF_DIR}/genetic_map_b37/genetic_map_chr{chrom}_combined_b37.txt", chrom=CHROMOSOMES, REF_DIR=REF_DIR),
+        vcfRef = expand("{REF_DIR}/1000genome/bcf/1000genome_chr{chrom}.bcf", chrom=CHROMOSOMES, REF_DIR=REF_DIR),
+        refHaps = expand("{REF_DIR}/Minimac/{chrom}.1000g.Phase3.v5.With.Parameter.Estimates.m3vcf.gz", chrom=CHROMOSOMES, REF_DIR=REF_DIR),
+        lift_chain = lift_chain,
+        SITE_1000GENOME=SITE_1000GENOME
+
+rule download_GRCh37_fasta:
+    output:
+        GRCh37_fasta = GRCh37_fasta
+    conda:
+        "../../envs/download.yaml"
+    shell:
+        """
+            set -e
+            set -x
+
+            if [ ! -f "{GRCh37_fasta}" ];
+            then
+                wget ftp://ftp.ncbi.nlm.nih.gov/1000genomes/ftp/technical/reference/human_g1k_v37.fasta.gz -O {GRCh37_fasta};
+            fi
+        """
+
+rule download_GENETIC_MAP:
+    output:
+        GENETIC_MAP = GENETIC_MAP
+    conda:
+        "../../envs/download.yaml"
+    shell:
+        """
+            set -e
+            set -x
+
+            if [ ! -f "{GENETIC_MAP}" ];
+            then
+                wget https://storage.googleapis.com/broad-alkesgroup-public/Eagle/downloads/tables/genetic_map_hg19_withX.txt.gz -O {GENETIC_MAP};
+            fi
+        """
+
+rule download_genetic_map_GRCh37:
+    output:
+        genetic_map_GRCh37 = expand("{REF_DIR}/genetic_map_GRCh37/genetic_map_GRCh37_chr{i}.txt", i=CHROMOSOMES, REF_DIR=REF_DIR)
+    conda:
+        "../../envs/download.yaml"
+    shell:
+        """
+            set -e
+            set -x
+
+            if [ ! -f "{genetic_map_GRCh37}" ];
+            then
+                wget ftp://ftp.ncbi.nlm.nih.gov/hapmap/recombination/2011-01_phaseII_B37/genetic_map_HapMapII_GRCh37.tar.gz -P {REF_DIR};
+                tar -zxvf {REF_DIR}/genetic_map_HapMapII_GRCh37.tar.gz -C {REF_DIR}/genetic_map_GRCh37 --exclude=README.txt
+                rm {REF_DIR}/genetic_map_HapMapII_GRCh37.tar.gz
+                # consider postprocessing? https://github.com/arq5x/gemini/blob/master/gemini/annotation_provenance/make-recombination.sh
+            fi
+        """
+
+rule download_vcfRef:
+    output:
+        vcfRef =  expand("{REF_DIR}/1000genome/bcf/1000genome_chr{chrom}.bcf", chrom=CHROMOSOMES, REF_DIR=REF_DIR)
+    conda:
+        "../../envs/download.yaml"
+    shell:
+        """
+            set -e
+            set -x
+
+            if [ ! -f "{vcfRef}" ];
+            then
+                wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr{{{{1..22}}.phase3_shapeit2_mvncall_integrated_v5a,X.phase3_shapeit2_mvncall_integrated_v1b,Y.phase3_integrated_v2a}}.20130502.genotypes.vcf.gz{{,.tbi}} -P {REF_DIR}/1000genome;
+                mkdir -p {REF_DIR}/1000genome/bcf
+                parallel bcftools convert ALL.chr{{}}.phase3*integrated_v[125][ab].20130502.genotypes.vcf.gz -Ob -o bcf/1000genome_chr{{}}.bcf ::: {{1..22}} X Y
+                parallel bcftools index -f bcf/1000genome_chr{{}}.bcf ::: {{1..22}} X Y
+                rm {REF_DIR}/1000genome/ALL*
+            fi
+        """
+
+rule download_refHaps:
+    output:
+        refHaps = expand("{REF_DIR}/Minimac/{chrom}.1000g.Phase3.v5.With.Parameter.Estimates.m3vcf.gz", chrom=CHROMOSOMES, REF_DIR=REF_DIR)
+    conda:
+        "../../envs/download.yaml"
+    shell:
+        """
+            set -e
+            set -x
+
+            if [ ! -f "{refHaps}" ];
+            then
+                wget ftp://share.sph.umich.edu/minimac3/G1K_P3_M3VCF_FILES_WITH_ESTIMATES.tar.gz -P {REF_DIR}/Minimac;
+                tar -zxvf {REF_DIR}/Minimac/G1K_P3_M3VCF_FILES_WITH_ESTIMATES.tar.gz -C {REF_DIR}/Minimac
+                rm {REF_DIR}/Minimac/G1K_P3_M3VCF_FILES_WITH_ESTIMATES.tar.gz
+            fi
+        """
+
+rule download_lift_chain:
+    output:
+        lift_chain = lift_chain
+    conda:
+        "../../envs/download.yaml"
+    shell:
+        """
+            set -e
+            set -x
+
+            if [ ! -f "{lift_chain}" ];
+            then
+                wget ftp://hgdownload.cse.ucsc.edu/goldenPath/hg38/liftOver/hg38ToHg19.over.chain.gz -P {REF_DIR};
+            fi
+        """
+
+rule download_cmmap:
+    output:
+        cmmap = expand("{REF_DIR}/genetic_map_b37/genetic_map_chr{chrom}_combined_b37.txt", chrom=CHROMOSOMES, REF_DIR=REF_DIR)
+    conda:
+        "../../envs/download.yaml",
+    shell:
+        """
+            set -e
+            set -x
+
+            if [ ! -f "{genetic_map_b37}" ];
+            then
+                # found only processed maps from dropbox
+                # TODO: need to find original and process it accordingly
+                wget https://www.dropbox.com/s/slchsd0uyd4hii8/genetic_map_b37.zip -P {REF_DIR};
+                unzip {REF_DIR}/genetic_map_b37.zip -d {REF_DIR}
+                rm {REF_DIR}/genetic_map_b37.zip
+            fi
+        """
+
+rule download_SITE_1000GENOME:
+    output:
+        SITE_1000GENOME=SITE_1000GENOME
+    conda:
+        "../../envs/download.yaml",
+    shell:
+        """
+            set -e
+            set -x
+
+            if [ ! -f "{SITE_1000GENOME}" ];
+            then
+                mkdir -p {REF_DIR}/1000genome/allele_info
+                wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz -P {REF_DIR}/1000genome/allele_info;
+                # do we really need to ungzip?
+                # gzip -d {REF_DIR}/1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
+                # possible crash due OOM
+                # awk '$3~/^rs/ && $5~/^[ATCG]$/ && $4~/^[ATCG]$/ && !a[$3]++' ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf > ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.only_rs.biallelic.tab
+                # alternative from https://github.com/aehrc/TRIBES/blob/branch-0.2/process.smake please note that output is not gzipped (why?)
+                bcftools view -m2 -M2 -v snps -g ^miss -Ov -o {SITE_1000GENOME} {REF_DIR}/1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
+                rm {REF_DIR}/1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
+            fi
+        """
