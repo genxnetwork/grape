@@ -44,10 +44,7 @@ rule download_GRCh37_fasta:
             set -e
             set -x
 
-            if [ ! -f "{GRCh37_fasta}" ];
-            then
-                wget ftp://ftp.ncbi.nlm.nih.gov/1000genomes/ftp/technical/reference/human_g1k_v37.fasta.gz -O {GRCh37_fasta};
-            fi
+            wget ftp://ftp.ncbi.nlm.nih.gov/1000genomes/ftp/technical/reference/human_g1k_v37.fasta.gz -O {GRCh37_fasta};
         """
 
 rule download_GENETIC_MAP:
@@ -60,10 +57,7 @@ rule download_GENETIC_MAP:
             set -e
             set -x
 
-            if [ ! -f "{GENETIC_MAP}" ];
-            then
-                wget https://storage.googleapis.com/broad-alkesgroup-public/Eagle/downloads/tables/genetic_map_hg19_withX.txt.gz -O {GENETIC_MAP};
-            fi
+            wget https://storage.googleapis.com/broad-alkesgroup-public/Eagle/downloads/tables/genetic_map_hg19_withX.txt.gz -O {GENETIC_MAP};
         """
 
 rule download_genetic_map_GRCh37:
@@ -76,16 +70,38 @@ rule download_genetic_map_GRCh37:
             set -e
             set -x
 
-            if [ ! -f "{genetic_map_GRCh37}" ];
-            then
-                wget ftp://ftp.ncbi.nlm.nih.gov/hapmap/recombination/2011-01_phaseII_B37/genetic_map_HapMapII_GRCh37.tar.gz -P {REF_DIR};
-                tar -zxvf {REF_DIR}/genetic_map_HapMapII_GRCh37.tar.gz -C {REF_DIR}/genetic_map_GRCh37 --exclude=README.txt
-                rm {REF_DIR}/genetic_map_HapMapII_GRCh37.tar.gz
-                # consider postprocessing? https://github.com/arq5x/gemini/blob/master/gemini/annotation_provenance/make-recombination.sh
-            fi
+            wget ftp://ftp.ncbi.nlm.nih.gov/hapmap/recombination/2011-01_phaseII_B37/genetic_map_HapMapII_GRCh37.tar.gz -P {REF_DIR};
+            tar -zxvf {REF_DIR}/genetic_map_HapMapII_GRCh37.tar.gz -C {REF_DIR}/genetic_map_GRCh37 --exclude=README.txt
+            rm {REF_DIR}/genetic_map_HapMapII_GRCh37.tar.gz
+            # consider postprocessing? https://github.com/arq5x/gemini/blob/master/gemini/annotation_provenance/make-recombination.sh
         """
 
 rule download_vcfRef:
+    output:
+        expand("{REF_DIR}/1000genome/ALL.chr{i}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz", i=CHROMOSOMES, REF_DIR=REF_DIR),
+        expand("{REF_DIR}/1000genome/ALL.chr{i}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz.tbi", i=CHROMOSOMES, REF_DIR=REF_DIR),
+        expand("{REF_DIR}/1000genome/ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz", REF_DIR=REF_DIR),
+        expand("{REF_DIR}/1000genome/ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz.tbi", REF_DIR=REF_DIR),
+        expand("{REF_DIR}/1000genome/ALL.chrY.phase3_integrated_v2a.20130502.genotypes.vcf.gz", REF_DIR=REF_DIR),
+        expand("{REF_DIR}/1000genome/ALL.chrY.phase3_integrated_v2a.20130502.genotypes.vcf.gz.tbi", REF_DIR=REF_DIR)
+    conda:
+        "../../envs/download.yaml"
+    shell:
+        """
+            set +e
+            set -x
+
+            # mind the -N flag
+            #wget -N ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr{{{{1..22}}.phase3_shapeit2_mvncall_integrated_v5a,X.phase3_shapeit2_mvncall_integrated_v1b,Y.phase3_integrated_v2a}}.20130502.genotypes.vcf.gz{{,.tbi}} -P {REF_DIR}/1000genome;
+            for o in {output}; do
+                # potentially inf loop
+                until wget -N -r -c ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/`basename $o` -P {REF_DIR}/1000genome; do :; done
+            done
+        """
+
+rule process_vcfRef:
+    input:
+        rules.download_vcfRef.output
     output:
         vcfRef =  expand("{REF_DIR}/1000genome/bcf/1000genome_chr{chrom}.bcf", chrom=CHROMOSOMES, REF_DIR=REF_DIR)
     conda:
@@ -95,14 +111,10 @@ rule download_vcfRef:
             set -e
             set -x
 
-            if [ ! -f "{vcfRef}" ];
-            then
-                wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr{{{{1..22}}.phase3_shapeit2_mvncall_integrated_v5a,X.phase3_shapeit2_mvncall_integrated_v1b,Y.phase3_integrated_v2a}}.20130502.genotypes.vcf.gz{{,.tbi}} -P {REF_DIR}/1000genome;
-                mkdir -p {REF_DIR}/1000genome/bcf
-                parallel bcftools convert ALL.chr{{}}.phase3*integrated_v[125][ab].20130502.genotypes.vcf.gz -Ob -o bcf/1000genome_chr{{}}.bcf ::: {{1..22}} X Y
-                parallel bcftools index -f bcf/1000genome_chr{{}}.bcf ::: {{1..22}} X Y
-                rm {REF_DIR}/1000genome/ALL*
-            fi
+            mkdir -p {REF_DIR}/1000genome/bcf
+            parallel bcftools convert {REF_DIR}/1000genome/ALL.chr{{}}.phase3*integrated_v[125][ab].20130502.genotypes.vcf.gz -Ob -o {REF_DIR}/1000genome/bcf/1000genome_chr{{}}.bcf ::: {{1..22}} X Y
+            parallel bcftools index -f {REF_DIR}/1000genome/bcf/1000genome_chr{{}}.bcf ::: {{1..22}} X Y
+            #rm {REF_DIR}/1000genome/ALL*
         """
 
 rule download_refHaps:
@@ -115,12 +127,9 @@ rule download_refHaps:
             set -e
             set -x
 
-            if [ ! -f "{refHaps}" ];
-            then
-                wget ftp://share.sph.umich.edu/minimac3/G1K_P3_M3VCF_FILES_WITH_ESTIMATES.tar.gz -P {REF_DIR}/Minimac;
-                tar -zxvf {REF_DIR}/Minimac/G1K_P3_M3VCF_FILES_WITH_ESTIMATES.tar.gz -C {REF_DIR}/Minimac
-                rm {REF_DIR}/Minimac/G1K_P3_M3VCF_FILES_WITH_ESTIMATES.tar.gz
-            fi
+            wget ftp://share.sph.umich.edu/minimac3/G1K_P3_M3VCF_FILES_WITH_ESTIMATES.tar.gz -P {REF_DIR}/Minimac;
+            tar -zxvf {REF_DIR}/Minimac/G1K_P3_M3VCF_FILES_WITH_ESTIMATES.tar.gz -C {REF_DIR}/Minimac
+            rm {REF_DIR}/Minimac/G1K_P3_M3VCF_FILES_WITH_ESTIMATES.tar.gz
         """
 
 rule download_lift_chain:
@@ -133,10 +142,7 @@ rule download_lift_chain:
             set -e
             set -x
 
-            if [ ! -f "{lift_chain}" ];
-            then
-                wget ftp://hgdownload.cse.ucsc.edu/goldenPath/hg38/liftOver/hg38ToHg19.over.chain.gz -P {REF_DIR};
-            fi
+            wget ftp://hgdownload.cse.ucsc.edu/goldenPath/hg38/liftOver/hg38ToHg19.over.chain.gz -P {REF_DIR}
         """
 
 rule download_cmmap:
@@ -149,14 +155,11 @@ rule download_cmmap:
             set -e
             set -x
 
-            if [ ! -f "{genetic_map_b37}" ];
-            then
-                # found only processed maps from dropbox
-                # TODO: need to find original and process it accordingly
-                wget https://www.dropbox.com/s/slchsd0uyd4hii8/genetic_map_b37.zip -P {REF_DIR};
-                unzip {REF_DIR}/genetic_map_b37.zip -d {REF_DIR}
-                rm {REF_DIR}/genetic_map_b37.zip
-            fi
+            # found only processed maps from dropbox
+            # TODO: need to find original and process it accordingly
+            wget https://www.dropbox.com/s/slchsd0uyd4hii8/genetic_map_b37.zip -P {REF_DIR};
+            unzip {REF_DIR}/genetic_map_b37.zip -d {REF_DIR}
+            rm {REF_DIR}/genetic_map_b37.zip
         """
 
 rule download_SITE_1000GENOME:
