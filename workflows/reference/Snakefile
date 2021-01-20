@@ -43,10 +43,13 @@ rule download_GRCh37_fasta:
         "../../envs/download.yaml"
     shell:
         """
-            set -e
+            set +e
             set -x
 
-            wget ftp://ftp.ncbi.nlm.nih.gov/1000genomes/ftp/technical/reference/human_g1k_v37.fasta.gz -O {GRCh37_fasta};
+            wget ftp://ftp.ncbi.nlm.nih.gov/1000genomes/ftp/technical/reference/human_g1k_v37.fasta.gz -P {REF_DIR};
+            # gzip exit with "decompression OK, trailing garbage ignored". need to silence
+            gzip -d {REF_DIR}/human_g1k_v37.fasta.gz
+            exit 0
         """
 
 rule download_GENETIC_MAP:
@@ -145,6 +148,7 @@ rule download_lift_chain:
             set -x
 
             wget ftp://hgdownload.cse.ucsc.edu/goldenPath/hg38/liftOver/hg38ToHg19.over.chain.gz -P {REF_DIR}
+            gzip -d {REF_DIR}/hg38ToHg19.over.chain.gz && sed -e s/chr//g -i {REF_DIR}/hg38ToHg19.over.chain && gzip -c {REF_DIR}/hg38ToHg19.over.chain > {REF_DIR}/hg38ToHg19.over.chain.gz && rm {REF_DIR}/hg38ToHg19.over.chain
         """
 
 rule download_cmmap:
@@ -181,7 +185,7 @@ rule download_SITE_1000GENOME:
             # possible crash due OOM
             # awk '$3~/^rs/ && $5~/^[ATCG]$/ && $4~/^[ATCG]$/ && !a[$3]++' ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf > ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.only_rs.biallelic.tab
             # alternative from https://github.com/aehrc/TRIBES/blob/branch-0.2/process.smake please note that output is not gzipped (why?)
-            bcftools view -m2 -M2 -v snps -g ^miss -Ov -o {SITE_1000GENOME} {REF_DIR}/1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
+            bcftools view --no-header -m2 -M2 -v snps -g ^miss -Ov -o {SITE_1000GENOME} {REF_DIR}/1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
             rm {REF_DIR}/1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
         """
 
