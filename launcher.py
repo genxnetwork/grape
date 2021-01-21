@@ -20,6 +20,7 @@ def get_parser_args():
                         find detects relatives in vcf file;
                         simulate generates pedigree and vcf file with distant relatives from 1000 genomes CEU(CEPH) population using pedsim;
                         hapmap extracts CEU(CEPH) data for running find;
+                        reference downloads and preprocess all the references to the --ref-directory;
                         For running the main pipeline you can provide .vcf file and use find or use preprocess with 23andme inputs""")
 
     parser.add_argument(
@@ -63,6 +64,11 @@ def get_parser_args():
         "--directory",
         default=".",
         help="Snakemake working directory")
+
+    parser.add_argument(
+        "--ref-directory",
+        default="",
+        help="Snakemake directory with references. If emptry, than it is equal to the /media/ref from config.yaml")
 
     parser.add_argument(
         '--input',
@@ -183,7 +189,7 @@ if __name__ == '__main__':
     if not os.path.exists(args.directory):
         os.makedirs(args.directory)
 
-    valid_commands = ['preprocess', 'find', 'simulate', 'hapmap', 'vcf']
+    valid_commands = ['preprocess', 'find', 'simulate', 'hapmap', 'vcf', 'reference']
     if args.command not in valid_commands:
         raise RuntimeError(f'command {args.command} not in list of valid commands: {valid_commands}')
 
@@ -200,7 +206,7 @@ if __name__ == '__main__':
     if args.command == 'vcf':
         shutil.copy(args.vcf_file, os.path.join(args.directory, 'input.vcf'))
 
-    if args.command in ['preprocess', 'find', 'vcf']:
+    if args.command in ['preprocess', 'find', 'vcf', 'reference']:
         shutil.copy('config.yaml', os.path.join(args.directory, 'config.yaml'))
 
     snakefiles = {
@@ -208,7 +214,8 @@ if __name__ == '__main__':
         'vcf': 'workflows/preprocess_vcf/Snakefile',
         'find': 'Snakefile',
         'simulate': 'workflows/pedsim/Snakefile',
-        'hapmap': 'workflows/hapmap/Snakefile'
+        'hapmap': 'workflows/hapmap/Snakefile',
+        'reference': 'workflows/reference/Snakefile'
     }
 
     if args.client:
@@ -233,6 +240,8 @@ if __name__ == '__main__':
     config_dict['sim_samples_file'] = args.sim_samples_file
     config_dict['assembly'] = args.assembly
     config_dict['mem_gb'] = args.memory
+    if args.ref_directory != '':
+        config_dict['ref_dir'] = args.ref_directory
     if args.flow == 'ibis':
         config_dict['use_ibis'] = True
     elif args.flow == 'rapid':

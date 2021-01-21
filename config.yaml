@@ -4,8 +4,8 @@ vcf_file: vcf/merged.vcf.gz
 use_simulated_ibd: False
 use_rapid: False
 use_ibis: False
+ref_dir: /media/ref
 reference:
-  ref_dir: /media/ref_test
   GRCh37_fasta: human_g1k_v37.fasta
   GENETIC_MAP: tables/genetic_map_hg19_withX.txt.gz
   genetic_map_GRCh37: genetic_map_GRCh37/genetic_map_GRCh37_chr{1..22}.txt
