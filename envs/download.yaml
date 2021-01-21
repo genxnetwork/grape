@@ -1,0 +1,10 @@
+name: download
+channels:
+  - anaconda
+  - conda-forge
+  - bioconda
+dependencies:
+  - unzip
+  - wget
+  - bcftools
+  - parallel

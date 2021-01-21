@@ -24,3 +24,5 @@ results/relatives.tsv
 scripts/__pycache__/*
 logs/*
 scripts/utils/__pycache__/*
+.zattrs/*
+zarr/*
