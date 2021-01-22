@@ -89,7 +89,7 @@ rule ibis:
     shell:
         """
         # use default params
-        ibis {params.input}.bed {input} {params.input}.fam -t {threads} -hbd -f ibis/merged_ibis |& tee -a {log}
+        ibis {params.input}.bed {input} {params.input}.fam -t {threads} -mt 300 -mL 5 -hbd -f ibis/merged_ibis |& tee -a {log}
 
         cat {output.ibd} | awk '{{sub(":", "_", $1); sub(":", "_", $2); print $1, $1 "\t" $2, $2 "\t" $3 "\t" $4, $5 "\t" 0, 0 "\t" $10 "\t" $9 "\t" "cM" "\t" 0 "\t" 0 "\t" 0}};' > {output.germline}
         """
@@ -120,8 +120,8 @@ rule ersa:
     shell:
         """
         ERSA_L=2.0 # the average number of IBD segments in population
-        ERSA_TH=7.5 # the average length of IBD segment in population
-        ERSA_T=7.0 # min length of segment to be considered in segment aggregation
+        ERSA_TH=5.5 # the average length of IBD segment in population
+        ERSA_T=5.0 # min length of segment to be considered in segment aggregation
         ersa --avuncular-adj -ci --dmax 14 -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd}  -o {output}  |& tee {log}
         """
 
