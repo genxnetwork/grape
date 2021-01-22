@@ -69,3 +69,15 @@ def test_segments_to_germline():
     frame = pandas.DataFrame.from_records(records)
     with tempfile.NamedTemporaryFile('w') as tf:
         frame.to_csv(tf, sep='\t', index=False, header=None)
+
+
+def test_read_king_segments():
+    cm_dir = '/media/pipeline_data/real-data-3-ibis/cm'
+    segments_path = '/media/ag3r/genx-relatives-snakemake/test_data/king_20.segments.gz'
+    segments = ibd.read_king_segments(segments_path)
+    interpolated = ibd.interpolate_all(segments, cm_dir)
+    key = list(interpolated.keys())[0]
+    for seg in interpolated[key]:
+        print(seg.bp_start, seg.bp_end, seg.cm_start, seg.cm_end, seg.cm_len)
+    assert interpolated[key][0].bp_len > 50*1e+6
+    assert interpolated[key][0].cm_len > 10.0

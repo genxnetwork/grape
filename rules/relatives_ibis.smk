@@ -68,7 +68,7 @@ rule ibis_mapping:
         "benchmarks/ibis/run_ibis_mapping.txt"
     shell:
         """
-        (add-map-plink.pl {params.input}.bim {genetic_map_GRCh37} > plink/merged_ibis_mapped.bim) |& tee -a {log}
+        (add-map-plink.pl -cm {params.input}.bim {genetic_map_GRCh37}> plink/merged_ibis_mapped.bim) |& tee -a {log}
         """
 
 rule ibis:
@@ -89,29 +89,9 @@ rule ibis:
     shell:
         """
         # use default params
-        ibis {params.input}.bed {input} {params.input}.fam -t {threads} -f ibis/merged_ibis |& tee -a {log}
+        ibis {params.input}.bed {input} {params.input}.fam -t {threads} -hbd -f ibis/merged_ibis |& tee -a {log}
 
         cat {output.ibd} | awk '{{sub(":", "_", $1); sub(":", "_", $2); print $1, $1 "\t" $2, $2 "\t" $3 "\t" $4, $5 "\t" 0, 0 "\t" $10 "\t" $9 "\t" "cM" "\t" 0 "\t" 0 "\t" 0}};' > {output.germline}
-        """
-
-rule ibis_hbd:
-    input:
-        rules.ibis_mapping.output
-    params:
-        input = "plink/merged_ibis"
-    singularity:
-        "docker://alexgenx/ibis:stable"
-    output:
-        hbd     = "ibis/merged_ibis.hbd"
-    log:
-        "logs/ibis/run_ibis.log"
-    benchmark:
-        "benchmarks/ibis/run_ibis.txt"
-    threads: workflow.cores
-    shell:
-        """
-        # use default params
-        ibis {params.input}.bed {input} {params.input}.fam -hbd -t {threads} -f ibis/merged_ibis |& tee -a {log}
         """
 
 rule split_map:
@@ -152,8 +132,7 @@ rule merge_king_ersa:
         ibd=rules.ibis.output['germline'],
         ersa=rules.ersa.output[0],
         kinship=rules.run_king.output['kinship'],
-        kinship0=rules.run_king.output['kinship0'],
-        hbd=rules.ibis_hbd.output['hbd'] # it does not need it, it is just for invoking hbd search for further analysis
+        kinship0=rules.run_king.output['kinship0']
     params:
         cm_dir='cm'
     output: "results/relatives.tsv"

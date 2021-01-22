@@ -80,7 +80,7 @@ def interpolate(segments, cm_map):
 
     cm_starts = numpy.interp(bp_starts, cm_map.bp_pos.values, cm_map.cm_pos.values)
     cm_ends = numpy.interp(bp_ends, cm_map.bp_pos.values, cm_map.cm_pos.values)
-
+    print('cm_map max is ', cm_map.cm_pos.values.max())
     for seg, cm_start, cm_end in zip(segments, cm_starts, cm_ends):
         seg.cm_start = cm_start
         seg.cm_end = cm_end
