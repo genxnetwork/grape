@@ -94,6 +94,26 @@ rule ibis:
         cat {output.ibd} | awk '{{sub(":", "_", $1); sub(":", "_", $2); print $1, $1 "\t" $2, $2 "\t" $3 "\t" $4, $5 "\t" 0, 0 "\t" $10 "\t" $9 "\t" "cM" "\t" 0 "\t" 0 "\t" 0}};' > {output.germline}
         """
 
+rule ibis_hbd:
+    input:
+        rules.ibis_mapping.output
+    params:
+        input = "plink/merged_ibis"
+    singularity:
+        "docker://alexgenx/ibis:stable"
+    output:
+        hbd     = "ibis/merged_ibis.hbd"
+    log:
+        "logs/ibis/run_ibis.log"
+    benchmark:
+        "benchmarks/ibis/run_ibis.txt"
+    threads: workflow.cores
+    shell:
+        """
+        # use default params
+        ibis {params.input}.bed {input} {params.input}.fam -hbd -t {threads} -f ibis/merged_ibis |& tee -a {log}
+        """
+
 rule split_map:
     input:
         bim = "plink/merged_ibis_mapped.bim"
@@ -119,10 +139,10 @@ rule ersa:
         "benchmarks/ersa/ersa.txt"
     shell:
         """
-        ERSA_L=5.0 # the average number of IBD segments in population
-        ERSA_TH=2.5 # the average length of IBD segment
-        ERSA_T=2.5 # min length of segment to be considered in segment aggregation
-        ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd} -o {output} |& tee {log}
+        ERSA_L=2.0 # the average number of IBD segments in population
+        ERSA_TH=7.5 # the average length of IBD segment in population
+        ERSA_T=7.0 # min length of segment to be considered in segment aggregation
+        ersa --avuncular-adj -ci --dmax 14 -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd}  -o {output}  |& tee {log}
         """
 
 rule merge_king_ersa:
@@ -132,7 +152,8 @@ rule merge_king_ersa:
         ibd=rules.ibis.output['germline'],
         ersa=rules.ersa.output[0],
         kinship=rules.run_king.output['kinship'],
-        kinship0=rules.run_king.output['kinship0']
+        kinship0=rules.run_king.output['kinship0'],
+        hbd=rules.ibis_hbd.output['hbd'] # it does not need it, it is just for invoking hbd search for further analysis
     params:
         cm_dir='cm'
     output: "results/relatives.tsv"
