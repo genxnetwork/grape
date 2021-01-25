@@ -96,11 +96,9 @@ rule download_vcfRef:
             set +e
             set -x
 
-            # mind the -N flag
-            #wget -N ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr{{{{1..22}}.phase3_shapeit2_mvncall_integrated_v5a,X.phase3_shapeit2_mvncall_integrated_v1b,Y.phase3_integrated_v2a}}.20130502.genotypes.vcf.gz{{,.tbi}} -P {REF_DIR}/1000genome;
             for o in {output}; do
                 # potentially inf loop
-                until wget -N -r -c ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/`basename $o` -P {REF_DIR}/1000genome; do :; done
+                until wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/`basename $o` -P {REF_DIR}/1000genome; do :; done
             done
         """
 
