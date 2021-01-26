@@ -1,5 +1,0 @@
-channels:
-    - bioconda
-    - soil
-dependencies:
-    - eagle

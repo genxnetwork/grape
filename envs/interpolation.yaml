@@ -1,8 +1,10 @@
 channels:
     - bioconda
     - conda-forge
+    - defaults
 dependencies:
-    - bcftools
-    - samtools
-    - pandas
-    - numpy
+    - bcftools==1.9
+    - samtools==1.9
+    - openssl==1.0.2u
+    - pandas==1.1.1
+    - numpy==1.19.1
