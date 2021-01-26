@@ -3,4 +3,4 @@ channels:
     - bioconda
     - soil
 dependencies:
-    - plink
+    - plink==1.90b6.18

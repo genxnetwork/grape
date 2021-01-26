@@ -1,5 +1,9 @@
+name: bcftools
 channels:
+    - conda-forge
     - bioconda
+    - defaults
 dependencies:
-    - bcftools
-    - samtools
+    - bcftools==1.9
+    - samtools==1.9
+    - openssl==1.0.2u

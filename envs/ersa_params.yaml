@@ -1,5 +1,0 @@
-name: ersa_params
-channels:
-    - conda-forge
-dependencies:
-    - networkx
