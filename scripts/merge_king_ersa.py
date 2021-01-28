@@ -25,6 +25,9 @@ def read_germline(ibd_path):
     ]
 
     data = pandas.read_table(ibd_path, header=None, names=germline_names)
+    if data.shape[0] == 0:
+        return pandas.DataFrame(columns=['id1', 'id2', 'seg_count_germline', 'total_seg_len_germline']).set_index(['id1', 'id2'])
+
     data.loc[:, 'id1'] = data.fid_iid1.str.split().str[1]
     data.loc[:, 'id2'] = data.fid_iid2.str.split().str[1]
 
@@ -45,6 +48,7 @@ def map_king_degree(king_degree):
     }
     return [degree_map[kd] for kd in king_degree]
 
+
 def map_king_relation(king_degree):
     degree_map = {
         'Dup/MZ': 0,
@@ -57,35 +61,48 @@ def map_king_relation(king_degree):
     }
     return [degree_map[kd] for kd in king_degree]
 
+
 def read_king(king_path):
     # FID1    ID1     FID2    ID2     MaxIBD1 MaxIBD2 IBD1Seg IBD2Seg PropIBD InfType
-    data = pandas.read_table(king_path)
-    data.loc[:, 'id1'] = data.FID1.astype(str) + '_' + data.ID1.astype(str)
-    data.loc[:, 'id2'] = data.FID2.astype(str) + '_' + data.ID2.astype(str)
+    try:
+        data = pandas.read_table(king_path)
+        data.loc[:, 'id1'] = data.FID1.astype(str) + '_' + data.ID1.astype(str)
+        data.loc[:, 'id2'] = data.FID2.astype(str) + '_' + data.ID2.astype(str)
 
-    data.loc[:, 'king_degree'] = map_king_degree(data.InfType)
-    data.loc[:, 'king_relation'] = map_king_relation(data.InfType)
-    data.loc[:, 'king_degree'] = data.king_degree.astype(float).astype(pandas.Int32Dtype())
-    data.rename({'PropIBD': 'shared_genome_proportion'}, axis='columns', inplace=True)
-    indexed = data.loc[:, ['id1', 'id2', 'king_degree', 'king_relation', 'shared_genome_proportion']].\
-        set_index(['id1', 'id2'])
+        data.loc[:, 'king_degree'] = map_king_degree(data.InfType)
+        data.loc[:, 'king_relation'] = map_king_relation(data.InfType)
+        data.loc[:, 'king_degree'] = data.king_degree.astype(float).astype(pandas.Int32Dtype())
+        data.rename({'PropIBD': 'shared_genome_proportion'}, axis='columns', inplace=True)
+        indexed = data.loc[:, ['id1', 'id2', 'king_degree', 'king_relation', 'shared_genome_proportion']].\
+            set_index(['id1', 'id2'])
+        return indexed
 
-    return indexed
+    except pandas.errors.EmptyDataError:
+        return pandas.DataFrame(data=None, index=None,
+                                columns=['id1',
+                                         'id2',
+                                         'king_degree',
+                                         'king_relation',
+                                         'shared_genome_proportion']).set_index(['id1', 'id2'])
 
 
 def read_king_segments(king_segments_path, map_dir):
-    segments = rks(king_segments_path)
-    segments = interpolate_all(segments, map_dir)
-    data = pandas.DataFrame(columns=['id1', 'id2', 'total_seg_len_king', 'seg_count_king'])
-    print(f'loaded and interpolated segments for {len(segments)} pairs')
-    for key, segs in segments.items():
-        row = {'id1': key[0],
-               'id2': key[1],
-               'total_seg_len_king': sum([s.cm_len for s in segs]),
-               'seg_count_king': len(segs)}
-        data = data.append(row, ignore_index=True)
+    try:
+        segments = rks(king_segments_path)
+        segments = interpolate_all(segments, map_dir)
+        data = pandas.DataFrame(columns=['id1', 'id2', 'total_seg_len_king', 'seg_count_king'])
+        print(f'loaded and interpolated segments for {len(segments)} pairs')
+        for key, segs in segments.items():
+            row = {'id1': key[0],
+                   'id2': key[1],
+                   'total_seg_len_king': sum([s.cm_len for s in segs]),
+                   'seg_count_king': len(segs)}
+            data = data.append(row, ignore_index=True)
 
-    return data.set_index(['id1', 'id2'])
+        return data.set_index(['id1', 'id2'])
+
+    except pandas.errors.EmptyDataError:
+        return pandas.DataFrame(columns=['id1', 'id2', 'total_seg_len_king', 'seg_count_king']).set_index(['id1', 'id2'])
 
 
 def read_kinship(kinship_path, kinship0_path):
@@ -94,6 +111,10 @@ def read_kinship(kinship_path, kinship0_path):
     within, across = None, None
     if is_non_zero_file(kinship_path):
         within = pandas.read_table(kinship_path)
+        # If no relations were found, king creates file with only header
+        if within.shape[0] == 0:
+            return pandas.DataFrame(columns=['id1', 'id2', 'kinship']).set_index(['id1', 'id2'])
+
         within.loc[:, 'id1'] = within.FID.astype(str) + '_' + within.ID1.astype(str)
         within.loc[:, 'id2'] = within.FID.astype(str) + '_' + within.ID2.astype(str)
         within.rename({'Kinship': 'kinship'}, axis=1, inplace=True)
@@ -103,6 +124,10 @@ def read_kinship(kinship_path, kinship0_path):
     # FID1    ID1     FID2    ID2     N_SNP   HetHet  IBS0    Kinship
     if is_non_zero_file(kinship0_path):
         across = pandas.read_table(kinship0_path)
+        # If no relations were found, king creates file with only header
+        if across.shape[0] == 0:
+            return pandas.DataFrame(columns=['id1', 'id2', 'kinship']).set_index(['id1', 'id2'])
+
         across.loc[:, 'id1'] = across.FID1.astype(str) + '_' + across.ID1.astype(str)
         across.loc[:, 'id2'] = across.FID2.astype(str) + '_' + across.ID2.astype(str)
         across.rename({'Kinship': 'kinship'}, axis=1, inplace=True)
@@ -168,7 +193,6 @@ if __name__ == '__main__':
 
     if kinship is not None:
         print(f'kinship is not none')
-        print(kinship.columns)
         relatives = ibd.merge(king, how='outer', left_index=True, right_index=True).\
             merge(kinship, how='outer', left_index=True, right_index=True).\
             merge(ersa, how='outer', left_index=True, right_index=True).\

@@ -51,6 +51,9 @@ rule run_king:
         if [ ! -f "{output.kinship0}" ]; then
             touch {output.kinship0}
         fi
+        if [ ! -f "{output.segments}" ]; then
+            touch {output.segments}
+        fi
         """
 
 rule ibis_mapping:
