@@ -66,7 +66,7 @@ rule liftover:
     output:
         vcf="vcf/merged_lifted.vcf"
     log: 'logs/liftover/merged_lifted.log'
-    singularity: "docker://alexgenx/picard:latest"
+    singularity: "docker://genxnetwork/picard:stable"
     shell:
         """
             # create dict for the reference

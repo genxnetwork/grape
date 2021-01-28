@@ -34,7 +34,7 @@ rule impute:
     output: "imputed/chr{chrom}.imputed.dose.vcf.gz"
     threads: 1
     singularity:
-        "docker://alexgenx/minimac4:stable"
+        "docker://genxnetwork/minimac4:stable"
     log:
         "logs/impute/minimac4-{chrom}.log"
     benchmark:

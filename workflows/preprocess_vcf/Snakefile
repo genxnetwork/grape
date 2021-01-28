@@ -38,7 +38,7 @@ rule liftover:
     output:
         vcf="vcf/merged_lifted.vcf"
     singularity:
-        "docker://alexgenx/picard:latest"
+        "docker://genxnetwork/picard:stable"
     log:
         "logs/liftover/liftover.log"
     params:
