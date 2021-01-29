@@ -73,5 +73,5 @@ rule liftover:
             if [ ! -f "$(echo "{GRCh37_fasta}" | cut -f 1 -d '.').dict" ]; then
                 java -jar /picard/picard.jar CreateSequenceDictionary REFERENCE={GRCh37_fasta} OUTPUT=$(echo "{GRCh37_fasta}" | cut -f 1 -d '.').dict
             fi
-            java -jar /picard/picard.jar LiftoverVcf I={input.vcf} O={output.vcf} CHAIN={lift_chain} REJECT=vcf/rejected.vcf R={GRCh37_fasta} |& tee {log}
+            java -jar /picard/picard.jar LiftoverVcf I={input.vcf} O={output.vcf} WARN_ON_MISSING_CONTIG=true CHAIN={lift_chain} REJECT=vcf/rejected.vcf R={GRCh37_fasta} |& tee {log}
         """
