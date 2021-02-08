@@ -62,7 +62,7 @@ rule rapid:
         vcf=rules.erase_dosages.output['vcf'],
         g=rules.interpolate.output
     singularity:
-        "docker://alexgenx/rapid:latest"
+        "docker://genxnetwork/rapid:stable"
     params:
         min_cm_len=1.0,
         window_size=50,
@@ -102,7 +102,7 @@ rule ersa:
     output:
         "ersa/relatives.tsv"
     singularity:
-        "docker://alexgenx/ersa:stable"
+        "docker://genxnetwork/ersa:stable"
     log:
         "logs/ersa/ersa.log"
     benchmark:

@@ -44,7 +44,7 @@ rule refined_ibd:
     params:
         out="ibd/chr{chrom}"
     singularity:
-        "docker://alexgenx/refined_ibd:latest"
+        "docker://genxnetwork/refined_ibd:stable"
     shell:
         """
             java -Xss5m -jar /app/refined-ibd.jar gt={input.vcf} map={input.cmmap} out={params.out}

@@ -207,7 +207,8 @@ if __name__ == '__main__':
         shutil.copy(args.vcf_file, os.path.join(args.directory, 'input.vcf'))
 
     if args.command in ['preprocess', 'find', 'vcf', 'reference']:
-        shutil.copy('config.yaml', os.path.join(args.directory, 'config.yaml'))
+        if args.directory != '.':
+            shutil.copy('config.yaml', os.path.join(args.directory, 'config.yaml'))
 
     snakefiles = {
         'preprocess': 'workflows/preprocess/Snakefile',

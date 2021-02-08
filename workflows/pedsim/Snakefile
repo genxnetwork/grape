@@ -104,7 +104,7 @@ rule simulate:
     params:
         prefix='pedsim/simulated/data'
     singularity:
-        "docker://alexgenx/pedsim:stable"
+        "docker://genxnetwork/pedsim:stable"
     shell:
         """
             pedsim -d {input._def} -m {input._map} -i {input.bg} -o {params.prefix} --intf {input.intf} --fam

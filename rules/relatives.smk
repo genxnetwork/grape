@@ -33,6 +33,9 @@ rule run_king:
         if [ ! -f "{output.kinship0}" ]; then
             touch {output.kinship0}
         fi
+        if [ ! -f "{output.segments}" ]; then
+            touch {output.segments}
+        fi
         """
 
 rule index_and_split:
@@ -79,7 +82,7 @@ rule vcf_to_bed:
         out="bed/imputed_chr{chrom}",
         vcf="vcf/temp_imputed_chr{chrom}.vcf"
     singularity:
-        "docker://alexgenx/plink2:stable"
+        "docker://genxnetwork/plink2:stable"
     log:
         "logs/vcf/vcf_to_ped-{chrom}.log"
     benchmark:
@@ -129,7 +132,7 @@ rule germline:
     input: rules.interpolate.output
     output: "germline/chr{chrom}.germline.match"
     singularity:
-        "docker://alexgenx/germline:stable"
+        "docker://genxnetwork/germline:stable"
     log:
         "logs/germline/germline-{chrom}.log"
     benchmark:
@@ -171,7 +174,7 @@ rule ersa:
     output:
         "ersa/relatives.tsv"
     singularity:
-        "docker://alexgenx/ersa:stable"
+        "docker://genxnetwork/ersa:stable"
     log:
         "logs/ersa/ersa.log"
     benchmark:

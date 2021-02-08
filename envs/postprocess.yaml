@@ -2,5 +2,6 @@ channels:
     - bioconda
     - conda-forge
 dependencies:
-    - bcftools
-    - networkx
+    - bcftools==1.9
+    - networkx==2.5
+    - openssl==1.0.2u

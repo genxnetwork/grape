@@ -58,7 +58,7 @@ rule recode_vcf:
     input: vcf=rules.merge_to_vcf.output['vcf']
     output: vcf = "vcf/merged_recoded.vcf.gz"
     conda: "../envs/plink.yaml"
-    shell: "plink --vcf {input.vcf} --snps-only just-acgt --output-chr M --not-chr XY,MT --export vcf bgz --out vcf/merged_recoded"
+    shell: "plink --vcf {input.vcf} --chr 1-22 --snps-only just-acgt --output-chr M --export vcf bgz --out vcf/merged_recoded"
 
 rule liftover:
     input:
@@ -66,12 +66,12 @@ rule liftover:
     output:
         vcf="vcf/merged_lifted.vcf"
     log: 'logs/liftover/merged_lifted.log'
-    singularity: "docker://alexgenx/picard:latest"
+    singularity: "docker://genxnetwork/picard:stable"
     shell:
         """
             # create dict for the reference
             if [ ! -f "$(echo "{GRCh37_fasta}" | cut -f 1 -d '.').dict" ]; then
                 java -jar /picard/picard.jar CreateSequenceDictionary REFERENCE={GRCh37_fasta} OUTPUT=$(echo "{GRCh37_fasta}" | cut -f 1 -d '.').dict
             fi
-            java -jar /picard/picard.jar LiftoverVcf I={input.vcf} O={output.vcf} CHAIN={lift_chain} REJECT=vcf/rejected.vcf R={GRCh37_fasta} |& tee {log}
+            java -jar /picard/picard.jar LiftoverVcf I={input.vcf} O={output.vcf} WARN_ON_MISSING_CONTIG=true CHAIN={lift_chain} REJECT=vcf/rejected.vcf R={GRCh37_fasta} |& tee {log}
         """

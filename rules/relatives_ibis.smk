@@ -51,6 +51,9 @@ rule run_king:
         if [ ! -f "{output.kinship0}" ]; then
             touch {output.kinship0}
         fi
+        if [ ! -f "{output.segments}" ]; then
+            touch {output.segments}
+        fi
         """
 
 rule ibis_mapping:
@@ -59,7 +62,7 @@ rule ibis_mapping:
     params:
         input = "plink/merged_ibis"
     singularity:
-        "docker://alexgenx/ibis:stable"
+        "docker://genxnetwork/ibis:stable"
     output:
         "plink/merged_ibis_mapped.bim"
     log:
@@ -77,7 +80,7 @@ rule ibis:
     params:
         input = "plink/merged_ibis"
     singularity:
-        "docker://alexgenx/ibis:stable"
+        "docker://genxnetwork/ibis:stable"
     output:
         ibd     = "ibis/merged_ibis.seg",
         germline= "ibd/merged_ibd.tsv"
@@ -112,7 +115,7 @@ rule ersa:
     output:
         "ersa/relatives.tsv"
     singularity:
-        "docker://alexgenx/ersa:stable"
+        "docker://genxnetwork/ersa:stable"
     log:
         "logs/ersa/ersa.log"
     benchmark:

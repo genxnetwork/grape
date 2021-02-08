@@ -1,6 +1,6 @@
 FROM golang:1.14.0-buster as builder
 
-ARG SINGULARITY_COMMITISH="master"
+ARG SINGULARITY_TAG="v3.7.1"
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -9,7 +9,7 @@ WORKDIR $GOPATH/src/github.com/sylabs
 RUN apt-get update && apt-get install -y gawk gcc git libseccomp-dev make
 RUN git clone https://github.com/sylabs/singularity.git \
     && cd singularity \
-    && git checkout "$SINGULARITY_COMMITISH" \
+    && git checkout "tags/$SINGULARITY_TAG" \
     && ./mconfig -p /usr/local/singularity \
     && cd builddir \
     && make \
