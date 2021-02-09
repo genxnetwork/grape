@@ -46,6 +46,7 @@ rule impute:
         --haps phase/chr{wildcards.chrom}.phased.vcf.gz \
         --format GT,GP \
         --prefix imputed/chr{wildcards.chrom}.imputed \
+        --minRatio 0.01 \
         --cpus {threads} |& tee {log}
         """
 
