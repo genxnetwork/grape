@@ -105,35 +105,35 @@ def read_king_segments(king_segments_path, map_dir):
         return pandas.DataFrame(columns=['id1', 'id2', 'total_seg_len_king', 'seg_count_king']).set_index(['id1', 'id2'])
 
 
+def _read_kinship_data(kinship_path):
+    try:
+        data = pandas.read_table(kinship_path)
+        print(kinship_path, data.shape)
+        # If no relations were found, king creates file with only header
+        if data.shape[0] != 0:
+            if 'FID' in data.columns:
+                data.loc[:, 'id1'] = data.FID.astype(str) + '_' + data.ID1.astype(str)
+                data.loc[:, 'id2'] = data.FID.astype(str) + '_' + data.ID2.astype(str)
+            else:
+                data.loc[:, 'id1'] = data.FID1.astype(str) + '_' + data.ID1.astype(str)
+                data.loc[:, 'id2'] = data.FID2.astype(str) + '_' + data.ID2.astype(str)
+            data.rename({'Kinship': 'kinship'}, axis=1, inplace=True)
+            data = data.loc[:, ['id1', 'id2', 'kinship']].set_index(['id1', 'id2'])
+        else:
+            data = pandas.DataFrame(columns=['id1', 'id2', 'kinship']).set_index(['id1', 'id2'])
+        return data
+    except pandas.errors.EmptyDataError:
+        return pandas.DataFrame(columns=['id1', 'id2', 'kinship']).set_index(['id1', 'id2'])
+
+
 def read_kinship(kinship_path, kinship0_path):
     # parse within families
     # FID     ID1     ID2     N_SNP   Z0      Phi     HetHet  IBS0    Kinship Error
-
-    within = pandas.read_table(kinship_path)
-    print(kinship_path, within.shape)
-    # If no relations were found, king creates file with only header
-    if within.shape[0] != 0:
-        within.loc[:, 'id1'] = within.FID.astype(str) + '_' + within.ID1.astype(str)
-        within.loc[:, 'id2'] = within.FID.astype(str) + '_' + within.ID2.astype(str)
-        within.rename({'Kinship': 'kinship'}, axis=1, inplace=True)
-        within = within.loc[:, ['id1', 'id2', 'kinship']].set_index(['id1', 'id2'])
-    else:
-        within = pandas.DataFrame(columns=['id1', 'id2', 'kinship']).set_index(['id1', 'id2'])
-
+    within = _read_kinship_data(kinship_path)
     print(f'loaded {within.shape[0]} pairs from within-families kinship estimation results')
 
     # FID1    ID1     FID2    ID2     N_SNP   HetHet  IBS0    Kinship
-    across = pandas.read_table(kinship0_path)
-    print(kinship0_path, across.shape)
-    # If no relations were found, king creates file with only header
-    if across.shape[0] != 0:
-        across.loc[:, 'id1'] = across.FID1.astype(str) + '_' + across.ID1.astype(str)
-        across.loc[:, 'id2'] = across.FID2.astype(str) + '_' + across.ID2.astype(str)
-        across.rename({'Kinship': 'kinship'}, axis=1, inplace=True)
-        across = across.loc[:, ['id1', 'id2', 'kinship']].set_index(['id1', 'id2'])
-    else:
-        across = pandas.DataFrame(columns=['id1', 'id2', 'kinship']).set_index(['id1', 'id2'])
-
+    across = _read_kinship_data(kinship0_path)
     print(f'loaded {across.shape[0]} pairs from across-families kinship estimation results')
     return pandas.concat([within, across], axis=0)
 
@@ -201,6 +201,9 @@ if __name__ == '__main__':
 
     relatives.loc[prefer_ersa_mask, 'total_seg_len'] = relatives.total_seg_len_germline
     relatives.loc[prefer_ersa_mask, 'seg_count'] = relatives.seg_count_germline
+
+    # approximate calculations, IBD share is really small in this case
+    relatives.loc[prefer_ersa_mask, 'shared_genome_proportion'] = 0.5*relatives.total_seg_len_germline / 3580
     relatives.drop(['total_seg_len_king', 'seg_count_king', 'total_seg_len_germline', 'seg_count_germline'],
                    axis='columns', inplace=True)
 
