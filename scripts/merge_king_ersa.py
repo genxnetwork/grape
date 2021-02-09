@@ -108,40 +108,34 @@ def read_king_segments(king_segments_path, map_dir):
 def read_kinship(kinship_path, kinship0_path):
     # parse within families
     # FID     ID1     ID2     N_SNP   Z0      Phi     HetHet  IBS0    Kinship Error
-    within, across = None, None
-    if is_non_zero_file(kinship_path):
-        within = pandas.read_table(kinship_path)
-        # If no relations were found, king creates file with only header
-        if within.shape[0] == 0:
-            return pandas.DataFrame(columns=['id1', 'id2', 'kinship']).set_index(['id1', 'id2'])
 
+    within = pandas.read_table(kinship_path)
+    print(kinship_path, within.shape)
+    # If no relations were found, king creates file with only header
+    if within.shape[0] != 0:
         within.loc[:, 'id1'] = within.FID.astype(str) + '_' + within.ID1.astype(str)
         within.loc[:, 'id2'] = within.FID.astype(str) + '_' + within.ID2.astype(str)
         within.rename({'Kinship': 'kinship'}, axis=1, inplace=True)
         within = within.loc[:, ['id1', 'id2', 'kinship']].set_index(['id1', 'id2'])
-        print(f'loaded {within.shape[0]} pairs from within-families kinship estimation results')
+    else:
+        within = pandas.DataFrame(columns=['id1', 'id2', 'kinship']).set_index(['id1', 'id2'])
+
+    print(f'loaded {within.shape[0]} pairs from within-families kinship estimation results')
 
     # FID1    ID1     FID2    ID2     N_SNP   HetHet  IBS0    Kinship
-    if is_non_zero_file(kinship0_path):
-        across = pandas.read_table(kinship0_path)
-        # If no relations were found, king creates file with only header
-        if across.shape[0] == 0:
-            return pandas.DataFrame(columns=['id1', 'id2', 'kinship']).set_index(['id1', 'id2'])
-
+    across = pandas.read_table(kinship0_path)
+    print(kinship0_path, across.shape)
+    # If no relations were found, king creates file with only header
+    if across.shape[0] != 0:
         across.loc[:, 'id1'] = across.FID1.astype(str) + '_' + across.ID1.astype(str)
         across.loc[:, 'id2'] = across.FID2.astype(str) + '_' + across.ID2.astype(str)
         across.rename({'Kinship': 'kinship'}, axis=1, inplace=True)
         across = across.loc[:, ['id1', 'id2', 'kinship']].set_index(['id1', 'id2'])
-        print(f'loaded {across.shape[0]} pairs from across-families kinship estimation results')
-
-    if within is None and across is None:
-        return None
-    elif within is None and across is not None:
-        return across
-    elif within is not None and across is None:
-        return within
     else:
-        return pandas.concat([within, across], axis=0)
+        across = pandas.DataFrame(columns=['id1', 'id2', 'kinship']).set_index(['id1', 'id2'])
+
+    print(f'loaded {across.shape[0]} pairs from across-families kinship estimation results')
+    return pandas.concat([within, across], axis=0)
 
 
 def read_ersa(ersa_path):
@@ -191,17 +185,10 @@ if __name__ == '__main__':
     king_segments = read_king_segments(king_segments_path, map_dir)
     ersa = read_ersa(ersa_path)
 
-    if kinship is not None:
-        print(f'kinship is not none')
-        relatives = ibd.merge(king, how='outer', left_index=True, right_index=True).\
-            merge(kinship, how='outer', left_index=True, right_index=True).\
-            merge(ersa, how='outer', left_index=True, right_index=True).\
-            merge(king_segments, how='outer', left_index=True, right_index=True)
-    else:
-        print('kinship is none')
-        relatives = ibd.merge(king, how='outer', left_index=True, right_index=True).\
-            merge(ersa, how='outer', left_index=True, right_index=True). \
-            merge(king_segments, how='outer', left_index=True, right_index=True)
+    relatives = ibd.merge(king, how='outer', left_index=True, right_index=True).\
+                    merge(kinship, how='outer', left_index=True, right_index=True).\
+                    merge(ersa, how='outer', left_index=True, right_index=True).\
+                    merge(king_segments, how='outer', left_index=True, right_index=True)
 
     prefer_ersa_mask = pandas.isnull(relatives.king_degree) | (relatives.king_degree > 3)
     relatives.loc[:, 'final_degree'] = relatives.king_degree
