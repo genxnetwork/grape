@@ -1,7 +1,7 @@
 import pandas
 import numpy
 import os
-import sys
+import logging
 from utils.ibd import read_king_segments as rks, interpolate_all
 
 
@@ -91,7 +91,7 @@ def read_king_segments(king_segments_path, map_dir):
         segments = rks(king_segments_path)
         segments = interpolate_all(segments, map_dir)
         data = pandas.DataFrame(columns=['id1', 'id2', 'total_seg_len_king', 'seg_count_king'])
-        print(f'loaded and interpolated segments for {len(segments)} pairs')
+        logging.info(f'loaded and interpolated segments for {len(segments)} pairs')
         for key, segs in segments.items():
             row = {'id1': key[0],
                    'id2': key[1],
@@ -130,11 +130,11 @@ def read_kinship(kinship_path, kinship0_path):
     # parse within families
     # FID     ID1     ID2     N_SNP   Z0      Phi     HetHet  IBS0    Kinship Error
     within = _read_kinship_data(kinship_path)
-    print(f'loaded {within.shape[0]} pairs from within-families kinship estimation results')
+    logging.info(f'loaded {within.shape[0]} pairs from within-families kinship estimation results')
 
     # FID1    ID1     FID2    ID2     N_SNP   HetHet  IBS0    Kinship
     across = _read_kinship_data(kinship0_path)
-    print(f'loaded {across.shape[0]} pairs from across-families kinship estimation results')
+    logging.info(f'loaded {across.shape[0]} pairs from across-families kinship estimation results')
     return pandas.concat([within, across], axis=0)
 
 
@@ -148,7 +148,7 @@ def read_ersa(ersa_path):
     data.loc[:, 'id2'] = data.id2.str.strip()
     data.loc[:, 'ersa_degree'] = pandas.to_numeric(data.ersa_degree.str.strip(), errors='coerce').astype(pandas.Int32Dtype())
 
-    print(f'read {data.shape[0]} pairs from ersa output')
+    logging.info(f'read {data.shape[0]} pairs from ersa output')
 
     return data.loc[data.id1 != data.id2, ['id1', 'id2', 'ersa_degree']].set_index(['id1', 'id2'])
 
@@ -167,6 +167,7 @@ if __name__ == '__main__':
     map_dir = '/media/pipeline_data/sim-vcf-to-ped/cm'
     output_path = 'test_data/relatives_merge_king_ersa.tsv'
     '''
+    logging.basicConfig(filename=snakemake.log[0], level=logging.DEBUG, format='%(levelname)s:%(asctime)s %(message)s')
 
     ibd_path = snakemake.input['ibd']
     king_path = snakemake.input['king']
