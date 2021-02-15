@@ -39,7 +39,7 @@ rule run_king:
         KING_DEGREE=3
 
         king -b {params.input}.bed --cpus {threads} --ibdseg --degree $KING_DEGREE --prefix {params.out} |& tee {log}
-        king -b {params.input}.bed --cpus {threads} --kinship --degree $KING_DEGREE --prefix {params.kin} |& tee -a {log}
+        king -b {params.input}.bed --cpus {threads} --kinship --degree 4 --prefix {params.kin} |& tee -a {log}
 
         # we need at least an empty file for the downstream analysis
         if [ ! -f "{output.king}" ]; then
@@ -92,7 +92,7 @@ rule ibis:
     shell:
         """
         # use default params
-        ibis {params.input}.bed {input} {params.input}.fam -t {threads} -mt 300 -mL 5 -hbd -f ibis/merged_ibis |& tee -a {log}
+        ibis {params.input}.bed {input} {params.input}.fam -t {threads} -mt 500 -mL 5 -hbd -f ibis/merged_ibis |& tee -a {log}
 
         cat {output.ibd} | awk '{{sub(":", "_", $1); sub(":", "_", $2); print $1, $1 "\t" $2, $2 "\t" $3 "\t" $4, $5 "\t" 0, 0 "\t" $10 "\t" $9 "\t" "cM" "\t" 0 "\t" 0 "\t" 0}};' > {output.germline}
         """
