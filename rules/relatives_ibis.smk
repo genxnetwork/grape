@@ -40,7 +40,7 @@ rule run_king:
 
         king -b {params.input}.bed --cpus {threads} --ibdseg --degree $KING_DEGREE --prefix {params.out} |& tee {log}
         king -b {params.input}.bed --cpus {threads} --kinship --degree 4 --prefix {params.kin} |& tee -a {log}
-
+        
         # we need at least an empty file for the downstream analysis
         if [ ! -f "{output.king}" ]; then
             touch {output.king}
