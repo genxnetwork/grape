@@ -34,6 +34,26 @@ def match_ref(a1, a2, ref, alt):
                 return 4
 
 
+def get_id(a1_a2, id_element, chr_, pos_, ref_, alt_):
+    # first, try to use rs
+    id_ = id_element.split(':')[0]
+    if id_ in a1_a2:
+        return id_
+    # then, try chr:pos
+    id_ = "{}:{}".format(chr_, pos_)
+    if id_ in a1_a2:
+        return id_
+    # try chr:pos:ref:alt
+    id_ = "{}:{}:{}:{}".format(chr_, pos_, ref_, alt_)
+    if id_ in a1_a2:
+        return id_
+    # try chr:pos:alt:ref
+    id_ = "{}:{}:{}:{}".format(chr_, pos_, alt_, ref_)
+    if id_ in a1_a2:
+        return id_
+    return None
+
+
 def pre_imputation_check(params, reference, fn='./data/hapmap20', rs=True):
     """Given a plink bim file
     1. Remove SNPs can not be matched
@@ -48,6 +68,7 @@ def pre_imputation_check(params, reference, fn='./data/hapmap20', rs=True):
     a1_a2 = {}
     for i in open(fn_new):
         items = i.split()
+        # id: (ref, alt)
         a1_a2[items[1]] = (items[-2], items[-1])
 
     # files to update bim
@@ -66,16 +87,13 @@ def pre_imputation_check(params, reference, fn='./data/hapmap20', rs=True):
 
         for i in open(reference):
             items = i.split()
-            chr_, pos_ = items[0], items[1]
-            if rs:
-                id_ = items[2].split(':')[0]
-            else:
-                id_ = "{}:{}".format(chr_, pos_)
+            chr_, pos_, ref_, alt_ = items[0], items[1], items[3], items[4]
+            # first, try to use rs
+            id_ = get_id(a1_a2, items[2], chr_, pos_, ref_, alt_)
 
-            if id_ in a1_a2:
+            if id_ is not None:
                 a1, a2 = a1_a2[id_]
-                ref, alt = items[3], items[4]
-                matching = match_ref(a1, a2, ref, alt)
+                matching = match_ref(a1, a2, ref_, alt_)
                 in_ref += 1
                 if matching == 4:
                     exclude += 1
@@ -83,7 +101,7 @@ def pre_imputation_check(params, reference, fn='./data/hapmap20', rs=True):
                     w1.write("{}\t{}\n".format(id_, chr_))
                     w2.write("{}\t{}\n".format(id_, pos_))
                     # set alt as A1, because recode vcf will code A1 as alt later
-                    w3.write("{}\t{}\n".format(id_, alt))
+                    w3.write("{}\t{}\n".format(id_, alt_))
                     if matching == 2:
                         w4.write(id_ + "\n")
                         strand_flip += 1
