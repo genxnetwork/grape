@@ -61,6 +61,8 @@ Password: b2mR4wQpJJdeKdsW
 
 ```
 
+For the convenience of setting reference data, we have created a separate workflow that automates this process. It is launched using a separate directive (reference) and carries out downloading, unpacking and post-processing of all necessary data.
+
 3. (Optional) Compile Funnel from https://github.com/messwith/funnel with go 1.12+ and make. Then one can just use bin/funnel binary.  
 In this Funnel fork we simply added the ‘--privileged’ flag to all task docker commands because w/o this flag  singularity containers do not work inside docker.
 
