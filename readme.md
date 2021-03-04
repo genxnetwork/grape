@@ -3,19 +3,28 @@
 
 The project intends to implement best-practices of estimation of recent shared ancestry in a production-ready way.
 
+Main features:
+
+1. It can handle input in hg37 and hg38.
+2. Implements phasing and imputation pipeline with GERMLINE + ERSA recent shared ancestry estimation
+3. It has a very fast alternative pipeline without phasing and imputation. It uses IBIS + ERSA.
+4. It has a special simulation workflow for the accuracy analysis.
+5. It is fully containerized in Docker.
+6. Fast pipeline workflow with `--flow ibis` option can process 2000 samples in a few minutes.
+
 ### Stack
 
 The pipeline is implemented with the Snakemake framework. All used components are wrapped in Singularity containers or isolated in a Conda environment.
 
 The visualisation of execution graph: [svg](https://bitbucket.org/genxglobal/genx-relatives-snakemake/raw/077f33cfdd421ae17b5c02a3a5f8eb34bd20e1fd/dag.svg).
 
-
 Multi-core parallelization is highly utilized due to the ability to split input data by each sample/chromosome.
 
 Information about stages:
 
-1. Preprocessing: we remove all multiallelic variants and indels.
+**Germline workflow**
 
+1. Preprocessing: we remove all multiallelic variants and indels.
 2. Liftover: we use picard tools and lift data from hg38 to hg37.
 3. Phasing: Eagle 2.4.1 and 1000 Genomes reference panel.
 4. Imputation: Minimac4 and 1000 Genomes reference panel.
@@ -24,25 +33,53 @@ Information about stages:
 7. Distant Relatives: ERSA with default params estimated on CEU founders.
 8. Merge: KING degree has priority over ersa degree for close relatives (degrees 1-3), otherwise, we take ERSA output.
 
+**Fast IBIS workflow**
+
+1. Preprocessing: we remove all multiallelic variants and indels.
+2. Liftover: we use picard tools and lift data from hg38 to hg37.
+3. Close Relatives: KING IBD search.
+4. IBD Search: IBIS.
+5. Distant Relatives: ERSA with default params estimated on CEU founders.
+6. Merge: KING degree has priority over ersa degree for close relatives (degrees 1-3), otherwise, we take ERSA output.
+
 
 ### Installation
 
-Clone the repository.
+1. Clone the repository.
 
-Download reference datasets to `/media/ref` folder using the following script:
+2. Build docker container 
+```   
+docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
+```
 
-```text
-
-sftp genx-reference-sftp@20.54.91.13
-Password: b2mR4wQpJJdeKdsW
+3. Download all needed references to the `--ref-directory` of your choice. 
+```
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
+launcher.py reference  --ref-directory /media/ref
 
 ```
 
-Compile Funnel from https://github.com/messwith/funnel with go 1.12+ and make. Then one can just use bin/funnel binary.  
+4. (Optional) Compile Funnel from https://github.com/messwith/funnel with go 1.12+ and make. Then one can just use bin/funnel binary.  
 This Funnel fork simply adds the ‘--privileged’ flag to all task docker commands.  
 Without ‘--privileged’ singularity containers do not work inside docker.
 
 ### Usage
+
+#### Reference downloading
+
+Firstly, one needs to download all needed references to the `--ref-directory` of your choice.
+These references will take up to 40GB of disk space. `--ref-directory` argument can now be used in all subsequent commands
+```
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
+launcher.py reference  --ref-directory /media/ref
+
+```
+#### Input data format: vcf
+
+One option is using gzipped vcf file format. If vcf file is in hg38 assembly, then you can just use `vcf` command
+with the `--vcf-file <path>` option. In this case, input file will be lifted. 
+If vcf file is in hg37, you should pass `--assembly hg37` to the `vcf` command.
+
 #### Input data format: 23andme
 
 The information about samples for analysis should be provided as a path to a tab-separated text file (samples.tsv).
@@ -52,12 +89,7 @@ Input data is expected in 23andMe format, one file for each sample:
 | name | path |
 | --- | --- |
 | 1 | input/1.txt |
-| 2 | input/2.txt | 
-
-#### Input data format: vcf
-
-Another option is using gzipped vcf file format. If vcf file is in hg38 assembly, then you can just use `vcf` command 
-with the `--vcf-file <path>` option. If vcf file is in hg37, you should pass `--assembly hg37` to the `vcf` command.   
+| 2 | input/2.txt |
 
 #### Console execution
 
@@ -70,30 +102,40 @@ To check if snakemake correctly sees input files do not pass --real-run to the l
 docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
 
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py find --samples /media/ref/samples.tsv --input /media/ref/input --directory /media/pipeline_data/real-data
+launcher.py find --samples /media/ref/samples.tsv --input /media/ref/input --directory /media/pipeline_data/real-data \
+--ref-directory /media/ref
 ```
 
-##### How to run full pipeline
+##### How to run the full pipeline with phasing and imputation
+
+With input in .vcf.gz format:
 
 ```text
 
 docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
 
-# if input data is in 23andme format
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py preprocess --samples /media/ref/samples.tsv --input /media/ref/input --directory /media/pipeline_data/real-data \
---real-run
-
-# else if input data is in vcf format
 # use --assembly hg37 if vcf file is in hg37 and not in hg38 
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py vcf --vcf-file /media/ref/input.vcf.gz --directory /media/pipeline_data/real-data \
+launcher.py vcf --vcf-file /media/ref/input.vcf.gz --directory /media/pipeline_data/real-data --ref-directory /media/ref \
 --real-run
 
 # now we can find relatives
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py find --samples /media/ref/samples.tsv --input /media/ref/input --directory /media/pipeline_data/real-data \
+launcher.py find --directory /media/pipeline_data/real-data --ref-directory /media/ref \
 --real-run
+```
+
+With input in 23andme format:
+
+```text
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
+launcher.py preprocess --samples /media/ref/samples.tsv --input /media/ref/input --directory /media/pipeline_data/real-data \
+--ref-directory /media/ref --real-run
+
+# now we can find relatives
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
+launcher.py find --samples /media/ref/samples.tsv --input /media/ref/input --directory /media/pipeline_data/real-data \
+--ref-directory /media/ref --real-run
 ```
 
 ##### Very fast relatives detection using king and ibis
@@ -103,7 +145,7 @@ You should just add ```--flow ibis``` to the ```find``` command of ```launcher.p
 ```text
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
 launcher.py find --samples /media/ref/samples.tsv --input /media/ref/input --directory /media/pipeline_data/real-data \
---flow ibis --real-run 
+--flow ibis --ref-directory /media/ref --real-run 
 ```
 
 In this case, nothing will be phased or imputed. Slight loss of accuracy is possible for degrees 8-10, 
@@ -133,6 +175,7 @@ How to execute operational run (sample output):
 ```text 
 /path/to/funnel task create examples/snakemake-real-23andme.json                                                                                                                                      
 ```
+
 #### Standalone version (not recommended)
 
 It is possible to run the pipeline using standalone version. First, you need to clone the repository and setup the references as described above.
@@ -180,17 +223,42 @@ snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media 
 
 Please mind '-n' flag for dry-run
 
-7. Usefull commands
+7. Useful commands
 
 Please see useful_commands.md.
+
+### Known limitations
+
+1. It is known that in some small, isolated populations IBD sharing is very high. 
+   Therefore, our pipeline will overestimate the relationship degree for them. 
+   It is not recommended to mix standard populations like CEU and small populations as isolated native ones. 
+   This problem is discussed in https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0034267 .
+2. If one intends to analyze diverse datasets, it is recommended to impute them with the same pipeline. 
+   It can be done with our pipeline using `--until` option:
+    ```text
+    
+    docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
+    
+    # use --assembly hg37 if vcf file is in hg37 and not in hg38 
+    docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
+    launcher.py vcf --vcf-file /media/ref/input.vcf.gz --directory /media/pipeline_data/imputed_data \
+    --real-run
+    
+    # now we can find relatives
+    docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
+    launcher.py find --directory /media/pipeline_data/imputed_data \
+    --until merge_imputation_filter --real-run
+    ```
+    Then, one can grab file `/media/pipeline_data/imputed_data/vcf/merged_imputed.vcf.gz`
+
 
 ### Evaluation on Simulated Data
 
 Pedigree simulation is performed on European populations from 1KG using the `pedsim` package.  
 Pedsim can use sex-specific genetic maps and randomly assigns the sex of each parent (or uses user-specified sexes) when using such maps.  
-Sex-specific map is preferrable because men and women have different recombination rates.  
+Sex-specific map is preferable because men and women have different recombination rates.  
 Founders for the pedigree simulation are selected from 1000genomes HD genotype chip data, CEU population.  
-CEU data consists of trios and we select no more than one member of each trio as founder.  
+CEU data consists of trios, and we select no more than one member of each trio as founder.  
 
 Visualization of structure of simulated pedigree is given below:
 
@@ -204,10 +272,7 @@ Use command simulate. Options --input and --samples are not needed in this case.
 docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
 
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py simulate --directory /media/pipeline_data/simulation --real-run
-
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py find --directory /media/pipeline_data/simulation --real-run
+launcher.py simulate --directory /media/pipeline_data/simulation --ref-directory /media/ref --real-run
 ```
 
 #### Evaluation results
@@ -228,10 +293,10 @@ Then, use find
 docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
 
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py hapmap --directory /media/pipeline_data/hapmap --real-run
+launcher.py hapmap --directory /media/pipeline_data/hapmap --ref-directory /media/ref --real-run
 
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py find --directory /media/pipeline_data/hapmap --real-run
+launcher.py find --directory /media/pipeline_data/hapmap --ref-directory /media/ref --real-run
 ```
 
 #### Evaluation results

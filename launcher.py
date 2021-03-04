@@ -68,7 +68,7 @@ def get_parser_args():
     parser.add_argument(
         "--ref-directory",
         default="",
-        help="Snakemake directory with references. If emptry, than it is equal to the /media/ref from config.yaml")
+        help="Snakemake directory with references. If empty, than it is equal to the /media/ref from config.yaml")
 
     parser.add_argument(
         '--input',
