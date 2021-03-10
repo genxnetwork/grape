@@ -26,3 +26,4 @@ logs/*
 scripts/utils/__pycache__/*
 .zattrs/*
 zarr/*
+/analysis_data/
