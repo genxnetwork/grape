@@ -84,11 +84,11 @@ rule download_genetic_map_GRCh37:
 rule download_vcfRef:
     output:
         expand("{REF_DIR}/1000genome/ALL.chr{i}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz", i=CHROMOSOMES, REF_DIR=REF_DIR),
-        expand("{REF_DIR}/1000genome/ALL.chr{i}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz.tbi", i=CHROMOSOMES, REF_DIR=REF_DIR),
-        expand("{REF_DIR}/1000genome/ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz", REF_DIR=REF_DIR),
-        expand("{REF_DIR}/1000genome/ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz.tbi", REF_DIR=REF_DIR),
-        expand("{REF_DIR}/1000genome/ALL.chrY.phase3_integrated_v2a.20130502.genotypes.vcf.gz", REF_DIR=REF_DIR),
-        expand("{REF_DIR}/1000genome/ALL.chrY.phase3_integrated_v2a.20130502.genotypes.vcf.gz.tbi", REF_DIR=REF_DIR)
+        expand("{REF_DIR}/1000genome/ALL.chr{i}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz.tbi", i=CHROMOSOMES, REF_DIR=REF_DIR)
+        # expand("{REF_DIR}/1000genome/ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz", REF_DIR=REF_DIR),
+        # expand("{REF_DIR}/1000genome/ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz.tbi", REF_DIR=REF_DIR),
+        # expand("{REF_DIR}/1000genome/ALL.chrY.phase3_integrated_v2a.20130502.genotypes.vcf.gz", REF_DIR=REF_DIR),
+        # expand("{REF_DIR}/1000genome/ALL.chrY.phase3_integrated_v2a.20130502.genotypes.vcf.gz.tbi", REF_DIR=REF_DIR)
     conda:
         "../../envs/download.yaml"
     shell:
@@ -106,7 +106,7 @@ rule process_vcfRef:
     input:
         rules.download_vcfRef.output
     output:
-        vcfRef =  expand("{REF_DIR}/1000genome/bcf/1000genome_chr{chrom}.bcf", chrom=CHROMOSOMES, REF_DIR=REF_DIR)
+        vcfRef =  expand("{REF_DIR}/1000genome/bcf/1000genome_chr{{chrom}}.bcf", REF_DIR=REF_DIR)
     conda:
         "../../envs/download.yaml"
     shell:
@@ -115,25 +115,39 @@ rule process_vcfRef:
             set -x
 
             mkdir -p {REF_DIR}/1000genome/bcf
-            parallel bcftools convert {REF_DIR}/1000genome/ALL.chr{{}}.phase3*integrated_v[125][ab].20130502.genotypes.vcf.gz -Ob -o {REF_DIR}/1000genome/bcf/1000genome_chr{{}}.bcf ::: {{1..22}} X Y
-            parallel bcftools index -f {REF_DIR}/1000genome/bcf/1000genome_chr{{}}.bcf ::: {{1..22}} X Y
+            bcftools convert {REF_DIR}/1000genome/ALL.chr{wildcards.chrom}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz -Ob -o {REF_DIR}/1000genome/bcf/1000genome_chr{wildcards.chrom}.bcf 
+            bcftools index -f {REF_DIR}/1000genome/bcf/1000genome_chr{wildcards.chrom}.bcf 
             #rm {REF_DIR}/1000genome/ALL*
         """
 
-rule download_refHaps:
+
+rule get_minimac:
+    output: expand("{REF_DIR}/Minimac3Executable/bin/Minimac3", REF_DIR=REF_DIR)
+    shell:
+        """
+            wget ftp://share.sph.umich.edu/minimac3/Minimac3Executable.tar.gz -O {REF_DIR}/Minimac3Executable.tar.gz
+            tar -xzvf {REF_DIR}/Minimac3Executable.tar.gz -C {REF_DIR}
+        """
+
+
+rule make_refHaps:
+    input:
+        expand("{REF_DIR}/1000genome/ALL.chr{{chrom}}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz", REF_DIR=REF_DIR),
+        minimac=rules.get_minimac.output
     output:
-        refHaps = expand("{REF_DIR}/Minimac/{chrom}.1000g.Phase3.v5.With.Parameter.Estimates.m3vcf.gz", chrom=CHROMOSOMES, REF_DIR=REF_DIR)
+        refHaps = expand("{REF_DIR}/Minimac/{{chrom}}.1000g.Phase3.v5.With.Parameter.Estimates.m3vcf.gz", REF_DIR=REF_DIR)
     conda:
         "../../envs/download.yaml"
     shell:
         """
             set -e
             set -x
-
-            wget ftp://share.sph.umich.edu/minimac3/G1K_P3_M3VCF_FILES_WITH_ESTIMATES.tar.gz -P {REF_DIR}/Minimac;
-            tar -zxvf {REF_DIR}/Minimac/G1K_P3_M3VCF_FILES_WITH_ESTIMATES.tar.gz -C {REF_DIR}/Minimac
-            rm {REF_DIR}/Minimac/G1K_P3_M3VCF_FILES_WITH_ESTIMATES.tar.gz
+            bcftools view --min-ac 251 -i 'strlen(REF)=1 & strlen(ALT)=1' {input[0]} -O z -o {REF_DIR}/1000genome/chr{wildcards.chrom}.ac251.vcf.gz
+            {REF_DIR}/Minimac3Executable/bin/Minimac3 --refHaps {REF_DIR}/1000genome/chr{wildcards.chrom}.ac251.vcf.gz \
+                --processReference --prefix {REF_DIR}/Minimac/{wildcards.chrom}.1000g.Phase3.v5.With.Parameter.Estimates
+            rm {REF_DIR}/1000genome/chr{wildcards.chrom}.ac251.vcf.gz
         """
+
 
 rule download_lift_chain:
     output:

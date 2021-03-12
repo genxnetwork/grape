@@ -150,7 +150,8 @@ def read_kinship(kinship_path, kinship0_path):
 def read_ersa(ersa_path):
     # Indv_1     Indv_2      Rel_est1      Rel_est2      d_est     N_seg     Tot_cM
     data = pandas.read_table(ersa_path, header=0,
-                             names=['id1', 'id2', 'rel_est1', 'rel_est2', 'ersa_degree', 'seg_count', 'total_seg_len'])
+                             names=['id1', 'id2', 'rel_est1', 'rel_est2', 'ersa_degree', 'seg_count', 'total_seg_len'],
+                             dtype={'ersa_degree': str})
 
     data = data.loc[(data.rel_est1 != 'NA') | (data.rel_est2 != 'NA'), :]
     data.loc[:, 'id1'] = data.id1.str.strip()
@@ -159,7 +160,7 @@ def read_ersa(ersa_path):
     data.loc[:, 'ersa_degree'] = pandas.to_numeric(data.ersa_degree.str.strip(), errors='coerce').astype(pandas.Int32Dtype())
 
     logging.info(f'read {data.shape[0]} pairs from ersa output')
-
+    logging.info(f'ersa after reading has {pandas.notna(data.ersa_degree).sum()}')
     return data.loc[data.id1 != data.id2, ['id1', 'id2', 'ersa_degree']].set_index(['id1', 'id2'])
 
 
@@ -196,7 +197,7 @@ if __name__ == '__main__':
     king_segments = read_king_segments(king_segments_path, map_dir)
     ersa = read_ersa(ersa_path)
 
-    print(f'ibd shape: {ibd.shape[0]}, ersa shape: {ersa.shape[0]}')
+    logging.info(f'ibd shape: {ibd.shape[0]}, ersa shape: {ersa.shape[0]}')
     # print('ibd test:',  ibd[('GRC12118091', 'GRC12118096')])
     # print('ibd test2:', ibd[('GRC12118096', 'GRC12118091')])
 
@@ -209,6 +210,8 @@ if __name__ == '__main__':
     relatives.loc[:, 'final_degree'] = relatives.king_degree
     # if king is unsure or king degree > 3 then we use ersa distant relatives estimation
     relatives.loc[prefer_ersa_mask, 'final_degree'] = relatives.ersa_degree
+    logging.info(f'king is null or more than 3: {prefer_ersa_mask.sum()}')
+    logging.info(f'ersa is not null: {pandas.notna(relatives.ersa_degree).sum()}')
 
     if 'total_seg_len_king' in relatives.columns:
         relatives.loc[:, 'total_seg_len'] = relatives.total_seg_len_king
@@ -221,5 +224,7 @@ if __name__ == '__main__':
     relatives.loc[prefer_ersa_mask, 'shared_genome_proportion'] = 0.5*relatives.loc[prefer_ersa_mask, 'total_seg_len'] / 3580
     relatives.drop(['total_seg_len_king', 'seg_count_king', 'total_seg_len_germline', 'seg_count_germline'],
                    axis='columns', inplace=True)
+
+    logging.info(f'final degree not null: {pandas.notna(relatives.final_degree).sum()}')
 
     relatives.loc[pandas.notna(relatives.final_degree), :].to_csv(output_path, sep='\t')

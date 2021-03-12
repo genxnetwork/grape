@@ -64,9 +64,9 @@ rule imputation_filter:
         "benchmarks/impute/imputation_filter-{chrom}.txt"
     shell:
         """
-        FILTER="'R2>0.3 & strlen(REF)=1 & strlen(ALT)=1'"
+        FILTER="'strlen(REF)=1 & strlen(ALT)=1'"
 
-        bcftools view -i 'R2>0.3 & strlen(REF)=1 & strlen(ALT)=1' imputed/chr{wildcards.chrom}.imputed.dose.vcf.gz -v snps -m 2 -M 2 -O z -o imputed/chr{wildcards.chrom}.imputed.dose.pass.vcf.gz |& tee {log}
+        bcftools view -i 'strlen(REF)=1 & strlen(ALT)=1' imputed/chr{wildcards.chrom}.imputed.dose.vcf.gz -v snps -m 2 -M 2 -O z -o imputed/chr{wildcards.chrom}.imputed.dose.pass.vcf.gz |& tee {log}
         """
 
 
