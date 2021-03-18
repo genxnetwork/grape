@@ -151,6 +151,36 @@ launcher.py find --samples /media/ref/samples.tsv --input /media/ref/input --dir
 In this case, nothing will be phased or imputed. Slight loss of accuracy is possible for degrees 8-10, 
 especially if you use different chips in the same batch
 
+
+#### Description of output file
+
+Output file is in .tsv file format, and contains one line for each detected pair of relatives.
+
+```text
+id1	id2	king_degree	king_relation	shared_genome_proportion	kinship	ersa_degree	final_degree	total_seg_len	seg_count
+HGDP00274_HGDP00274	HGDP00315_HGDP00315	3	3	0.1216		4	3	764.7229547063728	77
+HGDP00274_HGDP00274	HGDP00319_HGDP00319			0.031042068715083804		5	5	222.26121200000003	23.0
+```
+
+ * `id1` - ID of first sample in a pair of relatives.
+ * `id2` - ID of second sample in a pair of relatives, `id1` is always less than `id2` by the rules of string comparison in python.
+ * `king_degree` - Numeric degree of relationship estimated by KING. 0 means duplicates or MZ twins, 
+   1 means parent-offspring (PO), 2 can be either full siblings (FS), half siblings and grandmother/grandfather with a granddaughter/grandson.
+   3 is aunt/uncle with a niece/nephew, as described in table in https://en.wikipedia.org/wiki/Coefficient_of_relationship.
+   If `king_degree` exists, then `final_degree` will be equal to `king_degree`. 
+ * `king_relation` - further differentiation for first 2 degrees of KING. `king_degree` 1 means PO - parent-offspring, 
+   also KING detects FS in some of second degrees.
+ * `shared_genome_proportion` is the approximate fraction of genome shared by two individuals. 
+   It should be approximately 0.5 for PO and FS, 0.25 for grandmother-granddaugher and half-siblings.
+ * `kinship` is the KING kinship coefficient.
+ * `ersa_degree` is the degree estimated from IBD segments by ERSA, it is used for the `final_degree` in the cases where `king_degree` does not exist.
+ * `final_degree` is simply `king_degree` for close relatives up to 3rd degree and `ersa_degree` for distant relatives.
+ * `total_seg_len` is the total length of all IBD segments, for the first 3 degrees it is calculated using KING IBD data, 
+   for the 4th+ degrees it is calculated using IBID or Germline IBD data.
+ * `seg_count` is the total number of all IBD segments found by KING for the first 3 degrees and found by IBIS\Germline for the 4th+ degrees.
+
+
+
 #### Execution by scheduler
 The pipeline can be executed using lightweight scheduler [Funnel](https://ohsu-comp-bio.github.io/funnel/), which implements [Task Execution Schema](https://github.com/ga4gh/task-execution-schemas) developed by [GA4GH](https://github.com/ga4gh/wiki/wiki).  
   
@@ -175,6 +205,7 @@ How to execute operational run (sample output):
 ```text 
 /path/to/funnel task create examples/snakemake-real-23andme.json                                                                                                                                      
 ```
+
 
 #### Standalone version (not recommended)
 
