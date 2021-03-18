@@ -171,7 +171,9 @@ HGDP00274_HGDP00274	HGDP00319_HGDP00319			0.031042068715083804		5	5	222.26121200
  * `king_relation` - further differentiation for first 2 degrees of KING. `king_degree` 1 means PO - parent-offspring, 
    also KING detects FS in some of second degrees.
  * `shared_genome_proportion` is the approximate fraction of genome shared by two individuals. 
-   It should be approximately 0.5 for PO and FS, 0.25 for grandmother-granddaugher and half-siblings.
+   It should be approximately 0.5 for PO and FS, 0.25 for grandmother-granddaughter and half-siblings.
+   For the first 3 degrees it is calculated as total len of IBD2 segments + half of total length of IBD1 segments. 
+   For 4th+ degrees it is simply half of total length of IBD1 segments.  
  * `kinship` is the KING kinship coefficient.
  * `ersa_degree` is the degree estimated from IBD segments by ERSA, it is used for the `final_degree` in the cases where `king_degree` does not exist.
  * `final_degree` is simply `king_degree` for close relatives up to 3rd degree and `ersa_degree` for distant relatives.
