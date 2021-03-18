@@ -42,6 +42,7 @@ Information about stages:
 5. Distant Relatives: ERSA with default params estimated on CEU founders.
 6. Merge: KING degree has priority over ersa degree for close relatives (degrees 1-3), otherwise, we take ERSA output.
 
+![ibis](https://bitbucket.org/genxglobal/genx-relatives-snakemake/downloads/pipeline.jpg)
 
 ### Installation
 
