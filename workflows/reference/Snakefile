@@ -6,39 +6,40 @@ configfile: "config.yaml"
 
 # read reference directory from config
 # it's where they will be stored ~40G
-REF_DIR         = config["ref_dir"]
-GRCh37_fasta    = join(REF_DIR, config["reference"]["GRCh37_fasta"])
-GENETIC_MAP     = join(REF_DIR, config["reference"]["GENETIC_MAP"])
-genetic_map_GRCh37=join(REF_DIR, config["reference"]["genetic_map_GRCh37"])
-vcfRef          = join(REF_DIR, config["reference"]["vcfRef"])
-refHaps         = join(REF_DIR, config["reference"]["refHaps"])
-lift_chain      = join(REF_DIR, config["reference"]["lift_chain"])
-cmmap           = join(REF_DIR, config["reference"]["cmmap"])
-SITE_1000GENOME = join(REF_DIR, config["reference"]["SITE_1000GENOME"])
-hapmap_ped      = join(REF_DIR, config["reference"]["hapmap_ped"])
-hapmap_mp       = join(REF_DIR, config["reference"]["hapmap_mp"])
-hapmap_fam      = join(REF_DIR, config["reference"]["hapmap_fam"])
-hd_genotype_chip= join(REF_DIR, config["reference"]["hd_genotype_chip"])
-pedsim_map      = join(REF_DIR, config["reference"]["pedsim_map"])
+REF_DIR            = config["ref_dir"]
+GRCH37_FASTA       = join(REF_DIR, config["reference"]["GRCh37_fasta"])
+GENETIC_MAP        = join(REF_DIR, config["reference"]["GENETIC_MAP"])
+GENETIC_MAP_GRCH37 =join(REF_DIR, config["reference"]["genetic_map_GRCh37"])
+REF_VCF            = join(REF_DIR, config["reference"]["vcfRef"])
+REF_HAPS            = join(REF_DIR, config["reference"]["refHaps"])
+LIFT_CHAIN         = join(REF_DIR, config["reference"]["lift_chain"])
+CMMAP              = join(REF_DIR, config["reference"]["cmmap"])
+SITE_1000GENOME    = join(REF_DIR, config["reference"]["SITE_1000GENOME"])
+HAPMAP_PED         = join(REF_DIR, config["reference"]["hapmap_ped"])
+HAPMAP_MP          = join(REF_DIR, config["reference"]["hapmap_mp"])
+HAPMAP_FAM         = join(REF_DIR, config["reference"]["hapmap_fam"])
+HD_GENOTYPE_CHIP   = join(REF_DIR, config["reference"]["hd_genotype_chip"])
+AFFYMETRIX_CHIP    = join(REF_DIR, config["reference"]["affymetrix_chip"])
+PEDSIM_MAP         = join(REF_DIR, config["reference"]["pedsim_map"])
 
-CHROMOSOMES     = [str(i) for i in range(1, 23)]
+CHROMOSOMES = [str(i) for i in range(1, 23)]
 
 rule all:
     input:
-        GRCh37_fasta = GRCh37_fasta,
+        GRCh37_fasta = GRCH37_FASTA,
         GENETIC_MAP = GENETIC_MAP,
         genetic_map_GRCh37 = expand("{REF_DIR}/genetic_map_GRCh37/genetic_map_GRCh37_chr{i}.txt", i=CHROMOSOMES, REF_DIR=REF_DIR),
         cmmap = expand("{REF_DIR}/genetic_map_b37/genetic_map_chr{chrom}_combined_b37.txt", chrom=CHROMOSOMES, REF_DIR=REF_DIR),
         vcfRef = expand("{REF_DIR}/1000genome/bcf/1000genome_chr{chrom}.bcf", chrom=CHROMOSOMES, REF_DIR=REF_DIR),
         refHaps = expand("{REF_DIR}/Minimac/{chrom}.1000g.Phase3.v5.With.Parameter.Estimates.m3vcf.gz", chrom=CHROMOSOMES, REF_DIR=REF_DIR),
-        lift_chain = lift_chain,
-        SITE_1000GENOME=SITE_1000GENOME,
-        pedsim_map=pedsim_map,
-        hd_genotype_chip=hd_genotype_chip
+        lift_chain = LIFT_CHAIN,
+        SITE_1000GENOME = SITE_1000GENOME,
+        pedsim_map = PEDSIM_MAP,
+        hd_genotype_chip = HD_GENOTYPE_CHIP
 
 rule download_GRCh37_fasta:
     output:
-        GRCh37_fasta = GRCh37_fasta
+        GRCh37_fasta = GRCH37_FASTA
     conda:
         "../../envs/download.yaml"
     shell:
@@ -151,7 +152,7 @@ rule make_refHaps:
 
 rule download_lift_chain:
     output:
-        lift_chain = lift_chain
+        lift_chain = LIFT_CHAIN
     conda:
         "../../envs/download.yaml"
     shell:
@@ -203,29 +204,41 @@ rule download_SITE_1000GENOME:
 
 rule download_hapmap_fam:
     output:
-        hapmap_fam=hapmap_fam
+        hapmap_fam=HAPMAP_FAM
     conda:
         "../../envs/download.yaml",
     shell:
         """
-            wget ftp://ftp.ncbi.nlm.nih.gov/hapmap/phase_3//relationships_w_pops_121708.txt -O {hapmap_fam}
+            wget ftp://ftp.ncbi.nlm.nih.gov/hapmap/phase_3//relationships_w_pops_121708.txt -O {HAPMAP_FAM}
         """
 
 rule download_hd_genotype_chip:
     output:
-        hd_genotype_chip=hd_genotype_chip
+        hd_genotype_chip=HD_GENOTYPE_CHIP
     conda:
         "../../envs/download.yaml"
     shell:
         """
             mkdir -p {REF_DIR}/1000genome/hd_genotype_chip
-            wget http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.chip.omni_broad_sanger_combined.20140818.snps.genotypes.vcf.gz -O {hd_genotype_chip}
-            wget http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.chip.omni_broad_sanger_combined.20140818.snps.genotypes.vcf.gz.tbi -O {hd_genotype_chip}.tbi
+            wget http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.chip.omni_broad_sanger_combined.20140818.snps.genotypes.vcf.gz -O {HD_GENOTYPE_CHIP}
+            wget http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.chip.omni_broad_sanger_combined.20140818.snps.genotypes.vcf.gz.tbi -O {HD_GENOTYPE_CHIP}.tbi
+        """
+
+rule download_affymetrix_chip:
+    output:
+        affymetrix_chip=AFFYMETRIX_CHIP
+    conda:
+        "../../envs/download.yaml"
+    shell:
+        """
+            mkdir -p {REF_DIR}/1000genome/affymetrix_chip
+            wget http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.wgs.nhgri_coriell_affy_6.20140825.genotypes_has_ped.vcf.gz -O {AFFYMETRIX_CHIP}
+            wget http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.wgs.nhgri_coriell_affy_6.20140825.genotypes_has_ped.vcf.gz.tbi -O {HAFFYMETRIX_CHIP}.tbi
         """
 
 rule download_pedsim_map:
     output:
-        pedsim_map=pedsim_map
+        pedsim_map=PEDSIM_MAP
     conda:
         "../../envs/download.yaml"
     shell:

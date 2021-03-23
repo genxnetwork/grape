@@ -1,7 +1,7 @@
 
 rule vcf_stats:
     input:
-        vcf="vcf/merged_lifted.vcf"
+        vcf="vcf/merged_lifted.vcf.gz"
     output:
         stats="stats/lifted_vcf.txt",
         psc="stats/lifted_vcf.psc"
@@ -31,9 +31,9 @@ rule select_bad_samples:
 
 rule plink_filter:
     input:
-        vcf="vcf/merged_lifted.vcf",
+        vcf="vcf/merged_lifted.vcf.gz",
         bad_samples=rules.select_bad_samples.output.bad_samples
-    output: expand("plink/merged_filter.{ext}", ext=PLINK_FORMATS)
+    output: temp(expand("plink/merged_filter.{ext}", ext=PLINK_FORMATS))
     conda:
         "../envs/plink.yaml"
     params:
@@ -71,7 +71,8 @@ rule plink_clean_up:
         "plink/merged_filter.bim.chr",
         "plink/merged_filter.bim.pos",
         "plink/merged_filter.bim.force_allele",
-        "plink/merged_filter.bim.flip"
+        "plink/merged_filter.bim.flip",
+        plink=expand("plink/merged_filter.{ext}", ext=PLINK_FORMATS)
     output:
         expand("{i}.{ext}", i="plink/merged_mapped", ext=PLINK_FORMATS)
     params:
@@ -92,6 +93,10 @@ rule plink_clean_up:
         plink --bfile plink/merged_extracted  --flip          plink/merged_filter.bim.flip    --make-bed --out plink/merged_flipped      |& tee -a {log}
         plink --bfile plink/merged_flipped    --update-chr    plink/merged_filter.bim.chr     --make-bed --out plink/merged_chroped      |& tee -a {log}
         plink --bfile plink/merged_chroped    --update-map    plink/merged_filter.bim.pos     --make-bed --out {params.out}              |& tee -a {log}
+        rm plink/merged_filter_dub.*
+        rm plink/merged_extracted.*
+        rm plink/merged_flipped.*
+        rm plink/merged_chroped.*
         """
 
 rule prepare_vcf:
@@ -114,6 +119,6 @@ rule prepare_vcf:
         plink --bfile plink/merged_mapped_alleled --keep-allele-order --output-chr M --export vcf bgz --out vcf/merged_mapped_clean |& tee -a {log.vcf}
         bcftools sort vcf/merged_mapped_clean.vcf.gz -O z -o vcf/merged_mapped_sorted.vcf.gz |& tee -a {log.vcf}
         # need to check output for the potential issues
-        bcftools norm --check-ref e -f {GRCh37_fasta} vcf/merged_mapped_sorted.vcf.gz -O u -o /dev/null |& tee -a {log.vcf}
+        bcftools norm --check-ref e -f {GRCH37_FASTA} vcf/merged_mapped_sorted.vcf.gz -O u -o /dev/null |& tee -a {log.vcf}
         bcftools index -f vcf/merged_mapped_sorted.vcf.gz | tee -a {log.vcf}
         """

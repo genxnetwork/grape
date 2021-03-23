@@ -3,35 +3,11 @@ PLINK_FORMATS   = ['bed', 'bim', 'fam', ]
 PLINK_FORMATS_EXT   = ['bed', 'bim', 'fam', 'nosex']
 
 
-rule phase:
-    input:
-        vcf="vcf/merged_mapped_sorted.vcf.gz",
-        #idx="vcf/merged_mapped_sorted.vcf.gz.csi"
-        vcfRef=vcfRef
-    output: "phase/chr{chrom}.phased.vcf.gz"
-    threads: 1
-    singularity:
-        "docker://biocontainers/bio-eagle:v2.4.1-1-deb_cv1"
-    log:
-        "logs/phase/eagle-{chrom}.log"
-    benchmark:
-        "benchmarks/phase/eagle-{chrom}.txt"
-    shell:
-        """
-        /usr/bin/bio-eagle --vcfRef {input.vcfRef} \
-        --numThreads {threads} \
-        --vcfTarget {input.vcf}  \
-        --geneticMapFile {GENETIC_MAP} \
-        --chrom {wildcards.chrom} \
-        --vcfOutFormat z \
-        --outPrefix phase/chr{wildcards.chrom}.phased |& tee {log}
-        """
-
 rule impute:
     input:
         rules.phase.output,
-        refHaps=refHaps
-    output: "imputed/chr{chrom}.imputed.dose.vcf.gz"
+        refHaps=REF_HAPS
+    output: temp("imputed/chr{chrom}.imputed.dose.vcf.gz")
     threads: 1
     singularity:
         "docker://genxnetwork/minimac4:stable"
@@ -41,19 +17,18 @@ rule impute:
         "benchmarks/impute/minimac4-{chrom}.txt"
     shell:
         """
-        minimac4 \
-        --refHaps {input.refHaps} \
-        --haps phase/chr{wildcards.chrom}.phased.vcf.gz \
-        --format GT,GP \
-        --prefix imputed/chr{wildcards.chrom}.imputed \
-        --minRatio 0.01 \
-        --cpus {threads} |& tee {log}
+            minimac4 \
+            --refHaps {input.refHaps} \
+            --haps phase/chr{wildcards.chrom}.phased.vcf.gz \
+            --format GT,GP \
+            --prefix imputed/chr{wildcards.chrom}.imputed \
+            --minRatio 0.01 \
+            --cpus {threads} |& tee {log}
         """
-
 
 rule imputation_filter:
     input: rules.impute.output
-    output: "imputed/chr{chrom}.imputed.dose.pass.vcf.gz"
+    output: temp("imputed/chr{chrom}.imputed.dose.pass.vcf.gz")
     # TODO: because "The option is currently used only for the compression of the output stream"
     # threads: workflow.cores
     conda:
@@ -77,7 +52,7 @@ rule merge_imputation_filter:
         # TODO: wildcard violation
         # rules.imputation_filter.output
     output:
-        "vcf/merged_imputed.vcf.gz"
+        "preprocessed/data.vcf.gz"
     params:
         list="vcf/imputed.merge.list",
         mode=config["mode"]

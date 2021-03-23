@@ -89,6 +89,24 @@ def get_parser_args():
     )
 
     parser.add_argument(
+        '--remove-imputation',
+        action='store_true',
+        help='If present, preprocess workflow will remove all lines containing "IMPUTED" from input vcf file'
+    )
+
+    parser.add_argument(
+        '--impute',
+        action='store_true',
+        help='If present, preprocess workflow will impute input vcf file. You MUST also add --phase to cmd in this case'
+    )
+
+    parser.add_argument(
+        '--phase',
+        action='store_true',
+        help='If present, preprocess workflow will phase input vcf file'
+    )
+
+    parser.add_argument(
         '--vcf-file',
         default='input.vcf',
         help='Path to the input vcf file for "vcf" command only'
@@ -152,7 +170,15 @@ def get_parser_args():
         help='Conda prefix for environments'
     )
 
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    valid_commands = ['preprocess', 'find', 'simulate', 'hapmap', 'reference']
+    if args.command not in valid_commands:
+        raise RuntimeError(f'command {args.command} not in list of valid commands: {valid_commands}')
+
+    if args.impute and not args.phase:
+        raise ValueError('If --impute is present, then --phase must also be present')
+    return args
 
 
 def copy_file(working_dir, file_path):
@@ -189,13 +215,6 @@ if __name__ == '__main__':
     if not os.path.exists(args.directory):
         os.makedirs(args.directory)
 
-    valid_commands = ['preprocess', 'find', 'simulate', 'hapmap', 'vcf', 'reference']
-    if args.command not in valid_commands:
-        raise RuntimeError(f'command {args.command} not in list of valid commands: {valid_commands}')
-
-    if args.command == 'preprocess':
-        copy_input(args.input, args.directory, args.samples)
-
     if args.command == 'simulate':
         copy_input('workflows/pedsim/params', args.directory, os.path.join('workflows/pedsim/', args.sim_samples_file))
         # for some reason launching with docker from command line
@@ -203,16 +222,15 @@ if __name__ == '__main__':
         # therefore config.yaml must be in snakemake.workdir
         shutil.copy('workflows/pedsim/config.yaml', os.path.join(args.directory, 'config.yaml'))
 
-    if args.command == 'vcf':
+    if args.command == 'preprocess':
         shutil.copy(args.vcf_file, os.path.join(args.directory, 'input.vcf'))
 
-    if args.command in ['preprocess', 'find', 'vcf', 'reference']:
+    if args.command in ['preprocess', 'find', 'reference']:
         if args.directory != '.':
             shutil.copy('config.yaml', os.path.join(args.directory, 'config.yaml'))
 
     snakefiles = {
-        'preprocess': 'workflows/preprocess/Snakefile',
-        'vcf': 'workflows/preprocess_vcf/Snakefile',
+        'preprocess': 'workflows/preprocess2/Snakefile',
         'find': 'Snakefile',
         'simulate': 'workflows/pedsim/Snakefile',
         'hapmap': 'workflows/hapmap/Snakefile',
@@ -247,6 +265,10 @@ if __name__ == '__main__':
         config_dict['use_ibis'] = True
     elif args.flow == 'rapid':
         config_dict['use_rapid'] = True
+    if args.command == 'preprocess':
+        config_dict['remove_imputation'] = args.remove_imputation
+        config_dict['impute'] = args.impute
+        config_dict['phase'] = args.phase
 
     if not snakemake.snakemake(
             snakefile=snakefile,

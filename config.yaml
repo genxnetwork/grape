@@ -18,4 +18,5 @@ reference:
   hapmap_mp: hapmap/ceu.map
   hapmap_fam: hapmap/relations.txt
   hd_genotype_chip: 1000genome/hd_genotype_chip/all.vcf.gz
+  affymetrix_chip: 1000genome/affymetrix_chip/all.vcf.gz
   pedsim_map: refined_mf.simmap
