@@ -46,7 +46,7 @@ rule plink_filter:
     shell:
         """
         plink --vcf {input.vcf} --freqx --out plink/{params.out}
-        plink --vcf {input.vcf} --remove {input.bad_samples} --geno 0.5 --maf 1e-5 --mac 1 --hwe 0 --make-bed --keep-allele-order --out plink/{params.out} |& tee {log}
+        plink --vcf {input.vcf} --remove {input.bad_samples} --geno 0.5 --maf 0.02 --hwe 0 --make-bed --keep-allele-order --out plink/{params.out} |& tee {log}
         """
 
 rule pre_imputation_check:
