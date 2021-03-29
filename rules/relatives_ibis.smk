@@ -1,10 +1,10 @@
 rule convert_mapped_to_plink:
-    input: rules.prepare_vcf.params['vcf']
+    input: "preprocessed/data.vcf.gz"
     output: expand("plink/{i}.{ext}", i="merged_ibis", ext=PLINK_FORMATS)
     params:
         out = "plink/merged_ibis"
     conda:
-        "../envs/bcf_plink.yaml"
+        "../envs/plink.yaml"
     log:
         "logs/plink/convert_mapped_to_plink.log"
     benchmark:
@@ -12,8 +12,8 @@ rule convert_mapped_to_plink:
     shell:
         """
         # leave only chr1..22 because we need to map it later
-        bcftools view {input} --regions 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 -O z -o vcf/merged_mapped_sorted_22.vcf.gz
-        plink --vcf vcf/merged_mapped_sorted_22.vcf.gz --make-bed --out {params.out} |& tee {log}
+        # bcftools view {input} --regions 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 -O z -o vcf/merged_mapped_sorted_22.vcf.gz
+        plink --vcf {input} --make-bed --out {params.out} |& tee {log}
         """
 
 rule run_king:
@@ -24,9 +24,9 @@ rule run_king:
         kinship0="king/merged_imputed_kinship.kin0",
         segments="king/merged_imputed_king.segments.gz"
     params:
-        input = "plink/merged_ibis",
-        out = "king/merged_imputed_king",
-        kin = "king/merged_imputed_kinship"
+        input="plink/merged_ibis",
+        out="king/merged_imputed_king",
+        kin="king/merged_imputed_kinship"
     threads: workflow.cores
     singularity:
         "docker://lifebitai/king:latest"
@@ -71,7 +71,7 @@ rule ibis_mapping:
         "benchmarks/ibis/run_ibis_mapping.txt"
     shell:
         """
-        (add-map-plink.pl -cm {params.input}.bim {genetic_map_GRCh37}> plink/merged_ibis_mapped.bim) |& tee -a {log}
+        (add-map-plink.pl -cm {params.input}.bim {GENETIC_MAP_GRCH37}> plink/merged_ibis_mapped.bim) |& tee -a {log}
         """
 
 rule ibis:

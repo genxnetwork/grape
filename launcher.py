@@ -265,7 +265,7 @@ if __name__ == '__main__':
         config_dict['use_ibis'] = True
     elif args.flow == 'rapid':
         config_dict['use_rapid'] = True
-    if args.command == 'preprocess':
+    if args.command in ['preprocess', 'simulate']:
         config_dict['remove_imputation'] = args.remove_imputation
         config_dict['impute'] = args.impute
         config_dict['phase'] = args.phase

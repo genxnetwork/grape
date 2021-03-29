@@ -1,14 +1,32 @@
-rule run_king:
-    input: rules.convert_imputed_to_plink.output
-    output:
-        king="king/merged_imputed_king.seg",
-        kinship="king/merged_imputed_kinship.kin",
-        kinship0="king/merged_imputed_kinship.kin0",
-        segments="king/merged_imputed_king.segments.gz"
+rule convert_mapped_to_plink:
+    input: "preprocessed/data.vcf.gz"
+    output: expand("plink/{i}.{ext}", i="data", ext=PLINK_FORMATS)
     params:
-        input = "plink/merged_imputed",
-        out = "king/merged_imputed_king",
-        kin = "king/merged_imputed_kinship"
+        out = "plink/data"
+    conda:
+        "../envs/plink.yaml"
+    log:
+        "logs/plink/convert_mapped_to_plink.log"
+    benchmark:
+        "benchmarks/plink/convert_mapped_to_plink.txt"
+    shell:
+        """
+        # leave only chr1..22 because we need to map it later
+        # bcftools view {input} --regions 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 -O z -o vcf/merged_mapped_sorted_22.vcf.gz
+        plink --vcf {input} --make-bed --out {params.out} |& tee {log}
+        """
+
+rule run_king:
+    input: rules.convert_mapped_to_plink.output
+    output:
+        king="king/data.seg",
+        kinship="king/data.kin",
+        kinship0="king/data.kin0",
+        segments="king/data.segments.gz"
+    params:
+        input = "plink/data",
+        out = "king/data",
+        kin = "king/data"
     threads: workflow.cores
     singularity:
         "docker://lifebitai/king:latest"
@@ -38,8 +56,16 @@ rule run_king:
         fi
         """
 
+rule index_input:
+    input: "preprocessed/data.vcf.gz"
+    output: "preprocessed/data.vcf.gz.csi"
+    conda: "../envs/bcftools.yaml"
+    shell: "bcftools index -f {input}"
+
 rule index_and_split:
-    input: rules.merge_imputation_filter.output
+    input:
+        vcf="preprocessed/data.vcf.gz",
+        index="preprocessed/data.vcf.gz.csi"
     output: "vcf/imputed_chr{chrom}.vcf.gz"
     conda:
         "../envs/bcftools.yaml"
@@ -51,9 +77,8 @@ rule index_and_split:
         "benchmarks/vcf/index_and_split-{chrom}.txt"
     shell:
         """
-        bcftools filter {input} -r {wildcards.chrom} | bcftools norm --rm-dup none -O z -o vcf/imputed_chr{wildcards.chrom}.vcf.gz |& tee {log}
+        bcftools filter -r {wildcards.chrom} {input.vcf} | bcftools norm --rm-dup none -O z -o vcf/imputed_chr{wildcards.chrom}.vcf.gz |& tee {log}
         """
-
 
 rule vcf_to_ped:
     # --a2-allele <uncompressed VCF filename> 4 3 '#'
@@ -115,7 +140,7 @@ rule bed_to_ped:
 rule interpolate:
     input:
         rules.vcf_to_ped.output,
-        cmmap=cmmap
+        cmmap=CMMAP
     output: "cm/chr{chrom}.cm.map"
     conda:
         "../envs/plink.yaml"
@@ -139,7 +164,7 @@ rule germline:
         "benchmarks/germline/germline-{chrom}.txt"
     shell:
         """
-        germline -input ped/imputed_chr{wildcards.chrom}.ped cm/chr{wildcards.chrom}.cm.map -homoz -min_m 2.5 -err_hom 2 -err_het 1 -output germline/chr{wildcards.chrom}.germline |& tee {log}
+        germline -input ped/imputed_chr{wildcards.chrom}.ped cm/chr{wildcards.chrom}.cm.map -min_m 2.5 -err_hom 2 -err_het 1 -output germline/chr{wildcards.chrom}.germline |& tee {log}
         # TODO: germline returns some length in BP instead of cM - clean up is needed
         set +e
         grep -v MB germline/chr{wildcards.chrom}.germline.match > germline/chr{wildcards.chrom}.germline.match.clean && mv germline/chr{wildcards.chrom}.germline.match.clean germline/chr{wildcards.chrom}.germline.match

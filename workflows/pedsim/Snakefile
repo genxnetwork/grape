@@ -27,6 +27,18 @@ CHROMOSOMES     = [str(i) for i in range(1, 23)]
 
 PLINK_FORMATS   = ['bed', 'bim', 'fam']
 
+assembly = config['assembly']
+need_phase = config['phase']
+need_imputation = config['impute']
+need_remove_imputation = config['remove_imputation']
+
+_IDEAL_LARGE_MEM_GB = 20
+
+# if available, return the ideal pretty-large amount for most jobs (20GB)
+def _mem_gb_for_ram_hungry_jobs():
+  return min(_IDEAL_LARGE_MEM_GB, config["mem_gb"])
+
+
 #CHIP_DATA_LINK = 'ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.chip.omni_broad_sanger_combined.20140818.snps.genotypes.vcf.gz'
 #CHIP_INDEX_LINK = 'ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.chip.omni_broad_sanger_combined.20140818.snps.genotypes.vcf.gz.tbi'
 
@@ -94,36 +106,24 @@ rule simulate:
             pedsim -d {input._def} -m {input._map} -i {input.bg} -o {params.prefix} --intf {input.intf} --fam
         """
 
-
 rule postprocess:
     input:
         vcf='pedsim/simulated/data.vcf.gz',
         fam='pedsim/simulated/data-everyone.fam'
     output:
         kin='pedsim/simulated/reheaded_data.kinship',
-        vcf='vcf/merged_mapped_sorted.vcf.gz',
+        vcf='input.vcf',
         fam='pedsim/simulated/reheaded_data.fam'
     conda:
         "../../envs/postprocess.yaml"
     script:
         "../../scripts/postprocess.py"
 
-rule prepare_vcf:
-    input:
-        vcf=rules.postprocess.output['vcf']
-    output:
-        idx='vcf/merged_mapped_sorted.vcf.gz.csi'
-    params:
-        vcf='vcf/merged_mapped_sorted.vcf.gz'
-    conda:
-        '../../envs/bcftools.yaml'
-    shell:
-        "bcftools index {input}"
+include: "../../rules/preprocessing.smk"
 
 if use_ibis:
     include: "../../rules/relatives_ibis.smk"
 else:
-    include: "../../rules/imputation.smk"
     include: "../../rules/relatives.smk"
 
 rule evaluate_accuracy:
