@@ -102,7 +102,8 @@ rule plink_clean_up:
 rule prepare_vcf:
     input: "plink/merged_mapped.bim"
     output:
-        "vcf/merged_mapped_sorted.vcf.gz"
+        vcf="vcf/merged_mapped_sorted.vcf.gz",
+        alleled=temp(expand('plink/merged_mapped_alleled.{ext}', ext=PLINK_FORMATS))
     params:
         input   = "plink/merged_mapped",
         vcf     = 'vcf/merged_mapped_sorted.vcf.gz'

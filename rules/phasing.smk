@@ -19,6 +19,8 @@ rule phase:
             --geneticMapFile {GENETIC_MAP} \
             --chrom {wildcards.chrom} \
             --vcfOutFormat z \
+            --pbwtIters 2 \
+            --Kpbwt 20000 \
             --outPrefix phase/chr{wildcards.chrom}.phased |& tee {log}
             """
 

@@ -30,23 +30,23 @@ def write_map_file(ids, chrom, positions, out: str):
 if __name__ == '__main__':
     start = time.time()
 
-    #'''
     vcf = snakemake.input['vcf'][0]
     zarr_cache = snakemake.params['zarr']
     ped = snakemake.output['ped']
     map_file = snakemake.output['map_file']
-    #'''
+
     '''
     vcf = 'test_data/imputed_chr9.vcf.gz'
     zarr_cache = 'test_data/imputed_chr9.zarr'
     ped = 'test_data/imputed_chr9.ped'
     map_file = 'test_data/imputed_chr9.map'
     '''
+
     '''
-    vcf = 'test_data/test.vcf.gz'
-    zarr_cache = 'test_data/test.zarr'
-    ped = 'test_data/test.ped'
-    map_file = 'test_data/test.map'
+    vcf = '/home/ag3r/vcf_to_ped/testsample.vcf.gz'
+    zarr_cache = '/home/ag3r/vcf_to_ped/testsample.zarr'
+    ped = '/home/ag3r/vcf_to_ped/testsample.ped'
+    map_file = '/home/ag3r/vcf_to_ped/testsample.map'
     '''
 
     if os.path.exists(ped):

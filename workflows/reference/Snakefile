@@ -27,6 +27,7 @@ CHROMOSOMES = [str(i) for i in range(1, 23)]
 rule all:
     input:
         GRCh37_fasta = GRCH37_FASTA,
+        GRCh37_fasta_dict = expand("{ref}.dict", ref=GRCH37_FASTA),
         GENETIC_MAP = GENETIC_MAP,
         genetic_map_GRCh37 = expand("{REF_DIR}/genetic_map_GRCh37/genetic_map_GRCh37_chr{i}.txt", i=CHROMOSOMES, REF_DIR=REF_DIR),
         cmmap = expand("{REF_DIR}/genetic_map_b37/genetic_map_chr{chrom}_combined_b37.txt", chrom=CHROMOSOMES, REF_DIR=REF_DIR),
@@ -51,6 +52,18 @@ rule download_GRCh37_fasta:
             # gzip exit with "decompression OK, trailing garbage ignored". need to silence
             gzip -d {REF_DIR}/human_g1k_v37.fasta.gz
             exit 0
+        """
+
+rule create_fasta_dict:
+    input:
+        GRCh37_fasta = GRCH37_FASTA
+    output:
+        expand("{ref}.dict", ref=GRCH37_FASTA)
+    singularity:
+            "docker://genxnetwork/picard:stable"
+    shell:
+        """
+            java -jar /picard/picard.jar CreateSequenceDictionary R={input.GRCh37_fasta} O={output}
         """
 
 rule download_GENETIC_MAP:

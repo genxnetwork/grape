@@ -10,7 +10,7 @@ rule recode_vcf:
 if need_remove_imputation:
     rule remove_imputation:
         input:
-            vcf=rules.recode_vcf.input['vcf']
+            vcf=rules.recode_vcf.output['vcf']
         output:
             vcf='vcf/imputation_removed.vcf.gz'
         log: "logs/vcf/remove_imputation.log"
@@ -18,7 +18,7 @@ if need_remove_imputation:
 else:
     rule copy_vcf:
         input:
-            vcf=rules.recode_vcf.input['vcf']
+            vcf=rules.recode_vcf.output['vcf']
         output:
             vcf='vcf/imputation_removed.vcf.gz'
         shell:
@@ -77,8 +77,20 @@ else:
         input:
             vcf="phase/merged_phased.vcf.gz"
         output:
-            vcf="preprocessed/data.vcf.gz"
+            vcf="imputed/data.vcf.gz"
         shell:
              """
                 cp {input.vcf} {output.vcf}
              """
+
+rule recode_snp_ids:
+    input:
+        vcf="imputed/data.vcf.gz"
+    output:
+        vcf="preprocessed/data.vcf.gz"
+    conda:
+        "../envs/bcftools.yaml"
+    shell:
+        """
+            bcftools annotate --set-id '%CHROM:%POS:%REF:%FIRST_ALT' {input.vcf} -O z -o {output.vcf}
+        """

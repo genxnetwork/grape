@@ -12,8 +12,8 @@ rule convert_mapped_to_plink:
     shell:
         """
         # leave only chr1..22 because we need to map it later
-        # bcftools view {input} --regions 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 -O z -o vcf/merged_mapped_sorted_22.vcf.gz
-        plink --vcf {input} --make-bed --out {params.out} |& tee {log}
+        bcftools view {input} --regions 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 -O z -o vcf/merged_mapped_sorted_22.vcf.gz
+        plink --vcf vcf/merged_mapped_sorted_22.vcf.gz --make-bed --out {params.out} |& tee {log}
         """
 
 rule run_king:
@@ -70,7 +70,6 @@ rule index_and_split:
     conda:
         "../envs/bcftools.yaml"
     # TODO: because "The option is currently used only for the compression of the output stream"
-    # threads: workflow.cores
     log:
         "logs/vcf/index_and_split-{chrom}.log"
     benchmark:
@@ -79,6 +78,7 @@ rule index_and_split:
         """
         bcftools filter -r {wildcards.chrom} {input.vcf} | bcftools norm --rm-dup none -O z -o vcf/imputed_chr{wildcards.chrom}.vcf.gz |& tee {log}
         """
+
 
 rule vcf_to_ped:
     # --a2-allele <uncompressed VCF filename> 4 3 '#'
@@ -99,12 +99,33 @@ rule vcf_to_ped:
         "../scripts/vcf_to_ped.py"
 
 
+
 '''
-rule vcf_to_bed:
+rule vcf_to_haps:
     input: rules.index_and_split.output
-    output: expand("bed/imputed_chr{{chrom}}.{ext}", ext=PLINK_FORMATS)
+    output: expand("haps/imputed_chr{{chrom}}.{ext}", ext=['hap', 'sample'])
     params:
-        out="bed/imputed_chr{chrom}",
+        out="haps/imputed_chr{chrom}",
+        vcf="vcf/temp_imputed_chr{chrom}.vcf"
+    conda:
+        "../envs/bcftools.yaml"
+    log:
+        "logs/vcf/vcf_to_haps-{chrom}.log"
+    benchmark:
+        "benchmarks/vcf/vcf_to_haps-{chrom}.txt"
+    shell:
+        """
+        bcftools --version
+        bcftools convert vcf/imputed_chr{wildcards.chrom}.vcf.gz --hapsample haps/imputed_chr{wildcards.chrom} |& tee {log}
+        gunzip -f haps/imputed_chr{wildcards.chrom}.hap.gz |& tee -a {log}
+        """
+
+
+rule vcf_to_haps:
+    input: rules.index_and_split.output
+    output: expand("haps/imputed_chr{{chrom}}.{ext}", ext=['haps', 'sample'])
+    params:
+        out="haps/imputed_chr{chrom}",
         vcf="vcf/temp_imputed_chr{chrom}.vcf"
     singularity:
         "docker://genxnetwork/plink2:stable"
@@ -115,25 +136,27 @@ rule vcf_to_bed:
     shell:
         """
         zcat {input} > {params.vcf}
-        plink2 --vcf {input} --ref-allele {params.vcf} 4 3 '#' --make-bed --out {params.out} |& tee {log}
-        rm {params.vcf}
+        plink2 --vcf {input} --ref-allele {params.vcf} 4 3 '#' --export haps --out {params.out} |& tee {log} 
+        # plink2 --vcf {input} --ref-allele {params.vcf} 4 3 '#' --make-bed --out {params.out} |& tee {log}
+        # rm {params.vcf}
         """
 
-rule bed_to_ped:
-    input: rules.vcf_to_bed.output
+
+rule haps_to_ped:
+    input: rules.vcf_to_haps.output
     output: "ped/imputed_chr{chrom}.ped"
     params:
-        input="bed/imputed_chr{chrom}",
+        input="haps/imputed_chr{chrom}",
         out="ped/imputed_chr{chrom}"
-    conda:
-        "../envs/plink.yaml"
+    singularity:
+        "docker://genxnetwork/germline:stable"
     log:
-        "logs/bed/bed_to_ped-{chrom}.log"
+        "logs/haps/haps_to_ped-{chrom}.log"
     benchmark:
-        "benchmarks/bed/bed_to_ped-{chrom}.txt"
+        "benchmarks/haps/haps_to_ped-{chrom}.txt"
     shell:
         """
-        plink --bfile {params.input} --keep-allele-order --recode --out {params.out} |& tee {log}
+        impute_to_ped haps/imputed_chr{wildcards.chrom}.hap haps/imputed_chr{wildcards.chrom}.sample ped/imputed_chr{wildcards.chrom} |& tee {log}
         """
 '''
 
@@ -155,7 +178,7 @@ rule interpolate:
 
 rule germline:
     input: rules.interpolate.output
-    output: "germline/chr{chrom}.germline.match"
+    output: "germline/chr{chrom}.germline.match.clean"
     singularity:
         "docker://genxnetwork/germline:stable"
     log:
@@ -167,17 +190,18 @@ rule germline:
         germline -input ped/imputed_chr{wildcards.chrom}.ped cm/chr{wildcards.chrom}.cm.map -min_m 2.5 -err_hom 2 -err_het 1 -output germline/chr{wildcards.chrom}.germline |& tee {log}
         # TODO: germline returns some length in BP instead of cM - clean up is needed
         set +e
-        grep -v MB germline/chr{wildcards.chrom}.germline.match > germline/chr{wildcards.chrom}.germline.match.clean && mv germline/chr{wildcards.chrom}.germline.match.clean germline/chr{wildcards.chrom}.germline.match
+        # grep -v MB germline/chr{wildcards.chrom}.germline.match > germline/chr{wildcards.chrom}.germline.match.clean && mv germline/chr{wildcards.chrom}.germline.match.clean germline/chr{wildcards.chrom}.germline.match
+        grep -v MB germline/chr{wildcards.chrom}.germline.match > germline/chr{wildcards.chrom}.germline.match.clean 
         set -e
         """
 
 rule merge_matches:
     input:
-         expand("germline/chr{chrom}.germline.match", chrom=CHROMOSOMES)
+         expand("germline/chr{chrom}.germline.match.clean", chrom=CHROMOSOMES)
     output:
           "germline/all.tsv"
     shell:
-         "cat germline/*.match > {output}"
+         "cat germline/*.match.clean > {output}"
 
 rule merge_ibd_segments:
     input:

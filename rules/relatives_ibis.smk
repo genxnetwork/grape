@@ -1,10 +1,20 @@
-rule convert_mapped_to_plink:
+rule index_input:
     input: "preprocessed/data.vcf.gz"
-    output: expand("plink/{i}.{ext}", i="merged_ibis", ext=PLINK_FORMATS)
+    output: "preprocessed/data.vcf.gz.csi"
+    conda: "../envs/bcftools.yaml"
+    shell: "bcftools index -f {input}"
+
+rule convert_mapped_to_plink:
+    input:
+        vcf="preprocessed/data.vcf.gz",
+        index="preprocessed/data.vcf.gz.csi"
+    output:
+        plink=expand("plink/{i}.{ext}", i="merged_ibis", ext=PLINK_FORMATS),
+        vcf122=temp("vcf/merged_mapped_sorted_22.vcf.gz")
     params:
         out = "plink/merged_ibis"
     conda:
-        "../envs/plink.yaml"
+        "../envs/bcf_plink.yaml"
     log:
         "logs/plink/convert_mapped_to_plink.log"
     benchmark:
@@ -12,8 +22,8 @@ rule convert_mapped_to_plink:
     shell:
         """
         # leave only chr1..22 because we need to map it later
-        # bcftools view {input} --regions 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 -O z -o vcf/merged_mapped_sorted_22.vcf.gz
-        plink --vcf {input} --make-bed --out {params.out} |& tee {log}
+        bcftools view {input} --regions 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 -O z -o {output.vcf122}
+        plink --vcf {output.vcf122} --make-bed --out {params.out} |& tee {log}
         """
 
 rule run_king:

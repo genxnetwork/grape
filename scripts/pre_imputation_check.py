@@ -54,7 +54,7 @@ def get_id(a1_a2, id_element, chr_, pos_, ref_, alt_):
     return None
 
 
-def pre_imputation_check(params, reference, fn='./data/hapmap20', rs=True):
+def pre_imputation_check(params, reference, fn='./data/hapmap20'):
     """Given a plink bim file
     1. Remove SNPs can not be matched
     2. Flip SNPs that match after flip
@@ -84,7 +84,7 @@ def pre_imputation_check(params, reference, fn='./data/hapmap20', rs=True):
         strand_flip = 0
         swap = 0
         flip_swap = 0
-
+        unique_ids = set()
         for i in open(reference):
             items = i.split()
             chr_, pos_, ref_, alt_ = items[0], items[1], items[3], items[4]
@@ -98,10 +98,13 @@ def pre_imputation_check(params, reference, fn='./data/hapmap20', rs=True):
                 if matching == 4:
                     exclude += 1
                 else:
+                    if id_ in unique_ids:
+                        continue
                     w1.write("{}\t{}\n".format(id_, chr_))
                     w2.write("{}\t{}\n".format(id_, pos_))
                     # set alt as A1, because recode vcf will code A1 as alt later
                     w3.write("{}\t{}\n".format(id_, alt_))
+                    unique_ids.add(id_)
                     if matching == 2:
                         w4.write(id_ + "\n")
                         strand_flip += 1
