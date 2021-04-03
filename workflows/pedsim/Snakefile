@@ -21,6 +21,7 @@ HAPMAP_MP          = join(REF_DIR, config["reference"]["hapmap_mp"])
 HAPMAP_FAM         = join(REF_DIR, config["reference"]["hapmap_fam"])
 HD_GENOTYPE_CHIP   = join(REF_DIR, config["reference"]["hd_genotype_chip"])
 PEDSIM_MAP         = join(REF_DIR, config["reference"]["pedsim_map"])
+AFFYMETRIX_CHIP    = join(REF_DIR, config["reference"]["affymetrix_chip"])
 
 SAMPLES = [str(s) for s in range(10)]
 CHROMOSOMES     = [str(i) for i in range(1, 23)]
@@ -51,7 +52,7 @@ rule all:
 
 rule intersect:
     input:
-        hd_genotype_chip=HD_GENOTYPE_CHIP,
+        hd_genotype_chip=AFFYMETRIX_CHIP,
         vcfRef=REF_VCF
     output: "pedsim/phased/chr{chrom}.phased.vcf.gz"
     conda: "../../envs/bcftools.yaml"
@@ -106,13 +107,27 @@ rule simulate:
             pedsim -d {input._def} -m {input._map} -i {input.bg} -o {params.prefix} --intf {input.intf} --fam
         """
 
+rule shuffle_phase:
+        input: vcf=rules.simulate.output.vcf
+        output: vcf="pedsim/simulated/data_shuffled.vcf.gz",
+                plink=temp(expand("plink/data_shuffled.{ext}", ext=PLINK_FORMATS))
+        params:
+            plink="plink/data_shuffled",
+            vcf="pedsim/simulated/data_shuffled"
+        conda: "../../envs/plink.yaml"
+        shell:
+            """
+                plink --vcf {input.vcf} --make-bed --out {params.plink} 
+                plink --bfile {params.plink} --export vcf bgz --out {params.vcf}
+            """
+
 rule postprocess:
     input:
-        vcf='pedsim/simulated/data.vcf.gz',
+        vcf=rules.shuffle_phase.output.vcf,
         fam='pedsim/simulated/data-everyone.fam'
     output:
         kin='pedsim/simulated/reheaded_data.kinship',
-        vcf='input.vcf',
+        vcf='input.vcf.gz',
         fam='pedsim/simulated/reheaded_data.fam'
     conda:
         "../../envs/postprocess.yaml"
@@ -132,7 +147,10 @@ rule evaluate_accuracy:
         fam=rules.postprocess.output['fam']
     output:
         accuracy='results/accuracy.png',
-        pr='results/precision_recall.png'
+        pr='results/precision_recall.png',
+        conf_matrix='results/confusion_matrix.png'
+    log:
+        "logs/evaluation/accuracy.log"
     conda:
         "../../envs/evaluation.yaml"
     script:

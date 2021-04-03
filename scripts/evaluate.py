@@ -4,6 +4,7 @@ import itertools
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
+import logging
 
 from utils.relatives import get_kinship, read_pedigree, relatives_to_graph
 
@@ -33,6 +34,8 @@ def precision_recall(total, confusion_matrix, plot_name=None):
         false_negatives = true_total - true_positives
 
         print(f'td: {true_degree}\t tp: {true_positives}\t fn: {false_negatives}\t fp: {false_positives}')
+        logging.info(f'td: {true_degree}\t tp: {true_positives}\t fn: {false_negatives}\t fp: {false_positives}')
+
         if true_positives + false_positives == 0:
             data['Precision'].append(0.0)
         else:
@@ -49,10 +52,9 @@ def precision_recall(total, confusion_matrix, plot_name=None):
     if not plot_name:
         plt.show()
     else:
-        print('plot saved to ', plot_name)
+        logging.info(f'plot saved to {plot_name}')
         plt.savefig(plot_name)
         plt.close()
-    print('precision and recall plotting finished')
 
 
 def compare(total, correct, plot_name=None, cutoff=1):
@@ -74,25 +76,47 @@ def compare(total, correct, plot_name=None, cutoff=1):
     if not plot_name:
         plt.show()
     else:
-        print('plot saved to ', plot_name)
+        logging.info(f'plot saved to {plot_name}')
         plt.savefig(plot_name)
         plt.close()
-    print('comparison finished')
 
 
-def evaluate(result, fam, plot_name, pr_plot_name, only_client=False):
+def plot_confusion_matrix(confusion_matrix, plot_name):
+    x = []
+    y = []
+    sizes = []
+    max_degree = max(max([c[0] for c in confusion_matrix.keys()]), max([c[1] for c in confusion_matrix.keys()]))
+    for (true_degree, pred_degree), count in confusion_matrix.items():
+        if true_degree == -1:
+            true_degree = max_degree + 1
+        if pred_degree == -1:
+            pred_degree = max_degree + 1
+        if true_degree != -1 and pred_degree != -1:
+            x.append(true_degree)
+            y.append(pred_degree)
+            sizes.append(count*9)
+
+    plt.figure(figsize=(15, 15))
+    plt.ylim(0, max_degree + 2)
+    plt.xlim(0, max_degree + 2)
+    plt.xticks(ticks=list(range(max_degree + 2)),
+               labels=[str(d) for d in range(max_degree + 1)] + ['No rel'], fontsize=20)
+    plt.yticks(ticks=list(range(max_degree + 2)),
+               labels=[str(d) for d in range(max_degree + 1)] + ['No rel'], fontsize=20)
+    plt.grid(zorder=0)
+    plt.scatter(x, y, s=sizes, zorder=3)
+    for i, size in enumerate(sizes):
+        plt.annotate(size // 9, (x[i], y[i]), xytext=(x[i]+0.15, y[i]+0.17), fontsize=14)
+    plt.xlabel('Ground truth', fontsize=24)
+    plt.ylabel('Predicted degree', fontsize=24)
+    plt.savefig(plot_name)
+
+
+def evaluate(result, fam, plot_name, pr_plot_name, conf_matrix_plot_name, only_client=False):
     """If only_client=True, all pairwise relatives between client are evaluated"""
     iids, pedigree = read_pedigree(fn=fam)
-    print('pedigree:')
-    print(list(pedigree.edges)[:5])
     kinship = get_kinship(pedigree)
-    print('results is: ', result)
     inferred, clients = relatives_to_graph(result, only_client)
-    print('inferred:')
-    print(len(inferred), list(inferred.edges)[:5])
-    print('*'*100)
-    print('kinship:')
-    print(len(kinship), list(kinship.edges)[:5])
     confusion_matrix = {}
     total = {}
     correct = {}
@@ -133,10 +157,20 @@ def evaluate(result, fam, plot_name, pr_plot_name, only_client=False):
     keys = sorted(list(confusion_matrix.keys()))
     for key in keys:
         print(f'{key}\t{confusion_matrix[key]}')
+        logging.info(f'{key}\t{confusion_matrix[key]}')
 
     compare(total, correct, plot_name)
     precision_recall(total, confusion_matrix, pr_plot_name)
+    plot_confusion_matrix(confusion_matrix, conf_matrix_plot_name)
 
 
 if __name__ == '__main__':
-    evaluate(snakemake.input['rel'], snakemake.input['fam'], snakemake.output['accuracy'], snakemake.output['pr'], only_client=True)
+    logging.basicConfig(filename=snakemake.log[0], level=logging.DEBUG, format='%(levelname)s:%(asctime)s %(message)s')
+    sns.set_style()
+
+    evaluate(snakemake.input['rel'],
+             snakemake.input['fam'],
+             snakemake.output['accuracy'],
+             snakemake.output['pr'],
+             snakemake.output['conf_matrix'],
+             only_client=True)

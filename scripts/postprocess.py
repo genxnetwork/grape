@@ -117,8 +117,6 @@ if __name__ == "__main__":
     with open(fam_name, 'r') as old_file, open(fam_output, 'w') as new_file:
         old_ids = old_file.readlines()
         for i, old_id in enumerate(old_ids):
-            if i < 5:
-                print(i, old_id)
             # make names legal for input
             #new_file.write(old_id.replace("-", "").replace("_", ""))
             new_file.write(old_id)
@@ -134,8 +132,6 @@ if __name__ == "__main__":
     sample_ids = bcftools_samples(vcf_name)
     with open(vcf_output + '.samples', 'w') as samples_file:
         for i, _id in enumerate(sample_ids):
-            if i < 5:
-                print(i, _id)
             i1, i2 = _id.split(sep='_')
             samples_file.write("{}_{}\n".format(i1, i2))
 

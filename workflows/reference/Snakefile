@@ -36,7 +36,8 @@ rule all:
         lift_chain = LIFT_CHAIN,
         SITE_1000GENOME = SITE_1000GENOME,
         pedsim_map = PEDSIM_MAP,
-        hd_genotype_chip = HD_GENOTYPE_CHIP
+        hd_genotype_chip = HD_GENOTYPE_CHIP,
+        affymetrix_chip = AFFYMETRIX_CHIP
 
 rule download_GRCh37_fasta:
     output:
@@ -246,7 +247,7 @@ rule download_affymetrix_chip:
         """
             mkdir -p {REF_DIR}/1000genome/affymetrix_chip
             wget http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.wgs.nhgri_coriell_affy_6.20140825.genotypes_has_ped.vcf.gz -O {AFFYMETRIX_CHIP}
-            wget http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.wgs.nhgri_coriell_affy_6.20140825.genotypes_has_ped.vcf.gz.tbi -O {HAFFYMETRIX_CHIP}.tbi
+            wget http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.wgs.nhgri_coriell_affy_6.20140825.genotypes_has_ped.vcf.gz.tbi -O {AFFYMETRIX_CHIP}.tbi
         """
 
 rule download_pedsim_map:

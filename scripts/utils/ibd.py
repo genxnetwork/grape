@@ -110,6 +110,10 @@ def read_king_segments(path):
         else:
             segments[key].append(seg)
 
+        if i < 5:
+            print(f'segment number {i}:', seg.id1, seg.id2, seg.chrom, seg.bp_start, seg.bp_end)
+
+    print(f'len of segments is {len(segments)}')
     return segments
 
 

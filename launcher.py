@@ -223,7 +223,7 @@ if __name__ == '__main__':
         shutil.copy('workflows/pedsim/config.yaml', os.path.join(args.directory, 'config.yaml'))
 
     if args.command == 'preprocess':
-        shutil.copy(args.vcf_file, os.path.join(args.directory, 'input.vcf'))
+        shutil.copy(args.vcf_file, os.path.join(args.directory, 'input.vcf.gz'))
 
     if args.command in ['preprocess', 'find', 'reference']:
         if args.directory != '.':

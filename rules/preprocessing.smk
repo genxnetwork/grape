@@ -1,6 +1,6 @@
 
 rule recode_vcf:
-    input: vcf='input.vcf'
+    input: vcf='input.vcf.gz'
     output: vcf = "vcf/merged_recoded.vcf.gz"
     log: "logs/plink/recode_vcf.log"
     conda: "../envs/plink.yaml"
