@@ -29,14 +29,14 @@ rule convert_mapped_to_plink:
 rule run_king:
     input: rules.convert_mapped_to_plink.output
     output:
-        king="king/merged_imputed_king.seg",
-        kinship="king/merged_imputed_kinship.kin",
-        kinship0="king/merged_imputed_kinship.kin0",
-        segments="king/merged_imputed_king.segments.gz"
+        king="king/data.seg",
+        kinship="king/data.kin",
+        kinship0="king/data.kin0",
+        segments="king/data.segments.gz"
     params:
         input="plink/merged_ibis",
-        out="king/merged_imputed_king",
-        kin="king/merged_imputed_kinship"
+        out="king/data",
+        kin="king/data"
     threads: workflow.cores
     singularity:
         "docker://lifebitai/king:latest"
@@ -132,10 +132,10 @@ rule ersa:
         "benchmarks/ersa/ersa.txt"
     shell:
         """
-        ERSA_L=2.0 # the average number of IBD segments in population
-        ERSA_TH=5.5 # the average length of IBD segment in population
+        ERSA_L=2.5 # the average number of IBD segments in population
+        ERSA_TH=6.5 # the average length of IBD segment in population
         ERSA_T=5.0 # min length of segment to be considered in segment aggregation
-        ersa --avuncular-adj -ci --dmax 14 -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd}  -o {output}  |& tee {log}
+        ersa --avuncular-adj -ci --dmax 10 -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd}  -o {output}  |& tee {log}
         """
 
 rule merge_king_ersa:

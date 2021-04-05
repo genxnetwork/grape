@@ -112,6 +112,23 @@ def read_king_segments(king_segments_path, map_dir):
         return pandas.DataFrame(columns=['id1', 'id2', 'total_seg_len_king', 'seg_count_king']).set_index(['id1', 'id2'])
 
 
+def kinship_to_degree(kinship):
+    degrees = []
+    # >0.354, [0.177, 0.354], [0.0884, 0.177] and [0.0442, 0.0884]
+    for k in kinship:
+        if k > 0.354:
+            degrees.append(0)
+        elif 0.177 < k <= 0.354:
+            degrees.append(1)
+        elif 0.0884 < k <= 0.177:
+            degrees.append(2)
+        elif 0.0442 < k <= 0.0884:
+            degrees.append(3)
+        else:
+            degrees.append(None)
+    return degrees
+
+
 def _read_kinship_data(kinship_path):
     try:
         data = pandas.read_table(kinship_path)
@@ -127,6 +144,7 @@ def _read_kinship_data(kinship_path):
 
             _sort_ids(data)
             data.rename({'Kinship': 'kinship'}, axis=1, inplace=True)
+            data.loc[:, 'kinship_degree'] = kinship_to_degree(data.kinship)
             data = data.loc[:, ['id1', 'id2', 'kinship']].set_index(['id1', 'id2'])
         else:
             data = pandas.DataFrame(columns=['id1', 'id2', 'kinship']).set_index(['id1', 'id2'])
@@ -161,7 +179,10 @@ def read_ersa(ersa_path):
 
     logging.info(f'read {data.shape[0]} pairs from ersa output')
     logging.info(f'ersa after reading has {pandas.notna(data.ersa_degree).sum()}')
-    return data.loc[data.id1 != data.id2, ['id1', 'id2', 'ersa_degree']].set_index(['id1', 'id2'])
+    data.loc[:, 'is_niece_aunt'] = [True if 'Niece' in d else False for d in data.rel_est1]
+    logging.info(f'we have total of {data.is_niece_aunt.sum()} possible Niece/Aunt relationships')
+    print(f'we have total of {data.is_niece_aunt.sum()} possible Niece/Aunt relationships')
+    return data.loc[data.id1 != data.id2, ['id1', 'id2', 'ersa_degree', 'is_niece_aunt']].set_index(['id1', 'id2'])
 
 
 if __name__ == '__main__':
@@ -212,7 +233,12 @@ if __name__ == '__main__':
     relatives.loc[prefer_ersa_mask, 'final_degree'] = relatives.ersa_degree
     logging.info(f'king is null or more than 3: {prefer_ersa_mask.sum()}')
     logging.info(f'ersa is not null: {pandas.notna(relatives.ersa_degree).sum()}')
+    niece_aunt_mask = (relatives.king_relation == 2) & relatives.is_niece_aunt
+    logging.info(f'We will change {niece_aunt_mask.sum()} 2 degree relationships to the niece/aunt 3 degree relationship')
+    print(f'We will change {niece_aunt_mask.sum()} 2 degree relationships to the niece/aunt 3 degree relationship')
 
+    relatives.loc[niece_aunt_mask, 'final_degree'] = 3
+    relatives.loc[niece_aunt_mask, 'ersa_degree'] = 3
     if 'total_seg_len_king' in relatives.columns:
         relatives.loc[:, 'total_seg_len'] = relatives.total_seg_len_king
         relatives.loc[:, 'seg_count'] = relatives.seg_count_king

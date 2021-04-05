@@ -148,7 +148,17 @@ rule evaluate_accuracy:
     output:
         accuracy='results/accuracy.png',
         pr='results/precision_recall.png',
-        conf_matrix='results/confusion_matrix.png'
+        conf_matrix='results/confusion_matrix.png',
+        updated_rel='results/updated_relatives.tsv',
+        pedigree_plot='results/pedigree_plot.png',
+        king_accuracy='results/king/accuracy.png',
+        king_pr='results/king/precision_recall.png',
+        king_conf_matrix='results/king/confusion_matrix.png',
+        king_updated_rel='results/king/updated_relatives.tsv',
+        ersa_accuracy='results/ersa/accuracy.png',
+        ersa_pr='results/ersa/precision_recall.png',
+        ersa_conf_matrix='results/ersa/confusion_matrix.png',
+        ersa_updated_rel='results/ersa/updated_relatives.tsv'
     log:
         "logs/evaluation/accuracy.log"
     conda:
