@@ -92,8 +92,7 @@ rule ibis:
     singularity:
         "docker://genxnetwork/ibis:stable"
     output:
-        ibd     = "ibis/merged_ibis.seg",
-        germline= "ibd/merged_ibd.tsv"
+        ibd     = "ibis/merged_ibis.seg"
     log:
         "logs/ibis/run_ibis.log"
     benchmark:
@@ -102,10 +101,22 @@ rule ibis:
     shell:
         """
         # use default params
-        ibis {params.input}.bed {input} {params.input}.fam -t {threads} -mt 500 -mL 5 -hbd -f ibis/merged_ibis |& tee -a {log}
+        ibis {params.input}.bed {input} {params.input}.fam -t {threads} -mt 500 -mL 5 -ibd2 -hbd -f ibis/merged_ibis |& tee -a {log}
 
-        cat {output.ibd} | awk '{{sub(":", "_", $1); sub(":", "_", $2); print $1, $1 "\t" $2, $2 "\t" $3 "\t" $4, $5 "\t" 0, 0 "\t" $10 "\t" $9 "\t" "cM" "\t" 0 "\t" 0 "\t" 0}};' > {output.germline}
+        # cat {output.ibd} | awk '{{sub(":", "_", $1); sub(":", "_", $2); print $1, $1 "\t" $2, $2 "\t" $3 "\t" $4, $5 "\t" 0, 0 "\t" $10 "\t" $9 "\t" "cM" "\t" 0 "\t" 0 "\t" 0}};' > {output}
         """
+
+rule transform_ibis_segments:
+    input:
+        ibd=rules.ibis.output.ibd
+    output:
+        germline = "ibd/merged_ibd.tsv"
+    log:
+        "logs/ibis/transform_ibis_segments.log"
+    conda:
+        "../envs/evaluation.yaml"
+    script:
+        "../scripts/transform_ibis_segments.py"
 
 rule split_map:
     input:
@@ -118,6 +129,7 @@ rule split_map:
     script:
         "../scripts/split_map.py"
 
+'''
 rule ersa:
     input:
         ibd=rules.ibis.output['germline'],
@@ -137,13 +149,34 @@ rule ersa:
         ERSA_T=5.0 # min length of segment to be considered in segment aggregation
         ersa --avuncular-adj -ci --dmax 10 -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd}  -o {output}  |& tee {log}
         """
+'''
+
+rule ersa2:
+    input:
+        ibd=rules.transform_ibis_segments.output['germline'],
+        cm=expand("cm/chr{chrom}.cm.map", chrom=CHROMOSOMES) # it does not really need it, just to invoke split_map
+    output:
+        "ersa/relatives.tsv"
+    singularity:
+        "docker://genxnetwork/ersa2:stable"
+    log:
+        "logs/ersa/ersa.log"
+    benchmark:
+        "benchmarks/ersa/ersa.txt"
+    shell:
+        """
+        /ersa/ersa.py --confidence_level 0.99 --use_ibd2_siblings true --adjust_pop_dist true --min_cm 4.0 --max_cm 20 \
+         --segment_files {input.ibd} --control_files /ersa/data/merged_ibd.tsv --mask_common_shared_regions 1 --output_file {output} |& tee {log}
+        """
+
+
 
 rule merge_king_ersa:
     input:
         king=rules.run_king.output['king'],
         king_segments=rules.run_king.output['segments'],
-        ibd=rules.ibis.output['germline'],
-        ersa=rules.ersa.output[0],
+        ibd=rules.transform_ibis_segments.output['germline'],
+        ersa=rules.ersa2.output[0],
         kinship=rules.run_king.output['kinship'],
         kinship0=rules.run_king.output['kinship0']
     params:

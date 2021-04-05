@@ -130,6 +130,7 @@ def plot_confusion_matrix(confusion_matrix, plot_name):
     plt.xlabel('Ground truth', fontsize=24)
     plt.ylabel('Predicted degree', fontsize=24)
     plt.savefig(plot_name)
+    plt.close()
 
 
 def get_pred_degree(edge, source):
@@ -159,6 +160,7 @@ def draw_pedigree(pedigree: nx.DiGraph, pedigree_plot_name: str):
     pos = graphviz_layout(first1, prog="dot")
     nx.draw(first1, pos, with_labels=True)
     plt.savefig(pedigree_plot_name)
+    plt.close()
 
 
 def evaluate(result, fam, plot_name, pr_plot_name, conf_matrix_plot_name, output_path, only_client=False, source='both', pedigree_plot_name=None):
@@ -190,7 +192,7 @@ def evaluate(result, fam, plot_name, pr_plot_name, conf_matrix_plot_name, output
 
         key = (degree, pred_degree)
         confusion_matrix[key] = confusion_matrix.get(key, 0) + 1
-        if degree != -1 and pred_degree != -1:
+        if degree != -1 and pred_degree != -1 and degree - 1 <= pred_degree <= degree + 1:
             correct[degree] = correct.get(degree, 0) + 1
 
     if not total:

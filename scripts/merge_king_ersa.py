@@ -185,6 +185,39 @@ def read_ersa(ersa_path):
     return data.loc[data.id1 != data.id2, ['id1', 'id2', 'ersa_degree', 'is_niece_aunt']].set_index(['id1', 'id2'])
 
 
+def read_ersa2(ersa_path):
+    # individual_1    individual_2    est_number_of_shared_ancestors  est_degree_of_relatedness       0.95 CI_2p_lower:4
+    # 2p_upper:5     1p_lower:6 1p_upper:7        0p_lower:8        0p_upper:9
+    # maxlnl_relatedness      maxlnl_unrelatednes
+    data = pandas.read_table(ersa_path, comment='#')
+
+    data = data.loc[data.est_degree_of_relatedness != 'no_sig_rel', :]
+    data.rename({'individual_1': 'id1', 'individual_2': 'id2'}, axis=1, inplace=True)
+    data.loc[:, 'ersa_degree'] = pandas.to_numeric(data['est_degree_of_relatedness'], errors='coerce').\
+        astype(pandas.Int32Dtype())
+
+    lower, upper = [], []
+    for i, ancestors in enumerate(data.est_number_of_shared_ancestors):
+        if ancestors == 0:
+            lower.append(data.iloc[i, 8])
+            upper.append(data.iloc[i, 9])
+        if ancestors == 1:
+            lower.append(data.iloc[i, 6])
+            upper.append(data.iloc[i, 7])
+        if ancestors == 2:
+            lower.append(data.iloc[i, 4])
+            upper.append(data.iloc[i, 5])
+
+    data.loc[:, 'ersa_lower_bound'] = lower
+    data.loc[:, 'ersa_upper_bound'] = upper
+
+    print(f'read {data.shape[0]} pairs from ersa output')
+    print(data.iloc[0, :])
+
+    print(len(numpy.unique(data.id1)), len(numpy.unique(data.id2)))
+    cols = ['id1', 'id2', 'ersa_degree', 'ersa_lower_bound', 'ersa_upper_bound']
+    return data.loc[data.id1 != data.id2, cols].set_index(['id1', 'id2'])
+
 if __name__ == '__main__':
 
     '''
@@ -216,7 +249,7 @@ if __name__ == '__main__':
     king = read_king(king_path)
     kinship = read_kinship(kinship_path, kinship0_path)
     king_segments = read_king_segments(king_segments_path, map_dir)
-    ersa = read_ersa(ersa_path)
+    ersa = read_ersa2(ersa_path)
 
     logging.info(f'ibd shape: {ibd.shape[0]}, ersa shape: {ersa.shape[0]}')
     # print('ibd test:',  ibd[('GRC12118091', 'GRC12118096')])
@@ -233,12 +266,12 @@ if __name__ == '__main__':
     relatives.loc[prefer_ersa_mask, 'final_degree'] = relatives.ersa_degree
     logging.info(f'king is null or more than 3: {prefer_ersa_mask.sum()}')
     logging.info(f'ersa is not null: {pandas.notna(relatives.ersa_degree).sum()}')
-    niece_aunt_mask = (relatives.king_relation == 2) & relatives.is_niece_aunt
-    logging.info(f'We will change {niece_aunt_mask.sum()} 2 degree relationships to the niece/aunt 3 degree relationship')
-    print(f'We will change {niece_aunt_mask.sum()} 2 degree relationships to the niece/aunt 3 degree relationship')
+    # niece_aunt_mask = (relatives.king_relation == 2) & relatives.is_niece_aunt
+    # logging.info(f'We will change {niece_aunt_mask.sum()} 2 degree relationships to the niece/aunt 3 degree relationship')
+    # print(f'We will change {niece_aunt_mask.sum()} 2 degree relationships to the niece/aunt 3 degree relationship')
 
-    relatives.loc[niece_aunt_mask, 'final_degree'] = 3
-    relatives.loc[niece_aunt_mask, 'ersa_degree'] = 3
+    # relatives.loc[niece_aunt_mask, 'final_degree'] = 3
+    # relatives.loc[niece_aunt_mask, 'ersa_degree'] = 3
     if 'total_seg_len_king' in relatives.columns:
         relatives.loc[:, 'total_seg_len'] = relatives.total_seg_len_king
         relatives.loc[:, 'seg_count'] = relatives.seg_count_king
@@ -247,7 +280,7 @@ if __name__ == '__main__':
     relatives.loc[prefer_ersa_mask, 'seg_count'] = relatives.seg_count_germline
 
     # approximate calculations, IBD share is really small in this case
-    relatives.loc[prefer_ersa_mask, 'shared_genome_proportion'] = 0.5*relatives.loc[prefer_ersa_mask, 'total_seg_len'] / 3580
+    relatives.loc[prefer_ersa_mask, 'shared_genome_proportion'] = 0.5*relatives.loc[prefer_ersa_mask, 'total_seg_len'] / 3540
     relatives.drop(['total_seg_len_king', 'seg_count_king', 'total_seg_len_germline', 'seg_count_germline'],
                    axis='columns', inplace=True)
 
