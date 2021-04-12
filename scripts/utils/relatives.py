@@ -78,7 +78,9 @@ def relatives_to_graph(path, only_client=False):
     clients = set(relatives.id1)
     if only_client:
         clients |= set(relatives.id2)
-    edges = [(r['id1'], r['id2'], {'ersa': r['ersa_degree'], 'king': r['king_degree']}) for _, r in relatives.iterrows()]
+    edges = [(r['id1'], r['id2'], {'final': r['final_degree'],
+                                   'ersa': r['ersa_degree'],
+                                   'king': r['king_degree']}) for _, r in relatives.iterrows()]
     g.add_edges_from(edges)
     return g, clients
 

@@ -151,6 +151,7 @@ rule evaluate_accuracy:
         conf_matrix='results/confusion_matrix.png',
         updated_rel='results/updated_relatives.tsv',
         pedigree_plot='results/pedigree_plot.png',
+        dist_plot='results/segments_dist_plot.png',
         king_accuracy='results/king/accuracy.png',
         king_pr='results/king/precision_recall.png',
         king_conf_matrix='results/king/confusion_matrix.png',

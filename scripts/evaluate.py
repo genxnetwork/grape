@@ -136,12 +136,13 @@ def plot_confusion_matrix(confusion_matrix, plot_name):
 def get_pred_degree(edge, source):
     king = edge['king']
     ersa = edge['ersa']
-
-    if not math.isnan(king) and king <= 3.0 and source in ['both', 'king']:
-        return int(king)
-    if ersa != 'NA' and source in ['both', 'ersa']:
-        return int(ersa)
-    return -1
+    final = edge['final']
+    degree = {
+        'both': final,
+        'king': king,
+        'ersa': ersa
+    }[source]
+    return int(degree) if not math.isnan(degree) else -1
 
 
 def kinship_to_dataframe(kinship: nx.Graph):
@@ -163,7 +164,7 @@ def draw_pedigree(pedigree: nx.DiGraph, pedigree_plot_name: str):
     plt.close()
 
 
-def evaluate(result, fam, plot_name, pr_plot_name, conf_matrix_plot_name, output_path, only_client=False, source='both', pedigree_plot_name=None):
+def evaluate(result, fam, plot_name, pr_plot_name, conf_matrix_plot_name, output_path, only_client=False, source='both', pedigree_plot_name=None, dist_plot_name=None):
     """If only_client=True, all pairwise relatives between client are evaluated"""
     iids, pedigree = read_pedigree(fn=fam)
     if pedigree_plot_name is not None:
@@ -213,7 +214,61 @@ def evaluate(result, fam, plot_name, pr_plot_name, conf_matrix_plot_name, output
     predictions = pd.read_table(result, index_col=['id1', 'id2'])
 
     merged = predictions.merge(kinship_frame, left_index=True, right_index=True, how='outer')
+    if dist_plot_name is not None:
+        draw_distribution_plot(merged, dist_plot_name)
     merged.to_csv(output_path, sep='\t')
+
+
+def is_aunt(id1, id2, degree):
+    if degree != 3:
+        return False
+
+    iid1 = id1.split('_')[1]
+    iid2 = id2.split('_')[1]
+
+    g1, b1, _ = iid1.split('-')
+    g2, b2, _ = iid2.split('-')
+    # print(g1, b1, g2, b2)
+    if g1 == 'g2' and g2 == 'g3' and b1 != b2:
+        return True
+    return False
+
+
+def is_grandmother(id1, id2, degree):
+    if degree != 2:
+        return False
+    iid1 = id1.split('_')[1]
+    iid2 = id2.split('_')[1]
+
+    g1, b1, _ = iid1.split('-')
+    g2, b2, _ = iid2.split('-')
+    # print(g1, b1, g2, b2)
+    if g1 != g2:
+        return True
+    return False
+
+
+def draw_distribution_plot(merged, dist_plot_name):
+    m = merged.reset_index()
+    aunt_mask = [is_aunt(id1, id2, degree) for id1, id2, degree in zip(m.id1, m.id2, m.true_degree)]
+
+    aunt_seg_len = m.loc[aunt_mask, 'total_seg_len']
+    aunt_seg_count = m.loc[aunt_mask, 'seg_count']
+
+    grandmother_mask = [is_grandmother(id1, id2, degree) for id1, id2, degree in zip(m.id1, m.id2, m.true_degree)]
+    gm_seg_len = m.loc[grandmother_mask, 'total_seg_len']
+    gm_seg_count = m.loc[grandmother_mask, 'seg_count']
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(17, 12))
+
+    ax1.hist([aunt_seg_len, gm_seg_len], label=['Aunt/Niece', 'Grandmother/Granddaughter'])
+    ax2.hist([aunt_seg_count, gm_seg_count], label=['Aunt/Niece', 'Grandmother/granddaughter'])
+    ax1.legend()
+    ax2.legend()
+    ax1.set_title('Segments length distribution')
+    ax2.set_title('Segments count distribution')
+    plt.savefig(dist_plot_name)
+    plt.close()
 
 
 if __name__ == '__main__':
@@ -228,7 +283,8 @@ if __name__ == '__main__':
              snakemake.output['updated_rel'],
              only_client=True,
              source='both',
-             pedigree_plot_name=snakemake.output['pedigree_plot'])
+             pedigree_plot_name=snakemake.output['pedigree_plot'],
+             dist_plot_name=snakemake.output['dist_plot'])
 
     evaluate(snakemake.input['rel'],
              snakemake.input['fam'],

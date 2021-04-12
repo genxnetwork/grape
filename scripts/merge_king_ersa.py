@@ -145,12 +145,12 @@ def _read_kinship_data(kinship_path):
             _sort_ids(data)
             data.rename({'Kinship': 'kinship'}, axis=1, inplace=True)
             data.loc[:, 'kinship_degree'] = kinship_to_degree(data.kinship)
-            data = data.loc[:, ['id1', 'id2', 'kinship']].set_index(['id1', 'id2'])
+            data = data.loc[:, ['id1', 'id2', 'kinship', 'kinship_degree']].set_index(['id1', 'id2'])
         else:
-            data = pandas.DataFrame(columns=['id1', 'id2', 'kinship']).set_index(['id1', 'id2'])
+            data = pandas.DataFrame(columns=['id1', 'id2', 'kinship', 'kinship_degree']).set_index(['id1', 'id2'])
         return data
     except pandas.errors.EmptyDataError:
-        return pandas.DataFrame(columns=['id1', 'id2', 'kinship']).set_index(['id1', 'id2'])
+        return pandas.DataFrame(columns=['id1', 'id2', 'kinship', 'kinship_degree']).set_index(['id1', 'id2'])
 
 
 def read_kinship(kinship_path, kinship0_path):
@@ -192,12 +192,12 @@ def read_ersa2(ersa_path):
     data = pandas.read_table(ersa_path, comment='#')
 
     data = data.loc[data.est_degree_of_relatedness != 'no_sig_rel', :]
-    data.rename({'individual_1': 'id1', 'individual_2': 'id2'}, axis=1, inplace=True)
+    data.rename({'individual_1': 'id1', 'individual_2': 'id2', 'est_number_of_shared_ancestors': 'shared_ancestors'}, axis=1, inplace=True)
     data.loc[:, 'ersa_degree'] = pandas.to_numeric(data['est_degree_of_relatedness'], errors='coerce').\
         astype(pandas.Int32Dtype())
 
     lower, upper = [], []
-    for i, ancestors in enumerate(data.est_number_of_shared_ancestors):
+    for i, ancestors in enumerate(data.shared_ancestors):
         if ancestors == 0:
             lower.append(data.iloc[i, 8])
             upper.append(data.iloc[i, 9])
@@ -215,8 +215,9 @@ def read_ersa2(ersa_path):
     print(data.iloc[0, :])
 
     print(len(numpy.unique(data.id1)), len(numpy.unique(data.id2)))
-    cols = ['id1', 'id2', 'ersa_degree', 'ersa_lower_bound', 'ersa_upper_bound']
+    cols = ['id1', 'id2', 'ersa_degree', 'ersa_lower_bound', 'ersa_upper_bound', 'shared_ancestors']
     return data.loc[data.id1 != data.id2, cols].set_index(['id1', 'id2'])
+
 
 if __name__ == '__main__':
 
@@ -266,12 +267,23 @@ if __name__ == '__main__':
     relatives.loc[prefer_ersa_mask, 'final_degree'] = relatives.ersa_degree
     logging.info(f'king is null or more than 3: {prefer_ersa_mask.sum()}')
     logging.info(f'ersa is not null: {pandas.notna(relatives.ersa_degree).sum()}')
-    # niece_aunt_mask = (relatives.king_relation == 2) & relatives.is_niece_aunt
-    # logging.info(f'We will change {niece_aunt_mask.sum()} 2 degree relationships to the niece/aunt 3 degree relationship')
-    # print(f'We will change {niece_aunt_mask.sum()} 2 degree relationships to the niece/aunt 3 degree relationship')
 
-    # relatives.loc[niece_aunt_mask, 'final_degree'] = 3
-    # relatives.loc[niece_aunt_mask, 'ersa_degree'] = 3
+    niece_aunt_mask = (relatives.king_relation == 2) & (relatives.shared_ancestors == 2)
+    logging.info(f'We will change {niece_aunt_mask.sum()} 2 degree relationships to the niece/aunt 3 degree relationship')
+    print(f'We will change {niece_aunt_mask.sum()} 2 degree relationships to the niece/aunt 3 degree relationship')
+
+    relatives.loc[niece_aunt_mask, 'final_degree'] = 3
+
+    grand_niece_aunt_mask = (relatives.king_relation == 3) & (relatives.shared_ancestors == 2)
+    logging.info(
+        f'We will change {grand_niece_aunt_mask.sum()} 3 degree relationships to the grandniece/grandaunt 3 degree relationship')
+    print(f'We will change {grand_niece_aunt_mask.sum()} 3 degree relationships to the grandniece/grandaunt 3 degree relationship')
+
+    relatives.loc[grand_niece_aunt_mask, 'final_degree'] = 4
+
+    # strictly for the evaluation purposes
+    relatives.loc[grand_niece_aunt_mask, 'ersa_degree'] = 4
+
     if 'total_seg_len_king' in relatives.columns:
         relatives.loc[:, 'total_seg_len'] = relatives.total_seg_len_king
         relatives.loc[:, 'seg_count'] = relatives.seg_count_king
@@ -283,6 +295,8 @@ if __name__ == '__main__':
     relatives.loc[prefer_ersa_mask, 'shared_genome_proportion'] = 0.5*relatives.loc[prefer_ersa_mask, 'total_seg_len'] / 3540
     relatives.drop(['total_seg_len_king', 'seg_count_king', 'total_seg_len_germline', 'seg_count_germline'],
                    axis='columns', inplace=True)
+
+    relatives.loc[niece_aunt_mask].to_csv(output_path + '.aunts', sep='\t')
 
     logging.info(f'final degree not null: {pandas.notna(relatives.final_degree).sum()}')
 
