@@ -100,8 +100,7 @@ rule ibis:
     threads: workflow.cores
     shell:
         """
-        # use default params
-        ibis {params.input}.bed {input} {params.input}.fam -t {threads} -mt 500 -mL 5 -ibd2 -hbd -f ibis/merged_ibis |& tee -a {log}
+        ibis {params.input}.bed {input} {params.input}.fam -t {threads} -mt 500 -mL 7 -ibd2 -mL2 3 -hbd -f ibis/merged_ibis |& tee -a {log}
 
         # cat {output.ibd} | awk '{{sub(":", "_", $1); sub(":", "_", $2); print $1, $1 "\t" $2, $2 "\t" $3 "\t" $4, $5 "\t" 0, 0 "\t" $10 "\t" $9 "\t" "cM" "\t" 0 "\t" 0 "\t" 0}};' > {output}
         """

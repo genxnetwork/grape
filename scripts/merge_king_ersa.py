@@ -268,6 +268,7 @@ if __name__ == '__main__':
     logging.info(f'king is null or more than 3: {prefer_ersa_mask.sum()}')
     logging.info(f'ersa is not null: {pandas.notna(relatives.ersa_degree).sum()}')
 
+    '''
     niece_aunt_mask = (relatives.king_relation == 2) & (relatives.shared_ancestors == 2)
     logging.info(f'We will change {niece_aunt_mask.sum()} 2 degree relationships to the niece/aunt 3 degree relationship')
     print(f'We will change {niece_aunt_mask.sum()} 2 degree relationships to the niece/aunt 3 degree relationship')
@@ -283,7 +284,7 @@ if __name__ == '__main__':
 
     # strictly for the evaluation purposes
     relatives.loc[grand_niece_aunt_mask, 'ersa_degree'] = 4
-
+    '''
     if 'total_seg_len_king' in relatives.columns:
         relatives.loc[:, 'total_seg_len'] = relatives.total_seg_len_king
         relatives.loc[:, 'seg_count'] = relatives.seg_count_king
@@ -296,7 +297,9 @@ if __name__ == '__main__':
     relatives.drop(['total_seg_len_king', 'seg_count_king', 'total_seg_len_germline', 'seg_count_germline'],
                    axis='columns', inplace=True)
 
+    '''
     relatives.loc[niece_aunt_mask].to_csv(output_path + '.aunts', sep='\t')
+    '''
 
     logging.info(f'final degree not null: {pandas.notna(relatives.final_degree).sum()}')
 

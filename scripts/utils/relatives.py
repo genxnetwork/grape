@@ -80,6 +80,8 @@ def relatives_to_graph(path, only_client=False):
         clients |= set(relatives.id2)
     edges = [(r['id1'], r['id2'], {'final': r['final_degree'],
                                    'ersa': r['ersa_degree'],
+                                   'ersa_lower_bound': r['ersa_lower_bound'],
+                                   'ersa_upper_bound': r['ersa_upper_bound'],
                                    'king': r['king_degree']}) for _, r in relatives.iterrows()]
     g.add_edges_from(edges)
     return g, clients

@@ -66,6 +66,13 @@ Without ‘--privileged’ singularity containers do not work inside docker.
 
 ### Usage
 
+Pipeline has three steps: reference downloading, preprocessing data and finding relatives. 
+Reference downloading should only be done once. Before using it, one needs to build a docker container:
+
+```
+docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB . 
+```
+
 #### Reference downloading
 
 Firstly, one needs to download all needed references to the `--ref-directory` of your choice.
@@ -73,84 +80,58 @@ These references will take up to 40GB of disk space. `--ref-directory` argument 
 ```
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
 launcher.py reference  --ref-directory /media/ref
-
-```
-#### Input data format: vcf
-
-One option is using gzipped vcf file format. If vcf file is in hg38 assembly, then you can just use `vcf` command
-with the `--vcf-file <path>` option. In this case, input file will be lifted. 
-If vcf file is in hg37, you should pass `--assembly hg37` to the `vcf` command.
-
-#### Input data format: 23andme
-
-The information about samples for analysis should be provided as a path to a tab-separated text file (samples.tsv).
-
-Input data is expected in 23andMe format, one file for each sample:
-
-| name | path |
-| --- | --- |
-| 1 | input/1.txt |
-| 2 | input/2.txt |
-
-#### Console execution
-
-##### Pipeline checking
-
-To check if snakemake correctly sees input files do not pass --real-run to the launcher.py:
-
-```text
-
-docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
-
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py find --samples /media/ref/samples.tsv --input /media/ref/input --directory /media/pipeline_data/real-data \
---ref-directory /media/ref
 ```
 
-##### How to run the full pipeline with phasing and imputation
+#### Preprocessing
 
-With input in .vcf.gz format:
-
-```text
-
-docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
-
-# use --assembly hg37 if vcf file is in hg37 and not in hg38 
+Preprocessing features:
+    - Lifting to hg37 if input file is in hg38, invoked by option `--assembly hg38`. 
+    - Optional removing of imputed SNPs. In our tests 600K SNPs is enough and further imputation does not improve quality.
+     If your dataset has less then 300K SNPs, imputation can improve results.
+     Search of relatives requires substantially more time with increased number of SNPs.  
+     Invoked by option `--remove-imputation`. Currently it removes all SNPs with `IMPUTED` in it.
+    - Optional phasing, invoked by `--phase`. It is required for searching for relatives with Germline `--flow germline`, 
+    however we do not recommend using Germline for now.
+    - Optional imputation, invoked by `--impute`. One must also use `--phase` with this.
+    
+Option `--ref-directory` required to point to the downloaded references, option `--directory` points to the working directory
+where results and some files from intermediate steps will be saved.
+   
+**Important: add `--real-run` to all of these commands if you want a real launch and not just building of computational graph**
+ 
+Simple command when input file is in hg37 already and removing imputation, phasing and imputation is not required:
+ 
+```
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py vcf --vcf-file /media/ref/input.vcf.gz --directory /media/pipeline_data/real-data --ref-directory /media/ref \
---real-run
-
-# now we can find relatives
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py find --directory /media/pipeline_data/real-data --ref-directory /media/ref \
---real-run
+launcher.py preprocess --ref-directory /media/ref --vcf-file /media/input.vcf.gz --directory /media/pipeline_data/real-data 
 ```
 
-With input in 23andme format:
+Command with lifting from hg38 to hg37:
 
-```text
+```
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py preprocess --samples /media/ref/samples.tsv --input /media/ref/input --directory /media/pipeline_data/real-data \
---ref-directory /media/ref --real-run
-
-# now we can find relatives
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py find --samples /media/ref/samples.tsv --input /media/ref/input --directory /media/pipeline_data/real-data \
---ref-directory /media/ref --real-run
+launcher.py preprocess --ref-directory /media/ref --vcf-file /media/input.vcf.gz --directory /media/pipeline_data/real-data \
+--assembly hg38  
 ```
 
-##### Very fast relatives detection using king and ibis
+Command with lifting from hg38 to hg37, phasing and imputation:
 
-You should just add ```--flow ibis``` to the ```find``` command of ```launcher.py```.
-
-```text
+```
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py find --samples /media/ref/samples.tsv --input /media/ref/input --directory /media/pipeline_data/real-data \
---flow ibis --ref-directory /media/ref --real-run 
+launcher.py preprocess --ref-directory /media/ref --vcf-file /media/input.vcf.gz --directory /media/pipeline_data/real-data \
+--assembly hg38 --phase --impute 
 ```
 
-In this case, nothing will be phased or imputed. Slight loss of accuracy is possible for degrees 8-10, 
-especially if you use different chips in the same batch
+#### Finding relatives using IBIS
+
+After preprocessing, there will be a file `data.vcf.gz` in directory /media/pipeline_data/real-data/preprocessed/ .
+One have to use the same `--directory` value for both preprocessing and invoking search of relatives using `find` command.
+ `--vcf-file` is ignored. Option `--flow ibis` invokes fast IBD estimation using IBIS software.  
+
+```
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
+launcher.py find --ref-directory /media/ref --directory /media/pipeline_data/real-data --flow ibis 
+```
 
 
 #### Description of output file
@@ -158,10 +139,13 @@ especially if you use different chips in the same batch
 Output file is in .tsv file format, and contains one line for each detected pair of relatives.
 
 ```text
-id1	id2	king_degree	king_relation	shared_genome_proportion	kinship	ersa_degree	final_degree	total_seg_len	seg_count
-HGDP00274_HGDP00274	HGDP00315_HGDP00315	3	3	0.1216		4	3	764.7229547063728	77
-HGDP00274_HGDP00274	HGDP00319_HGDP00319			0.031042068715083804		5	5	222.26121200000003	23.0
+id1      id2     king_degree king_relation shared_genome_proportion kinship kinship_degree ersa_degree ersa_lower_bound ersa_upper_bound shared_ancestors final_degree  total_seg_len        seg_count
+g1-b1-i1 g2-b1-i1     1           PO                0.4996          0.2493      1.0             1               1               1               0.0             1       3359.9362945470302      40
+g1-b1-i1 g2-b2-i1     1           PO                0.4997          0.2459      1.0             1               1               1               0.0             1       3362.012253715002       40
+g1-b1-i1 g2-b3-i1     1           PO                0.4999          0.2467      1.0             1               1               1               0.0             1       3363.150814131464       40
+g1-b1-i1 g3-b1-i1     2           2                 0.2369          0.1163      2.0             2               2               2               1.0             2       1644.634182188072       60
 ```
+
 
  * `id1` - ID of first sample in a pair of relatives.
  * `id2` - ID of second sample in a pair of relatives, `id1` is always less than `id2` by the rules of string comparison in python.
@@ -177,6 +161,12 @@ HGDP00274_HGDP00274	HGDP00319_HGDP00319			0.031042068715083804		5	5	222.26121200
    For 4th+ degrees it is simply half of total length of IBD1 segments.  
  * `kinship` is the KING kinship coefficient.
  * `ersa_degree` is the degree estimated from IBD segments by ERSA, it is used for the `final_degree` in the cases where `king_degree` does not exist.
+ * `ersa_lower_bound` is the lower bound degree estimation of ERSA using confidence interval 0.99,
+  i.e. with probability (1-0.99)/2=0.005 degree will be lower than `ersa_lower_bound`.
+ * `ersa_upper_bound` is the upper bound degree estimation of ERSA using confidence interval 0.99,
+  i.e. with probability (1-0.99)/2=0.005 degree will be higher than `ersa_upper_bound`.
+ * `shared_ancestors` is the most likeliest number of shared ancestors, if it is 0, then one relative is a direct descendant of the other, 
+ if 1 then they probably have one common ancestor, i.e. half siblings, if 2 then they have common mother and father, for example.  
  * `final_degree` is simply `king_degree` for close relatives up to 3rd degree and `ersa_degree` for distant relatives.
  * `total_seg_len` is the total length of all IBD segments, for the first 3 degrees it is calculated using KING IBD data, 
    for the 4th+ degrees it is calculated using IBID or Germline IBD data.

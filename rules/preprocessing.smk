@@ -14,7 +14,7 @@ if need_remove_imputation:
         output:
             vcf='vcf/imputation_removed.vcf.gz'
         log: "logs/vcf/remove_imputation.log"
-        script: '../../scripts/remove_imputation.py'
+        script: '../scripts/remove_imputation.py'
 else:
     rule copy_vcf:
         input:

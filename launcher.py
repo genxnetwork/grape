@@ -133,8 +133,8 @@ def get_parser_args():
 
     parser.add_argument(
         '--flow',
-        default='germline',
-        help='How to find ibd segments: values are germline, ibis, rapid'
+        default='ibis',
+        help='How to find ibd segments: values are germline, ibis, rapid, default is ibis'
     )
 
     parser.add_argument(
