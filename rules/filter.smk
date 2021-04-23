@@ -21,7 +21,9 @@ rule select_bad_samples:
     input:
         psc=rules.vcf_stats.output.psc
     output:
-        bad_samples="vcf/lifted_vcf.badsamples"
+        bad_samples="vcf/lifted_vcf.badsamples",
+        report="results/bad_samples_report.tsv"
+    log: "logs/vcf/select_bad_samples.log"
     params:
         samples="vcf/merged_lifted.vcf.samples"
     conda:

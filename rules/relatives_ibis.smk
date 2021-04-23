@@ -128,10 +128,10 @@ rule split_map:
     script:
         "../scripts/split_map.py"
 
-'''
+
 rule ersa:
     input:
-        ibd=rules.ibis.output['germline'],
+        ibd=rules.transform_ibis_segments.output['germline'],
         cm=expand("cm/chr{chrom}.cm.map", chrom=CHROMOSOMES) # it does not really need it, just to invoke split_map
     output:
         "ersa/relatives.tsv"
@@ -143,13 +143,13 @@ rule ersa:
         "benchmarks/ersa/ersa.txt"
     shell:
         """
-        ERSA_L=2.5 # the average number of IBD segments in population
-        ERSA_TH=6.5 # the average length of IBD segment in population
-        ERSA_T=5.0 # min length of segment to be considered in segment aggregation
-        ersa --avuncular-adj -ci --dmax 10 -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd}  -o {output}  |& tee {log}
+        ERSA_L=0.1 # the average number of IBD segments in population
+        ERSA_TH=5.00 # the average length of IBD segment in population
+        ERSA_T=7.0 # min length of segment to be considered in segment aggregation
+        ersa --avuncular-adj -ci --alpha 0.01 --dmax 14 -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd} -o {output}  |& tee {log}
         """
-'''
 
+'''
 rule ersa2:
     input:
         ibd=rules.transform_ibis_segments.output['germline'],
@@ -167,7 +167,7 @@ rule ersa2:
         /ersa/ersa.py --confidence_level 0.99 --use_ibd2_siblings true --adjust_pop_dist true --min_cm 4.0 --max_cm 20 \
          --segment_files {input.ibd} --control_files /ersa/data/merged_ibd.tsv --mask_common_shared_regions 1 --output_file {output} |& tee {log}
         """
-
+'''
 
 
 rule merge_king_ersa:
@@ -175,7 +175,7 @@ rule merge_king_ersa:
         king=rules.run_king.output['king'],
         king_segments=rules.run_king.output['segments'],
         ibd=rules.transform_ibis_segments.output['germline'],
-        ersa=rules.ersa2.output[0],
+        ersa=rules.ersa.output[0],
         kinship=rules.run_king.output['kinship'],
         kinship0=rules.run_king.output['kinship0']
     params:

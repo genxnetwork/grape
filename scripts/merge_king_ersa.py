@@ -2,6 +2,7 @@ import pandas
 import numpy
 import os
 import logging
+from collections import Counter
 from utils.ibd import read_king_segments as rks, interpolate_all
 
 
@@ -114,6 +115,7 @@ def read_king_segments(king_segments_path, map_dir):
 
 def kinship_to_degree(kinship):
     degrees = []
+    # intervals are from KING manual
     # >0.354, [0.177, 0.354], [0.0884, 0.177] and [0.0442, 0.0884]
     for k in kinship:
         if k > 0.354:
@@ -166,23 +168,35 @@ def read_kinship(kinship_path, kinship0_path):
 
 
 def read_ersa(ersa_path):
-    # Indv_1     Indv_2      Rel_est1      Rel_est2      d_est     N_seg     Tot_cM
+    # Indv_1     Indv_2      Rel_est1      Rel_est2      d_est     lower_d  upper_d     N_seg     Tot_cM
     data = pandas.read_table(ersa_path, header=0,
-                             names=['id1', 'id2', 'rel_est1', 'rel_est2', 'ersa_degree', 'seg_count', 'total_seg_len'],
+                             names=['id1', 'id2', 'rel_est1', 'rel_est2',
+                                    'ersa_degree', 'ersa_lower_bound', 'ersa_upper_bound', 'seg_count', 'total_seg_len'],
                              dtype={'ersa_degree': str})
 
     data = data.loc[(data.rel_est1 != 'NA') | (data.rel_est2 != 'NA'), :]
     data.loc[:, 'id1'] = data.id1.str.strip()
     data.loc[:, 'id2'] = data.id2.str.strip()
     _sort_ids(data)
-    data.loc[:, 'ersa_degree'] = pandas.to_numeric(data.ersa_degree.str.strip(), errors='coerce').astype(pandas.Int32Dtype())
+    data.loc[:, 'ersa_degree'] = pandas.to_numeric(data.ersa_degree.str.strip(), errors='coerce').astype(
+        pandas.Int32Dtype())
+    data.loc[:, 'ersa_lower_bound'] = pandas.to_numeric(data.ersa_lower_bound.str.strip(), errors='coerce').astype(
+        pandas.Int32Dtype())
+    data.loc[:, 'ersa_upper_bound'] = pandas.to_numeric(data.ersa_upper_bound.str.strip(), errors='coerce').astype(
+        pandas.Int32Dtype())
 
+    data.loc[data.ersa_lower_bound != 1, 'ersa_lower_bound'] = data.ersa_lower_bound - 1
+    data.loc[data.ersa_upper_bound != 1, 'ersa_upper_bound'] = data.ersa_upper_bound - 1
+
+    print(f'Bad degrees are {(data.ersa_lower_bound > data.ersa_degree).sum()}')
+    print(Counter(data.ersa_degree[data.ersa_lower_bound > data.ersa_degree]))
     logging.info(f'read {data.shape[0]} pairs from ersa output')
     logging.info(f'ersa after reading has {pandas.notna(data.ersa_degree).sum()}')
     data.loc[:, 'is_niece_aunt'] = [True if 'Niece' in d else False for d in data.rel_est1]
     logging.info(f'we have total of {data.is_niece_aunt.sum()} possible Niece/Aunt relationships')
     print(f'we have total of {data.is_niece_aunt.sum()} possible Niece/Aunt relationships')
-    return data.loc[data.id1 != data.id2, ['id1', 'id2', 'ersa_degree', 'is_niece_aunt']].set_index(['id1', 'id2'])
+    return data.loc[data.id1 != data.id2, ['id1', 'id2', 'ersa_degree', 'ersa_lower_bound', 'ersa_upper_bound', 'is_niece_aunt']].\
+        set_index(['id1', 'id2'])
 
 
 def read_ersa2(ersa_path):
@@ -250,7 +264,7 @@ if __name__ == '__main__':
     king = read_king(king_path)
     kinship = read_kinship(kinship_path, kinship0_path)
     king_segments = read_king_segments(king_segments_path, map_dir)
-    ersa = read_ersa2(ersa_path)
+    ersa = read_ersa(ersa_path)
 
     logging.info(f'ibd shape: {ibd.shape[0]}, ersa shape: {ersa.shape[0]}')
     # print('ibd test:',  ibd[('GRC12118091', 'GRC12118096')])
