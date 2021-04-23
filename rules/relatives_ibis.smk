@@ -100,7 +100,7 @@ rule ibis:
     threads: workflow.cores
     shell:
         """
-        ibis {params.input}.bed {input} {params.input}.fam -t {threads} -mt 500 -mL 7 -ibd2 -mL2 3 -hbd -f ibis/merged_ibis |& tee -a {log}
+        ibis {params.input}.bed {input} {params.input}.fam -t {threads} -mt 560 -mL 7 -ibd2 -mL2 3 -hbd -f ibis/merged_ibis |& tee -a {log}
 
         # cat {output.ibd} | awk '{{sub(":", "_", $1); sub(":", "_", $2); print $1, $1 "\t" $2, $2 "\t" $3 "\t" $4, $5 "\t" 0, 0 "\t" $10 "\t" $9 "\t" "cM" "\t" 0 "\t" 0 "\t" 0}};' > {output}
         """
@@ -143,8 +143,8 @@ rule ersa:
         "benchmarks/ersa/ersa.txt"
     shell:
         """
-        ERSA_L=0.1 # the average number of IBD segments in population
-        ERSA_TH=5.00 # the average length of IBD segment in population
+        ERSA_L=0.5 # the average number of IBD segments in population
+        ERSA_TH=6.00 # the average length of IBD segment in population
         ERSA_T=7.0 # min length of segment to be considered in segment aggregation
         ersa --avuncular-adj -ci --alpha 0.01 --dmax 14 -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd} -o {output}  |& tee {log}
         """
