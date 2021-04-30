@@ -149,26 +149,6 @@ rule ersa:
         ersa --avuncular-adj -ci --alpha 0.01 --dmax 14 -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd} -o {output}  |& tee {log}
         """
 
-'''
-rule ersa2:
-    input:
-        ibd=rules.transform_ibis_segments.output['germline'],
-        cm=expand("cm/chr{chrom}.cm.map", chrom=CHROMOSOMES) # it does not really need it, just to invoke split_map
-    output:
-        "ersa/relatives.tsv"
-    singularity:
-        "docker://genxnetwork/ersa2:stable"
-    log:
-        "logs/ersa/ersa.log"
-    benchmark:
-        "benchmarks/ersa/ersa.txt"
-    shell:
-        """
-        /ersa/ersa.py --confidence_level 0.99 --use_ibd2_siblings true --adjust_pop_dist true --min_cm 4.0 --max_cm 20 \
-         --segment_files {input.ibd} --control_files /ersa/data/merged_ibd.tsv --mask_common_shared_regions 1 --output_file {output} |& tee {log}
-        """
-'''
-
 
 rule merge_king_ersa:
     input:

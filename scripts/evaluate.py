@@ -199,6 +199,8 @@ def interval_precision_recall(kinship, inferred, clients, source, plot_name):
 
         elif degree != -1 and pred_degree == -1:
             false_negatives[degree] += 1
+        elif degree == -1 and pred_degree != -1:
+            false_positives[pred_degree] += 1
 
     data = {'True Degree': [], 'Precision': [], 'Recall': []}
     for degree in range(1, 14):
