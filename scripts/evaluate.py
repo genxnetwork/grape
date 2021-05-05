@@ -13,54 +13,6 @@ from networkx.drawing.nx_pydot import graphviz_layout
 from utils.relatives import get_kinship, read_pedigree, relatives_to_graph
 
 
-def precision_recall(total, confusion_matrix, plot_name=None):
-
-    data = {'True Degree': [], 'Precision': [], 'Recall': []}
-
-    max_degree = max(c[0] for c in confusion_matrix.keys())
-
-    for true_degree in range(1, max_degree + 1):
-
-        # precision: how many of the selected items are relevant
-        # recall: how many of the relevant items are selected
-        true_positives, false_negatives, false_positives = 0, 0, 0
-        for key, value in confusion_matrix.items():
-            predicted_degree = key[1]
-            if true_degree == key[0]:
-                if true_degree - 1 <= predicted_degree <= true_degree + 1:
-                    true_positives += value
-                #else:
-                #    false_negatives += value
-            if key[0] == -1 and true_degree == predicted_degree:
-                false_positives += value
-
-        true_total = total[true_degree]
-        false_negatives = true_total - true_positives
-
-        print(f'td: {true_degree}\t tp: {true_positives}\t fn: {false_negatives}\t fp: {false_positives}')
-        logging.info(f'td: {true_degree}\t tp: {true_positives}\t fn: {false_negatives}\t fp: {false_positives}')
-
-        if true_positives + false_positives == 0:
-            data['Precision'].append(0.0)
-        else:
-            data['Precision'].append(true_positives / (true_positives + false_positives))
-        if true_positives + false_negatives == 0:
-            data['Recall'].append(0.0)
-        else:
-            data['Recall'].append(true_positives / (true_positives + false_negatives))
-        data['True Degree'].append(true_degree)
-
-    df = pd.DataFrame.from_dict(data)
-    df.set_index('True Degree').plot.bar()
-
-    if not plot_name:
-        plt.show()
-    else:
-        logging.info(f'plot saved to {plot_name}')
-        plt.savefig(plot_name)
-        plt.close()
-
-
 def compare(total, correct, plot_name=None, cutoff=1):
     ds = []
     cs = []
@@ -133,12 +85,10 @@ def plot_confusion_matrix(confusion_matrix, plot_name):
 
 
 def get_pred_degree(edge, source):
-    king = edge['king']
     ersa = edge['ersa']
     final = edge['final']
     degree = {
         'both': final,
-        'king': king,
         'ersa': ersa
     }[source]
     return int(degree) if not math.isnan(degree) else -1
@@ -229,7 +179,9 @@ def interval_precision_recall(kinship, inferred, clients, source, plot_name):
         plt.close()
 
 
-def interval_evaluate(result, fam, plot_name, pr_plot_name, conf_matrix_plot_name, output_path, only_client=False, source='both', pedigree_plot_name=None, dist_plot_name=None):
+def interval_evaluate(result, fam, plot_name, pr_plot_name, conf_matrix_plot_name, output_path,
+                      only_client=False, source='ersa', pedigree_plot_name=None, dist_plot_name=None,
+                      po_fs_plot_name=None):
     iids, pedigree = read_pedigree(fn=fam)
     if pedigree_plot_name is not None:
         draw_pedigree(pedigree, pedigree_plot_name)
@@ -293,61 +245,9 @@ def interval_evaluate(result, fam, plot_name, pr_plot_name, conf_matrix_plot_nam
     merged = predictions.merge(kinship_frame, left_index=True, right_index=True, how='outer')
     if dist_plot_name is not None:
         draw_distribution_plot(merged, dist_plot_name)
-    merged.to_csv(output_path, sep='\t')
+    if po_fs_plot_name is not None:
+        draw_po_fs(merged, po_fs_plot_name)
 
-
-def evaluate(result, fam, plot_name, pr_plot_name, conf_matrix_plot_name, output_path, only_client=False, source='both', pedigree_plot_name=None, dist_plot_name=None):
-    """If only_client=True, all pairwise relatives between client are evaluated"""
-    iids, pedigree = read_pedigree(fn=fam)
-    if pedigree_plot_name is not None:
-        draw_pedigree(pedigree, pedigree_plot_name)
-    kinship = get_kinship(pedigree)
-    inferred, clients = relatives_to_graph(result, only_client)
-    confusion_matrix = {}
-    total = {}
-    correct = {}
-    if only_client:
-        iterator = itertools.combinations(clients, 2)
-    else:
-        iterator = itertools.product(clients, iids - clients)
-
-    for i, j in iterator:
-        if kinship.has_edge(i, j):
-            degree = kinship[i][j]['degree']
-            total[degree] = total.get(degree, 0) + 1
-        else:
-            degree = -1
-
-        if inferred.has_edge(i, j):
-            pred_degree = get_pred_degree(inferred[i][j], source)
-        else:
-            pred_degree = -1
-
-        key = (degree, pred_degree)
-        confusion_matrix[key] = confusion_matrix.get(key, 0) + 1
-        if degree != -1 and pred_degree != -1 and degree - 1 <= pred_degree <= degree + 1:
-            correct[degree] = correct.get(degree, 0) + 1
-
-    if not total:
-        print('total is not total')
-        return
-    print('correct: ', correct)
-    print('total: ', total)
-    keys = sorted(list(confusion_matrix.keys()))
-    for key in keys:
-        print(f'{key}\t{confusion_matrix[key]}')
-        logging.info(f'{key}\t{confusion_matrix[key]}')
-
-    compare(total, correct, plot_name)
-    precision_recall(total, confusion_matrix, pr_plot_name)
-    plot_confusion_matrix(confusion_matrix, conf_matrix_plot_name)
-
-    kinship_frame = kinship_to_dataframe(kinship)
-    predictions = pd.read_table(result, index_col=['id1', 'id2'])
-
-    merged = predictions.merge(kinship_frame, left_index=True, right_index=True, how='outer')
-    if dist_plot_name is not None:
-        draw_distribution_plot(merged, dist_plot_name)
     merged.to_csv(output_path, sep='\t')
 
 
@@ -403,6 +303,40 @@ def draw_distribution_plot(merged, dist_plot_name):
     plt.close()
 
 
+def is_fs(id1, id2, degree):
+    if degree != 2:
+        return False
+    iid1 = id1.split('_')[1]
+    iid2 = id2.split('_')[1]
+
+    g1, b1, _ = iid1.split('-')
+    g2, b2, _ = iid2.split('-')
+    return g1 == g2
+
+
+def draw_po_fs(merged, plot_name):
+    m = merged.reset_index()
+    fs_mask = [is_fs(id1, id2, degree) for id1, id2, degree in zip(m.id1, m.id2, m.true_degree)]
+    po_mask = (m.true_degree == 1)
+    print(f'we have total of {sum(fs_mask)} FS')
+    print(f'we have total of {sum(po_mask)} PO')
+    fs_ibd2 = m.loc[fs_mask, 'total_seg_len_ibd2']
+    fs_ibd1 = m.loc[fs_mask, 'total_seg_len']
+
+    po_ibd2 = m.loc[po_mask, 'total_seg_len_ibd2']
+    po_ibd1 = m.loc[po_mask, 'total_seg_len']
+
+    plt.figure(figsize=(17, 12))
+    print(fs_ibd1, fs_ibd2)
+    print(po_ibd1, po_ibd2)
+    plt.scatter(fs_ibd2, fs_ibd1, label='Full Siblings', marker='+')
+    plt.scatter(po_ibd2, po_ibd1, label='Parent/Offspring', marker='o')
+    plt.legend()
+    plt.title('Distribution of ibd2 versus ibd1 in PO and FS pairs')
+    plt.savefig(plot_name)
+    plt.close()
+
+
 if __name__ == '__main__':
     logging.basicConfig(filename=snakemake.log[0], level=logging.DEBUG, format='%(levelname)s:%(asctime)s %(message)s')
     sns.set_style()
@@ -414,24 +348,7 @@ if __name__ == '__main__':
              snakemake.output['conf_matrix'],
              snakemake.output['updated_rel'],
              only_client=True,
-             source='both',
+             source='ersa',
              pedigree_plot_name=snakemake.output['pedigree_plot'],
-             dist_plot_name=snakemake.output['dist_plot'])
+             po_fs_plot_name=snakemake.output['po_fs_plot'])
 
-    interval_evaluate(snakemake.input['rel'],
-             snakemake.input['fam'],
-             snakemake.output['king_accuracy'],
-             snakemake.output['king_pr'],
-             snakemake.output['king_conf_matrix'],
-             snakemake.output['king_updated_rel'],
-             only_client=True,
-             source='king')
-
-    interval_evaluate(snakemake.input['rel'],
-             snakemake.input['fam'],
-             snakemake.output['ersa_accuracy'],
-             snakemake.output['ersa_pr'],
-             snakemake.output['ersa_conf_matrix'],
-             snakemake.output['ersa_updated_rel'],
-             only_client=True,
-             source='ersa')

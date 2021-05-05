@@ -143,7 +143,7 @@ else:
 
 rule evaluate_accuracy:
     input:
-        rel=rules.merge_king_ersa.output[0],
+        rel=rules.postprocess_ersa.output[0],
         fam=rules.postprocess.output['fam']
     output:
         accuracy='results/accuracy.png',
@@ -151,15 +151,7 @@ rule evaluate_accuracy:
         conf_matrix='results/confusion_matrix.png',
         updated_rel='results/updated_relatives.tsv',
         pedigree_plot='results/pedigree_plot.png',
-        dist_plot='results/segments_dist_plot.png',
-        king_accuracy='results/king/accuracy.png',
-        king_pr='results/king/precision_recall.png',
-        king_conf_matrix='results/king/confusion_matrix.png',
-        king_updated_rel='results/king/updated_relatives.tsv',
-        ersa_accuracy='results/ersa/accuracy.png',
-        ersa_pr='results/ersa/precision_recall.png',
-        ersa_conf_matrix='results/ersa/confusion_matrix.png',
-        ersa_updated_rel='results/ersa/updated_relatives.tsv'
+        po_fs_plot='results/po_fs_plot.png'
     log:
         "logs/evaluation/accuracy.log"
     conda:

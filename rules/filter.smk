@@ -105,6 +105,8 @@ rule prepare_vcf:
     input: "plink/merged_mapped.bim"
     output:
         vcf="vcf/merged_mapped_sorted.vcf.gz",
+        temp_vcf=temp("vcf/merged_mapped_regions.vcf.gz"),
+        temp_vcf_csi=temp("vcf/merged_mapped_regions.vcf.gz.csi"),
         alleled=temp(expand('plink/merged_mapped_alleled.{ext}', ext=PLINK_FORMATS))
     params:
         input   = "plink/merged_mapped",
@@ -120,8 +122,10 @@ rule prepare_vcf:
         """
         plink --bfile {params.input} --a1-allele plink/merged_filter.bim.force_allele --make-bed --out plink/merged_mapped_alleled |& tee -a {log.plink}
         plink --bfile plink/merged_mapped_alleled --keep-allele-order --output-chr M --export vcf bgz --out vcf/merged_mapped_clean |& tee -a {log.vcf}
-        bcftools sort vcf/merged_mapped_clean.vcf.gz -O z -o vcf/merged_mapped_sorted.vcf.gz |& tee -a {log.vcf}
+        bcftools sort vcf/merged_mapped_clean.vcf.gz -O z -o {output.temp_vcf} |& tee -a {log.vcf}
+        bcftools index -f {output.temp_vcf} |& tee -a {log.vcf}
         # need to check output for the potential issues
+        bcftools view {output.temp_vcf} --regions 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 -O z -o {output.vcf}
         bcftools norm --check-ref e -f {GRCH37_FASTA} vcf/merged_mapped_sorted.vcf.gz -O u -o /dev/null |& tee -a {log.vcf}
-        bcftools index -f vcf/merged_mapped_sorted.vcf.gz | tee -a {log.vcf}
+        bcftools index -f {output.vcf} | tee -a {log.vcf}
         """
