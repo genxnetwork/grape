@@ -2,8 +2,7 @@ from os.path import join
 
 configfile: "config.yaml"
 
-use_rapid       = config["use_rapid"]
-use_ibis        = config["use_ibis"]
+flow            = config["flow"]
 is_client       = False
 use_simulated_ibd = config["use_simulated_ibd"] if "use_simulated_ibd" in config else False
 
@@ -136,22 +135,26 @@ rule postprocess:
 
 include: "../../rules/preprocessing.smk"
 
-if use_ibis:
+if flow == 'ibis':
     include: "../../rules/relatives_ibis.smk"
-else:
+elif flow == 'germline':
     include: "../../rules/relatives.smk"
+elif flow == 'ibis_king':
+    include: "../../rules/relatives_ibis_king.smk"
 
 rule evaluate_accuracy:
     input:
-        rel=rules.postprocess_ersa.output[0],
+        rel='results/relatives.tsv',
         fam=rules.postprocess.output['fam']
     output:
         accuracy='results/accuracy.png',
         pr='results/precision_recall.png',
         conf_matrix='results/confusion_matrix.png',
         updated_rel='results/updated_relatives.tsv',
-        pedigree_plot='results/pedigree_plot.png',
-        po_fs_plot='results/po_fs_plot.png'
+        pedigree_plot='results/pedigree_plot.png'
+    params:
+        source='ersa' if flow == 'ibis' else 'both',
+        po_fs_plot='results/po_fs_plot.png' if flow == 'ibis' else None
     log:
         "logs/evaluation/accuracy.log"
     conda:
@@ -168,7 +171,7 @@ rule split_map:
     conda:
         "../../envs/evaluation.yaml"
     script:
-        "../scripts/split_map.py"
+        "../../scripts/split_map.py"
 
 rule evaluate_ibd:
     input:
@@ -177,7 +180,7 @@ rule evaluate_ibd:
         cm=expand("cm/chr{chrom}.cm.map", chrom=CHROMOSOMES)
     params:
         cm_dir='cm',
-        is_rapid_ibd=use_rapid
+        is_rapid_ibd=False
     conda:
         '../../envs/evaluation.yaml'
     output:

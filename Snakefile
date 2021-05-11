@@ -6,8 +6,7 @@ from os.path import join
 
 configfile: "config.yaml"
 
-use_rapid          = config["use_rapid"]
-use_ibis           = config["use_ibis"]
+flow               = config["flow"]
 is_client          = config["mode"] == "client"
 use_simulated_ibd  = config["use_simulated_ibd"] if "use_simulated_ibd" in config else False
 
@@ -45,9 +44,9 @@ rule all:
         # rules.report_benchmark_summary.output
 
 
-if use_rapid:
-    include: "rules/relatives_rapid.smk"
-elif use_ibis:
-    include: "rules/relatives_ibis.smk"
-else:
-    include: "rules/relatives.smk"
+if flow == 'ibis':
+    include: "../../rules/relatives_ibis.smk"
+elif flow == 'germline':
+    include: "../../rules/relatives.smk"
+elif flow == 'ibis_king':
+    include: "../../rules/relatives_ibis_king.smk"

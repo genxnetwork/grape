@@ -245,7 +245,7 @@ def interval_evaluate(result, fam, plot_name, pr_plot_name, conf_matrix_plot_nam
     merged = predictions.merge(kinship_frame, left_index=True, right_index=True, how='outer')
     if dist_plot_name is not None:
         draw_distribution_plot(merged, dist_plot_name)
-    if po_fs_plot_name is not None:
+    if po_fs_plot_name is not None and po_fs_plot_name != '':
         draw_po_fs(merged, po_fs_plot_name)
 
     merged.to_csv(output_path, sep='\t')
@@ -339,6 +339,8 @@ if __name__ == '__main__':
     logging.basicConfig(filename=snakemake.log[0], level=logging.DEBUG, format='%(levelname)s:%(asctime)s %(message)s')
     sns.set_style()
 
+    source = snakemake.params['source']
+    po_fs_plot_name = snakemake.params['po_fs_plot']
     interval_evaluate(snakemake.input['rel'],
              snakemake.input['fam'],
              snakemake.output['accuracy'],
@@ -346,7 +348,7 @@ if __name__ == '__main__':
              snakemake.output['conf_matrix'],
              snakemake.output['updated_rel'],
              only_client=True,
-             source='ersa',
+             source=source,
              pedigree_plot_name=snakemake.output['pedigree_plot'],
-             po_fs_plot_name=snakemake.output['po_fs_plot'])
+             po_fs_plot_name=po_fs_plot_name)
 
