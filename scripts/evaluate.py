@@ -327,8 +327,6 @@ def draw_po_fs(merged, plot_name):
     po_ibd1 = m.loc[po_mask, 'total_seg_len']
 
     plt.figure(figsize=(17, 12))
-    print(fs_ibd1, fs_ibd2)
-    print(po_ibd1, po_ibd2)
     plt.scatter(fs_ibd2, fs_ibd1, label='Full Siblings', marker='+')
     plt.scatter(po_ibd2, po_ibd1, label='Parent/Offspring', marker='o')
     plt.legend()

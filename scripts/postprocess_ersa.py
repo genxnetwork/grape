@@ -34,13 +34,13 @@ def read_ibis(ibd_path):
         'error_density'
     ]
     data = pandas.read_table(ibd_path, header=None, names=names)
-    data.loc[:, 'id1'] = data.sample1.str.replace(':', '_') + ' ' + data.sample1.str.replace(':', '_')
-    data.loc[:, 'id2'] = data.sample2.str.replace(':', '_') + ' ' + data.sample2.str.replace(':', '_')
+    data.loc[:, 'id1'] = data.sample1.str.replace(':', '_')
+    data.loc[:, 'id2'] = data.sample2.str.replace(':', '_')
     _sort_ids(data)
     ibd2_info = data.loc[data.IBD_type == 'IBD2', ['id1', 'id2', 'chrom', 'genetic_seg_length']].groupby(by=['id1', 'id2']).agg(
         {'genetic_seg_length': 'sum', 'chrom': 'count'})
-    print(ibd2_info)
     ibd2_info.rename({'genetic_seg_length': 'total_seg_len_ibd2', 'chrom': 'seg_count_ibd2'}, axis=1, inplace=True)
+    print(ibd2_info)
     return ibd2_info
 
 
@@ -105,12 +105,12 @@ if __name__ == '__main__':
     logging.info(f'ibd shape: {ibd.shape[0]}, ersa shape: {ersa.shape[0]}')
 
     relatives = ibd.merge(ersa, how='outer', left_index=True, right_index=True)
-
-    po_mask = (relatives.total_seg_len_ibd2 / 3540 > 0.2)
-    fs_mask = (relatives.total_seg_len / 3540 > 0.7) & (~po_mask)
+    fs_mask = (relatives.total_seg_len > 2100) & (relatives.total_seg_len_ibd2 > 450)
+    po_mask = (relatives.total_seg_len / 3540 > 0.8) & (~fs_mask)
 
     relatives.loc[:, 'final_degree'] = relatives.ersa_degree
     relatives.loc[po_mask, 'final_degree'] = 1
+    relatives.loc[(~po_mask) & (relatives.final_degree == 1)] = 2 # to eliminate some ersa false positives
     relatives.loc[fs_mask, 'final_degree'] = 2
     relatives.loc[:, 'relation'] = relatives.ersa_degree.astype(str)
     relatives.loc[po_mask, 'relation'] = 'PO'
