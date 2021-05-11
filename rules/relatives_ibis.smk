@@ -65,21 +65,9 @@ rule transform_ibis_segments:
     script:
         "../scripts/transform_ibis_segments.py"
 
-rule split_map:
-    input:
-        bim = "plink/merged_ibis_mapped.bim"
-    output: expand("cm/chr{chrom}.cm.map", chrom=CHROMOSOMES)
-    params:
-        cm_dir='cm'
-    conda:
-        "../envs/evaluation.yaml"
-    script:
-        "../scripts/split_map.py"
-
 rule ersa:
     input:
-        ibd=rules.transform_ibis_segments.output['germline'],
-        cm=expand("cm/chr{chrom}.cm.map", chrom=CHROMOSOMES) # it does not really need it, just to invoke split_map
+        ibd=rules.transform_ibis_segments.output['germline']
     output:
         "ersa/relatives.tsv"
     singularity:

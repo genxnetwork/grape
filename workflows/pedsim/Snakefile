@@ -159,6 +159,17 @@ rule evaluate_accuracy:
     script:
          '../../scripts/evaluate.py'
 
+rule split_map:
+    input:
+        bim = "plink/merged_ibis_mapped.bim"
+    output: expand("cm/chr{chrom}.cm.map", chrom=CHROMOSOMES)
+    params:
+        cm_dir='cm'
+    conda:
+        "../../envs/evaluation.yaml"
+    script:
+        "../scripts/split_map.py"
+
 rule evaluate_ibd:
     input:
         pedsim=rules.simulate.output['seg'],
