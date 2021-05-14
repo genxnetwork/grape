@@ -222,6 +222,13 @@ if __name__ == '__main__':
         # therefore config.yaml must be in snakemake.workdir
         shutil.copy('workflows/pedsim/config.yaml', os.path.join(args.directory, 'config.yaml'))
 
+    if args.command == 'hapmap':
+        # for some reason launching with docker from command line
+        # sets root directory for 'configfile' directive in Snakefile as snakemake.workdir
+        # therefore config.yaml must be in snakemake.workdir
+        shutil.copy('workflows/hapmap/config.yaml', os.path.join(args.directory, 'config.yaml'))
+
+
     if args.command == 'preprocess':
         shutil.copy(args.vcf_file, os.path.join(args.directory, 'input.vcf.gz'))
 
@@ -264,7 +271,7 @@ if __name__ == '__main__':
     if args.flow not in ['germline', 'ibis', 'ibis_king']:
         raise ValueError(f'--flow can be one of the ["germline", "ibis", "ibis_king"] and not {args.flow}')
     config_dict['flow'] = args.flow
-    if args.command in ['preprocess', 'simulate']:
+    if args.command in ['preprocess', 'simulate', 'hapmap']:
         config_dict['remove_imputation'] = args.remove_imputation
         config_dict['impute'] = args.impute
         config_dict['phase'] = args.phase

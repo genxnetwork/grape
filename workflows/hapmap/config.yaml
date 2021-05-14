@@ -1,0 +1,14 @@
+ref_dir: /media/ref
+reference:
+    GRCh37_fasta: human_g1k_v37.fasta
+    GENETIC_MAP: tables/genetic_map_hg19_withX.txt.gz
+    genetic_map_GRCh37: genetic_map_GRCh37/genetic_map_GRCh37_chr{1..22}.txt
+    vcfRef: 1000genome/bcf/1000genome_chr{chrom}.bcf
+    refHaps: Minimac/{chrom}.1000g.Phase3.v5.With.Parameter.Estimates.m3vcf.gz
+    lift_chain: hg38ToHg19.over.chain.gz
+    cmmap: genetic_map_b37/genetic_map_chr{chrom}_combined_b37.txt
+    SITE_1000GENOME: 1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.only_rs.biallelic.tab
+    hapmap_fam: hapmap/relations.txt
+    affymetrix_chip: 1000genome/affymetrix_chip/all.vcf.gz
+    pedsim_map: refined_mf.simmap
+    beagle_map: beagle_map_b37/plink.chr{chrom}.GRCh37.map
