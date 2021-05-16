@@ -1,44 +1,8 @@
-rule convert_mapped_to_plink:
-    input:
-        vcf="preprocessed/data.vcf.gz"
-    output:
-        plink=expand("plink/{i}.{ext}", i="merged_ibis", ext=PLINK_FORMATS)
-    params:
-        out = "plink/merged_ibis"
-    conda:
-        "../envs/plink.yaml"
-    log:
-        "logs/plink/convert_mapped_to_plink.log"
-    benchmark:
-        "benchmarks/plink/convert_mapped_to_plink.txt"
-    shell:
-        """
-        plink --vcf {input} --make-bed --out {params.out} |& tee {log}
-        """
-
-rule ibis_mapping:
-    input:
-        rules.convert_mapped_to_plink.output
-    params:
-        input = "plink/merged_ibis"
-    singularity:
-        "docker://genxnetwork/ibis:stable"
-    output:
-        "plink/merged_ibis_mapped.bim"
-    log:
-        "logs/ibis/run_ibis_mapping.log"
-    benchmark:
-        "benchmarks/ibis/run_ibis_mapping.txt"
-    shell:
-        """
-        (add-map-plink.pl -cm {params.input}.bim {GENETIC_MAP_GRCH37}> plink/merged_ibis_mapped.bim) |& tee -a {log}
-        """
-
 rule ibis:
     input:
-        rules.ibis_mapping.output
-    params:
-        input = "plink/merged_ibis"
+        bed="preprocessed/data.bed",
+        fam="preprocessed/data.fam",
+        bim="preprocessed/data.bim"
     singularity:
         "docker://genxnetwork/ibis:stable"
     output:
@@ -50,7 +14,7 @@ rule ibis:
     threads: workflow.cores
     shell:
         """
-        ibis {params.input}.bed {input} {params.input}.fam -t {threads} -mt 560 -mL 7 -ibd2 -mL2 3 -hbd -f ibis/merged_ibis |& tee -a {log}
+        ibis {input.bed} {input.bim} {input.fam} -t {threads} -mt 560 -mL 7 -ibd2 -mL2 3 -hbd -f ibis/merged_ibis |& tee -a {log}
         """
 
 rule transform_ibis_segments:

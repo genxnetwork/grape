@@ -164,7 +164,7 @@ rule evaluate_accuracy:
 
 rule split_map:
     input:
-        bim = "plink/merged_ibis_mapped.bim"
+        bim = "preprocessed/data.bim"
     output: expand("cm/chr{chrom}.cm.map", chrom=CHROMOSOMES)
     params:
         cm_dir='cm'

@@ -45,8 +45,8 @@ rule all:
 
 
 if flow == 'ibis':
-    include: "../../rules/relatives_ibis.smk"
+    include: "rules/relatives_ibis.smk"
 elif flow == 'germline':
-    include: "../../rules/relatives.smk"
+    include: "rules/relatives.smk"
 elif flow == 'ibis_king':
-    include: "../../rules/relatives_ibis_king.smk"
+    include: "rules/relatives_ibis_king.smk"

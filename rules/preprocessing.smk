@@ -94,3 +94,42 @@ rule recode_snp_ids:
         """
             bcftools annotate --set-id '%CHROM:%POS:%REF:%FIRST_ALT' {input.vcf} -O z -o {output.vcf}
         """
+
+rule convert_mapped_to_plink:
+    input:
+        vcf="preprocessed/data.vcf.gz"
+    output:
+        bed="preprocessed/data.bed",
+        fam="preprocessed/data.fam",
+        bim="preprocessed/data_unmapped.bim"
+    params:
+        out = "preprocessed/data"
+    conda:
+        "../envs/plink.yaml"
+    log:
+        "logs/plink/convert_mapped_to_plink.log"
+    benchmark:
+        "benchmarks/plink/convert_mapped_to_plink.txt"
+    shell:
+        """
+        plink --vcf {input} --make-bed --out {params.out} |& tee {log}
+        mv {params.out}.bim {output.bim}
+        """
+
+rule ibis_mapping:
+    input:
+        bim=rules.convert_mapped_to_plink.output['bim']
+    params:
+        input = "preprocessed/data"
+    singularity:
+        "docker://genxnetwork/ibis:stable"
+    output:
+        "preprocessed/data.bim"
+    log:
+        "logs/ibis/run_ibis_mapping.log"
+    benchmark:
+        "benchmarks/ibis/run_ibis_mapping.txt"
+    shell:
+        """
+        (add-map-plink.pl -cm {input.bim} {GENETIC_MAP_GRCH37}> {output}) |& tee -a {log}
+        """

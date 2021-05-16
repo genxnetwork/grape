@@ -34,7 +34,10 @@ def _mem_gb_for_ram_hungry_jobs():
 
 rule all:
     input:
-        vcf="preprocessed/data.vcf.gz"
+        vcf="preprocessed/data.vcf.gz",
+        bed="preprocessed/data.bed",
+        bim="preprocessed/data.bim",
+        fam="preprocessed/data.fam"
         # rules.report_benchmark_summary.output
 
 
