@@ -11,7 +11,7 @@ GRCH37_FASTA       = join(REF_DIR, config["reference"]["GRCh37_fasta"])
 GENETIC_MAP        = join(REF_DIR, config["reference"]["GENETIC_MAP"])
 GENETIC_MAP_GRCH37 =join(REF_DIR, config["reference"]["genetic_map_GRCh37"])
 REF_VCF            = join(REF_DIR, config["reference"]["vcfRef"])
-REF_HAPS            = join(REF_DIR, config["reference"]["refHaps"])
+REF_HAPS           = join(REF_DIR, config["reference"]["refHaps"])
 LIFT_CHAIN         = join(REF_DIR, config["reference"]["lift_chain"])
 CMMAP              = join(REF_DIR, config["reference"]["cmmap"])
 SITE_1000GENOME    = join(REF_DIR, config["reference"]["SITE_1000GENOME"])
@@ -130,7 +130,7 @@ rule process_vcfRef:
             set -x
 
             mkdir -p {REF_DIR}/1000genome/bcf
-            bcftools convert {REF_DIR}/1000genome/ALL.chr{wildcards.chrom}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz -Ob -o {REF_DIR}/1000genome/bcf/1000genome_chr{wildcards.chrom}.bcf 
+            bcftools convert {REF_DIR}/1000genome/ALL.chr{wildcards.chrom}.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz -Ob -o {REF_DIR}/1000genome/bcf/1000genome_chr{wildcards.chrom}.bcf 
             bcftools index -f {REF_DIR}/1000genome/bcf/1000genome_chr{wildcards.chrom}.bcf 
             #rm {REF_DIR}/1000genome/ALL*
         """
@@ -147,7 +147,7 @@ rule get_minimac:
 
 rule make_refHaps:
     input:
-        expand("{REF_DIR}/1000genome/ALL.chr{{chrom}}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz", REF_DIR=REF_DIR),
+        expand("{REF_DIR}/1000genome/ALL.chr{{chrom}}.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz", REF_DIR=REF_DIR),
         minimac=rules.get_minimac.output
     output:
         refHaps = expand("{REF_DIR}/Minimac/{{chrom}}.1000g.Phase3.v5.With.Parameter.Estimates.m3vcf.gz", REF_DIR=REF_DIR)
