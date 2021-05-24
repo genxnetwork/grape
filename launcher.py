@@ -107,6 +107,12 @@ def get_parser_args():
     )
 
     parser.add_argument(
+        '--phase-reference',
+        action='store_true',
+        help='If present, reference workflow will download impute/phase ref data'
+    )
+
+    parser.add_argument(
         '--vcf-file',
         default='input.vcf',
         help='Path to the input vcf file for "vcf" command only'
@@ -275,6 +281,9 @@ if __name__ == '__main__':
         config_dict['remove_imputation'] = args.remove_imputation
         config_dict['impute'] = args.impute
         config_dict['phase'] = args.phase
+    
+    if args.command in ['reference']:
+        config_dict['phase_reference'] = args.phase_reference
 
     if not snakemake.snakemake(
             snakefile=snakefile,

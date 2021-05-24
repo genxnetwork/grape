@@ -9,7 +9,7 @@ configfile: "config.yaml"
 REF_DIR            = config["ref_dir"]
 GRCH37_FASTA       = join(REF_DIR, config["reference"]["GRCh37_fasta"])
 GENETIC_MAP        = join(REF_DIR, config["reference"]["GENETIC_MAP"])
-GENETIC_MAP_GRCH37 =join(REF_DIR, config["reference"]["genetic_map_GRCh37"])
+GENETIC_MAP_GRCH37 = join(REF_DIR, config["reference"]["genetic_map_GRCh37"])
 REF_VCF            = join(REF_DIR, config["reference"]["vcfRef"])
 REF_HAPS           = join(REF_DIR, config["reference"]["refHaps"])
 LIFT_CHAIN         = join(REF_DIR, config["reference"]["lift_chain"])
@@ -21,23 +21,38 @@ HAPMAP_FAM         = join(REF_DIR, config["reference"]["hapmap_fam"])
 HD_GENOTYPE_CHIP   = join(REF_DIR, config["reference"]["hd_genotype_chip"])
 AFFYMETRIX_CHIP    = join(REF_DIR, config["reference"]["affymetrix_chip"])
 PEDSIM_MAP         = join(REF_DIR, config["reference"]["pedsim_map"])
+phase_reference    = config["phase_reference"]
 
 CHROMOSOMES = [str(i) for i in range(1, 23)]
 
-rule all:
-    input:
-        GRCh37_fasta = GRCH37_FASTA,
-        GRCh37_fasta_dict = expand("{ref}.dict", ref=GRCH37_FASTA),
-        GENETIC_MAP = GENETIC_MAP,
-        genetic_map_GRCh37 = expand("{REF_DIR}/genetic_map_GRCh37/genetic_map_GRCh37_chr{i}.txt", i=CHROMOSOMES, REF_DIR=REF_DIR),
-        cmmap = expand("{REF_DIR}/genetic_map_b37/genetic_map_chr{chrom}_combined_b37.txt", chrom=CHROMOSOMES, REF_DIR=REF_DIR),
-        vcfRef = expand("{REF_DIR}/1000genome/bcf/1000genome_chr{chrom}.bcf", chrom=CHROMOSOMES, REF_DIR=REF_DIR),
-        refHaps = expand("{REF_DIR}/Minimac/{chrom}.1000g.Phase3.v5.With.Parameter.Estimates.m3vcf.gz", chrom=CHROMOSOMES, REF_DIR=REF_DIR),
-        lift_chain = LIFT_CHAIN,
-        SITE_1000GENOME = SITE_1000GENOME,
-        pedsim_map = PEDSIM_MAP,
-        hd_genotype_chip = HD_GENOTYPE_CHIP,
-        affymetrix_chip = AFFYMETRIX_CHIP
+if phase_reference:
+    rule all:
+        input:
+            GRCh37_fasta = GRCH37_FASTA,
+            GRCh37_fasta_dict = expand("{ref}.dict", ref=GRCH37_FASTA),
+            GENETIC_MAP = GENETIC_MAP,
+            genetic_map_GRCh37 = expand("{REF_DIR}/genetic_map_GRCh37/genetic_map_GRCh37_chr{i}.txt", i=CHROMOSOMES, REF_DIR=REF_DIR),
+            cmmap = expand("{REF_DIR}/genetic_map_b37/genetic_map_chr{chrom}_combined_b37.txt", chrom=CHROMOSOMES, REF_DIR=REF_DIR),
+            lift_chain = LIFT_CHAIN,
+            SITE_1000GENOME = SITE_1000GENOME,
+            pedsim_map = PEDSIM_MAP,
+            hd_genotype_chip = HD_GENOTYPE_CHIP,
+            affymetrix_chip = AFFYMETRIX_CHIP,
+            vcfRef = expand("{REF_DIR}/1000genome/bcf/1000genome_chr{chrom}.bcf", chrom=CHROMOSOMES, REF_DIR=REF_DIR),
+            refHaps = expand("{REF_DIR}/Minimac/{chrom}.1000g.Phase3.v5.With.Parameter.Estimates.m3vcf.gz", chrom=CHROMOSOMES, REF_DIR=REF_DIR)
+else:
+    rule all:
+        input:
+            GRCh37_fasta = GRCH37_FASTA,
+            GRCh37_fasta_dict = expand("{ref}.dict", ref=GRCH37_FASTA),
+            GENETIC_MAP = GENETIC_MAP,
+            genetic_map_GRCh37 = expand("{REF_DIR}/genetic_map_GRCh37/genetic_map_GRCh37_chr{i}.txt", i=CHROMOSOMES, REF_DIR=REF_DIR),
+            cmmap = expand("{REF_DIR}/genetic_map_b37/genetic_map_chr{chrom}_combined_b37.txt", chrom=CHROMOSOMES, REF_DIR=REF_DIR),
+            lift_chain = LIFT_CHAIN,
+            SITE_1000GENOME = SITE_1000GENOME,
+            pedsim_map = PEDSIM_MAP,
+            hd_genotype_chip = HD_GENOTYPE_CHIP,
+            affymetrix_chip = AFFYMETRIX_CHIP
 
 rule download_GRCh37_fasta:
     output:
