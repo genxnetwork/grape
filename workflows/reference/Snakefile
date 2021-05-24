@@ -113,7 +113,9 @@ rule download_vcfRef:
 
             for o in {output}; do
                 # potentially inf loop
-                until wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/`basename $o` -P {REF_DIR}/1000genome; do :; done
+                # until wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/`basename $o` -P {REF_DIR}/1000genome; do :; done
+                # less error proof but w/o inf loop. would not handle "connection refused" or "not found"
+                wget --tries=100 ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/`basename $o` -P {REF_DIR}/1000genome
             done
         """
 
