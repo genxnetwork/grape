@@ -208,14 +208,14 @@ rule download_SITE_1000GENOME:
             set -x
 
             mkdir -p {REF_DIR}/1000genome/allele_info
-            wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz -P {REF_DIR}/1000genome/allele_info;
+            wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5с.20130502.sites.vcf.gz -P {REF_DIR}/1000genome/allele_info;
             # do we really need to ungzip?
-            # gzip -d {REF_DIR}/1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
+            # gzip -d {REF_DIR}/1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5с.20130502.sites.vcf.gz
             # possible crash due OOM
-            # awk '$3~/^rs/ && $5~/^[ATCG]$/ && $4~/^[ATCG]$/ && !a[$3]++' ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf > ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.only_rs.biallelic.tab
+            # awk '$3~/^rs/ && $5~/^[ATCG]$/ && $4~/^[ATCG]$/ && !a[$3]++' ALL.wgs.phase3_shapeit2_mvncall_integrated_v5c.20130502.sites.vcf > ALL.wgs.phase3_shapeit2_mvncall_integrated_v5c.20130502.sites.only_rs.biallelic.tab
             # alternative from https://github.com/aehrc/TRIBES/blob/branch-0.2/process.smake please note that output is not gzipped (why?)
-            bcftools view --no-header -m2 -M2 -v snps -g ^miss -Ov -o {SITE_1000GENOME} {REF_DIR}/1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
-            rm {REF_DIR}/1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
+            bcftools view --no-header -m2 -M2 -v snps -g ^miss -Ov -o {SITE_1000GENOME} {REF_DIR}/1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5c.20130502.sites.vcf.gz
+            rm {REF_DIR}/1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5c.20130502.sites.vcf.gz
         """
 
 rule download_hapmap_fam:
