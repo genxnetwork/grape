@@ -108,7 +108,7 @@ rule download_vcfRef:
         "../../envs/download.yaml"
     shell:
         """
-            set +e
+            set -e
             set -x
 
             for o in {output}; do
