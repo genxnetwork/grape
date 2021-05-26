@@ -104,6 +104,8 @@ rule download_vcfRef:
         # expand("{REF_DIR}/1000genome/ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz.tbi", REF_DIR=REF_DIR),
         # expand("{REF_DIR}/1000genome/ALL.chrY.phase3_integrated_v2a.20130502.genotypes.vcf.gz", REF_DIR=REF_DIR),
         # expand("{REF_DIR}/1000genome/ALL.chrY.phase3_integrated_v2a.20130502.genotypes.vcf.gz.tbi", REF_DIR=REF_DIR)
+    log:
+        "logs/wget/wget_download_vcfRef.log"
     conda:
         "../../envs/download.yaml"
     shell:
@@ -115,7 +117,7 @@ rule download_vcfRef:
                 # potentially inf loop
                 # until wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/`basename $o` -P {REF_DIR}/1000genome; do :; done
                 # less error proof but w/o inf loop. would not handle "connection refused" or "not found"
-                wget --tries=100 ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/`basename $o` -P {REF_DIR}/1000genome
+                wget --tries=100 ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/`basename $o` -P {REF_DIR}/1000genome |& tee -a {log}
             done
         """
 
