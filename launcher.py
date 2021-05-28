@@ -138,6 +138,36 @@ def get_parser_args():
     )
 
     parser.add_argument(
+        '--zero-seg-count',
+        default=0.5,
+        type=float,
+        help="""
+            Average count of IBD segments in two unrelated individuals in population. 
+            Smaller values of 0.1, 0.2 tend to give more distant matches than default 0.5.
+            """
+    )
+
+    parser.add_argument(
+        '--zero-seg-len',
+        default=5.0,
+        type=float,
+        help="""
+            Average length of IBD segment in two unrelated individuals in population. 
+            Smaller values of tend to give more distant matches than default 5.0
+            """
+    )
+
+    parser.add_argument(
+        '--alpha',
+        default=0.01,
+        type=float,
+        help="""
+            ERSA P-value limit for testing for an existence of an relationship.
+            Values of 0.02-0.05 tend to give more distant matches that default 0.01. 
+            """
+    )
+
+    parser.add_argument(
         '--stat-file',
         default='stat_file.txt',
         help='File for writing statistics'
@@ -275,6 +305,10 @@ if __name__ == '__main__':
         config_dict['remove_imputation'] = args.remove_imputation
         config_dict['impute'] = args.impute
         config_dict['phase'] = args.phase
+
+    config_dict['zero_seg_len'] = args.zero_seg_len
+    config_dict['zero_seg_count'] = args.zero_seg_count
+    config_dict['alpha'] = args.alpha
 
     if not snakemake.snakemake(
             snakefile=snakefile,
