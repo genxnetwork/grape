@@ -55,7 +55,7 @@ rule ibis:
     threads: workflow.cores
     shell:
         """
-        ibis {input.bed} {input.bim} {input.fam} -t {threads} -mt 560 -mL 7 -ibd2 -mL2 3 -hbd -f ibis/merged_ibis |& tee -a {log}
+        ibis {input.bed} {input.bim} {input.fam} -t {threads} -mt 500 -mL 7 -ibd2 -mL2 3 -hbd -f ibis/merged_ibis |& tee -a {log}
         """
 
 rule transform_ibis_segments:
