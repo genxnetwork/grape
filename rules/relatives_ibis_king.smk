@@ -55,7 +55,7 @@ rule ibis:
     threads: workflow.cores
     shell:
         """
-        ibis {input.bed} {input.bim} {input.fam} -t {threads} -mt 560 -mL 7 -ibd2 -mL2 3 -hbd -f ibis/merged_ibis |& tee -a {log}
+        ibis {input.bed} {input.bim} {input.fam} -t {threads} -mt 500 -mL 7 -ibd2 -mL2 3 -hbd -f ibis/merged_ibis |& tee -a {log}
         """
 
 rule transform_ibis_segments:
@@ -81,12 +81,16 @@ rule ersa:
         "logs/ersa/ersa.log"
     benchmark:
         "benchmarks/ersa/ersa.txt"
+    params:
+        ersa_l = config['zero_seg_count'],
+        ersa_th = config['zero_seg_len'],
+        alpha = config['alpha']
     shell:
         """
-        ERSA_L=0.5 # the average number of IBD segments in population
-        ERSA_TH=6.00 # the average length of IBD segment in population
+        ERSA_L={params.ersa_l} # the average number of IBD segments in population
+        ERSA_TH={params.ersa_th} # the average length of IBD segment in population
         ERSA_T=7.0 # min length of segment to be considered in segment aggregation
-        ersa --avuncular-adj -ci --alpha 0.01 --dmax 14 -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd} -o {output}  |& tee {log}
+        ersa --avuncular-adj -ci --alpha {params.alpha} --dmax 14 -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd} -o {output}  |& tee {log}
         """
 
 rule merge_king_ersa:

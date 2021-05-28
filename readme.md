@@ -172,7 +172,19 @@ g1-b1-i1 g3-b1-i1     2           2                 0.2369          0.1163      
    for the 4th+ degrees it is calculated using IBID or Germline IBD data.
  * `seg_count` is the total number of all IBD segments found by KING for the first 3 degrees and found by IBIS\Germline for the 4th+ degrees.
 
+#### Description of some launcher parameters
 
+`--zero-seg-count`, default=0.5
+Average count of IBD segments in two unrelated individuals in population. 
+Smaller values of 0.1, 0.2 tend to give more distant matches than default 0.5.
+
+`--zero-seg-len`, default=5.0
+Average length of IBD segment in two unrelated individuals in population. 
+Smaller values of tend to give more distant matches than default 5.0
+
+`--alpha`, default=0.01
+ERSA P-value limit for testing for an existence of an relationship.
+Values of 0.02-0.05 tend to give more distant matches that default 0.01. 
 
 #### Execution by scheduler
 The pipeline can be executed using lightweight scheduler [Funnel](https://ohsu-comp-bio.github.io/funnel/), which implements [Task Execution Schema](https://github.com/ga4gh/task-execution-schemas) developed by [GA4GH](https://github.com/ga4gh/wiki/wiki).  
