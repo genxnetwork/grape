@@ -137,7 +137,7 @@ rule process_vcfRef:
     conda:
         "../../envs/download.yaml"
     log:
-        "logs/ref/process_vcfRef.log"
+        "logs/ref/process_vcfRef-{chrom}.log"
     shell:
         """
             set -e
@@ -170,7 +170,7 @@ rule make_refHaps:
     conda:
         "../../envs/download.yaml"
     log:
-        "logs/ref/make_refHaps.log"
+        "logs/ref/make_refHaps-{chrom}.log"
     shell:
         """
             set -e
@@ -252,7 +252,7 @@ rule download_hapmap_fam:
         "logs/ref/download_hapmap_fam.log"
     shell:
         """
-            wget ftp://ftp.ncbi.nlm.nih.gov/hapmap/phase_3//relationships_w_pops_121708.txt -O {HAPMAP_FAM} |& tee -a {log}
+            wget ftp://ftp.ncbi.nlm.nih.gov/hapmap/phase_3/relationships_w_pops_121708.txt -O {HAPMAP_FAM} |& tee -a {log}
         """
 
 rule download_hd_genotype_chip:
