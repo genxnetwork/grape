@@ -82,6 +82,8 @@ docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localti
 launcher.py reference  --ref-directory /media/ref
 ```
 
+Please note that reference post-processing is a computationally intensive task and can take a lot of time. Consider using `--cores all` (or number) flag because the default behavior uses only 1 core.
+
 #### Preprocessing
 
 Preprocessing features:
