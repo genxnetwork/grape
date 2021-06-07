@@ -168,6 +168,26 @@ def get_parser_args():
     )
 
     parser.add_argument(
+        '--ibis-seg-len',
+        default=7.0,
+        type=float,
+        help="""
+                Minimum length of IBD segment for ibis. 
+                Smaller values of it tend to give more distant matches than default 7.0 and more false-positives.
+            """
+    )
+
+    parser.add_argument(
+        '--ibis-min-snp',
+        default=500,
+        type=int,
+        help="""
+                Minimum number of SNPs in IBD segment. 
+                Smaller values of it tend to give more distant matches than default 500 and more false-positives.
+            """
+    )
+
+    parser.add_argument(
         '--stat-file',
         default='stat_file.txt',
         help='File for writing statistics'
@@ -309,6 +329,8 @@ if __name__ == '__main__':
     config_dict['zero_seg_len'] = args.zero_seg_len
     config_dict['zero_seg_count'] = args.zero_seg_count
     config_dict['alpha'] = args.alpha
+    config_dict['ibis_seg_len'] = args.ibis_seg_len
+    config_dict['ibis_min_snp'] = args.ibis_min_snp
 
     if not snakemake.snakemake(
             snakefile=snakefile,

@@ -153,7 +153,7 @@ rule evaluate_accuracy:
         updated_rel='results/updated_relatives.tsv',
         pedigree_plot='results/pedigree_plot.png'
     params:
-        source='ersa' if flow == 'ibis' else 'both',
+        source='both',
         po_fs_plot='results/po_fs_plot.png' if flow == 'ibis' else None
     log:
         "logs/evaluation/accuracy.log"
