@@ -162,12 +162,12 @@ rule evaluate_accuracy:
     script:
          '../../scripts/evaluate.py'
 
-rule split_map:
+rule split_map_for_ibd:
     input:
         bim = "preprocessed/data.bim"
-    output: expand("cm/chr{chrom}.cm.map", chrom=CHROMOSOMES)
+    output: expand("cm2/chr{chrom}.cm.map", chrom=CHROMOSOMES)
     params:
-        cm_dir='cm'
+        cm_dir='cm2'
     conda:
         "../../envs/evaluation.yaml"
     script:
@@ -177,9 +177,9 @@ rule evaluate_ibd:
     input:
         pedsim=rules.simulate.output['seg'],
         ibd="ibd/merged_ibd.tsv",
-        cm=expand("cm/chr{chrom}.cm.map", chrom=CHROMOSOMES)
+        cm=expand("cm2/chr{chrom}.cm.map", chrom=CHROMOSOMES)
     params:
-        cm_dir='cm',
+        cm_dir='cm2',
         is_rapid_ibd=False
     conda:
         '../../envs/evaluation.yaml'

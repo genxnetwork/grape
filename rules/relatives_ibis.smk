@@ -2,7 +2,7 @@ rule ibis:
     input:
         bed="preprocessed/data.bed",
         fam="preprocessed/data.fam",
-        bim="preprocessed/data.bim"
+        bim="preprocessed/data_mapped.bim"
     singularity:
         "docker://genxnetwork/ibis:stable"
     output:

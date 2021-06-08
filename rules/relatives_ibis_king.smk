@@ -43,7 +43,7 @@ rule ibis:
     input:
         bed="preprocessed/data.bed",
         fam="preprocessed/data.fam",
-        bim="preprocessed/data.bim"
+        bim="preprocessed/data_mapped.bim"
     singularity:
         "docker://genxnetwork/ibis:stable"
     output:
@@ -99,7 +99,7 @@ rule ersa:
 
 rule split_map:
     input:
-        bim = "preprocessed/data.bim"
+        bim = "preprocessed/data_mapped.bim"
     output: expand("cm/chr{chrom}.cm.map", chrom=CHROMOSOMES)
     params:
         cm_dir='cm'
@@ -116,7 +116,7 @@ rule merge_king_ersa:
         ersa=rules.ersa.output[0],
         kinship=rules.run_king.output['kinship'],
         kinship0=rules.run_king.output['kinship0'],
-        cm=rules.split_map.input
+        cm=expand("cm/chr{chrom}.cm.map", chrom=CHROMOSOMES)
     params:
         cm_dir='cm'
     output: "results/relatives.tsv"

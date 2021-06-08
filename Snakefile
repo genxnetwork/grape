@@ -11,6 +11,11 @@ is_client          = config["mode"] == "client"
 use_simulated_ibd  = config["use_simulated_ibd"] if "use_simulated_ibd" in config else False
 
 REF_DIR            = config["ref_dir"]
+# print('REF_DIR: ', REF_DIR)
+# print('REF DIR type ', type(REF_DIR))
+# print('grch37', config["reference"]["GRCh37_fasta"])
+# print('grch37 type', type(config["reference"]["GRCh37_fasta"]))
+
 GRCH37_FASTA       = join(REF_DIR, config["reference"]["GRCh37_fasta"])
 GENETIC_MAP        = join(REF_DIR, config["reference"]["GENETIC_MAP"])
 GENETIC_MAP_GRCH37 = join(REF_DIR, config["reference"]["genetic_map_GRCh37"])

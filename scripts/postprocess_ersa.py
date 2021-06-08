@@ -79,18 +79,6 @@ def read_ersa(ersa_path):
 
 if __name__ == '__main__':
 
-    '''
-    ibd_path = 'test_data/merge_king_ersa/merged_ibd.tsv'
-    king_path = 'test_data/merge_king_ersa/merged_imputed_king.seg'
-    king_segments_path = 'test_data/merge_king_ersa/merged_imputed_king.segments.gz'
-    # within families
-    kinship_path = 'test_data/merge_king_ersa/merged_imputed_kinship.kin'
-    # across families
-    kinship0_path = 'test_data/merge_king_ersa/merged_imputed_kinship.kin0'
-    ersa_path = 'test_data/merge_king_ersa/relatives.tsv'
-    map_dir = '/media/pipeline_data/sim-vcf-to-ped/cm'
-    output_path = 'test_data/relatives_merge_king_ersa.tsv'
-    '''
     logging.basicConfig(filename=snakemake.log[0], level=logging.DEBUG, format='%(levelname)s:%(asctime)s %(message)s')
 
     ibd_path = snakemake.input['ibd']
