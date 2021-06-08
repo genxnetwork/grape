@@ -7,20 +7,32 @@ configfile: "config.yaml"
 # read reference directory from config
 # it's where they will be stored ~40G
 REF_DIR            = config["ref_dir"]
-GRCH37_FASTA       = join(REF_DIR, config["reference"]["GRCh37_fasta"])
-GENETIC_MAP        = join(REF_DIR, config["reference"]["GENETIC_MAP"])
-GENETIC_MAP_GRCH37 = join(REF_DIR, config["reference"]["genetic_map_GRCh37"])
-REF_VCF            = join(REF_DIR, config["reference"]["vcfRef"])
-REF_HAPS           = join(REF_DIR, config["reference"]["refHaps"])
-LIFT_CHAIN         = join(REF_DIR, config["reference"]["lift_chain"])
-CMMAP              = join(REF_DIR, config["reference"]["cmmap"])
-SITE_1000GENOME    = join(REF_DIR, config["reference"]["SITE_1000GENOME"])
-HAPMAP_PED         = join(REF_DIR, config["reference"]["hapmap_ped"])
-HAPMAP_MP          = join(REF_DIR, config["reference"]["hapmap_mp"])
-HAPMAP_FAM         = join(REF_DIR, config["reference"]["hapmap_fam"])
-HD_GENOTYPE_CHIP   = join(REF_DIR, config["reference"]["hd_genotype_chip"])
-AFFYMETRIX_CHIP    = join(REF_DIR, config["reference"]["affymetrix_chip"])
-PEDSIM_MAP         = join(REF_DIR, config["reference"]["pedsim_map"])
+GRCH37_FASTA       = join(REF_DIR, config["reference"]["GRCh37_fasta"]["file"])
+GENETIC_MAP        = join(REF_DIR, config["reference"]["GENETIC_MAP"]["file"])
+GENETIC_MAP_GRCH37 = join(REF_DIR, config["reference"]["genetic_map_GRCh37"]["file"])
+REF_VCF            = join(REF_DIR, config["reference"]["vcfRef"]["file"])
+REF_HAPS           = join(REF_DIR, config["reference"]["refHaps"]["file"])
+LIFT_CHAIN         = join(REF_DIR, config["reference"]["lift_chain"]["file"])
+CMMAP              = join(REF_DIR, config["reference"]["cmmap"]["file"])
+SITE_1000GENOME    = join(REF_DIR, config["reference"]["SITE_1000GENOME"]["file"])
+HAPMAP_PED         = join(REF_DIR, config["reference"]["hapmap_ped"]["file"])
+HAPMAP_MP          = join(REF_DIR, config["reference"]["hapmap_mp"]["file"])
+HAPMAP_FAM         = join(REF_DIR, config["reference"]["hapmap_fam"]["file"])
+HD_GENOTYPE_CHIP   = join(REF_DIR, config["reference"]["hd_genotype_chip"]["file"])
+AFFYMETRIX_CHIP    = join(REF_DIR, config["reference"]["affymetrix_chip"]["file"])
+PEDSIM_MAP         = join(REF_DIR, config["reference"]["pedsim_map"]["file"])
+
+GRCH37_FASTA_url       = config["reference"]["GRCh37_fasta"]["url"]
+GENETIC_MAP_url        = config["reference"]["GENETIC_MAP"]["url"]
+GENETIC_MAP_GRCH37_url = config["reference"]["genetic_map_GRCh37"]["url"]
+REF_VCF_url            = config["reference"]["vcfRef"]["url"]
+LIFT_CHAIN_url         = config["reference"]["lift_chain"]["url"]
+CMMAP_url              = config["reference"]["cmmap"]["url"]
+SITE_1000GENOME_url    = config["reference"]["SITE_1000GENOME"]["url"]
+HAPMAP_FAM_url         = config["reference"]["hapmap_fam"]["url"]
+HD_GENOTYPE_CHIP_url   = config["reference"]["hd_genotype_chip"]["url"]
+AFFYMETRIX_CHIP_url    = config["reference"]["affymetrix_chip"]["url"]
+PEDSIM_MAP_url         = config["reference"]["pedsim_map"]["url"]
 
 CHROMOSOMES = [str(i) for i in range(1, 23)]
 
@@ -29,10 +41,10 @@ rule all:
         GRCh37_fasta = GRCH37_FASTA,
         GRCh37_fasta_dict = expand("{ref}.dict", ref=GRCH37_FASTA),
         GENETIC_MAP = GENETIC_MAP,
-        genetic_map_GRCh37 = expand("{REF_DIR}/genetic_map_GRCh37/genetic_map_GRCh37_chr{i}.txt", i=CHROMOSOMES, REF_DIR=REF_DIR),
-        cmmap = expand("{REF_DIR}/genetic_map_b37/genetic_map_chr{chrom}_combined_b37.txt", chrom=CHROMOSOMES, REF_DIR=REF_DIR),
-        vcfRef = expand("{REF_DIR}/1000genome/bcf/1000genome_chr{chrom}.bcf", chrom=CHROMOSOMES, REF_DIR=REF_DIR),
-        refHaps = expand("{REF_DIR}/Minimac/{chrom}.1000g.Phase3.v5.With.Parameter.Estimates.m3vcf.gz", chrom=CHROMOSOMES, REF_DIR=REF_DIR),
+        genetic_map_GRCh37 = expand(GENETIC_MAP_GRCH37, chrom=CHROMOSOMES),
+        cmmap = expand(CMMAP, chrom=CHROMOSOMES),
+        vcfRef = expand(REF_VCF, chrom=CHROMOSOMES),
+        refHaps = expand(REF_HAPS, chrom=CHROMOSOMES),
         lift_chain = LIFT_CHAIN,
         SITE_1000GENOME = SITE_1000GENOME,
         pedsim_map = PEDSIM_MAP,
@@ -51,7 +63,7 @@ rule download_GRCh37_fasta:
             set +e
             set -x
 
-            wget ftp://ftp.ncbi.nlm.nih.gov/1000genomes/ftp/technical/reference/human_g1k_v37.fasta.gz -P {REF_DIR} |& tee -a {log}
+            wget {GRCH37_FASTA_url} -P {REF_DIR} |& tee -a {log}
             # gzip exit with "decompression OK, trailing garbage ignored". need to silence
             gzip -d {REF_DIR}/human_g1k_v37.fasta.gz |& tee -a {log}
             exit 0
@@ -83,12 +95,12 @@ rule download_GENETIC_MAP:
             set -e
             set -x
 
-            wget https://storage.googleapis.com/broad-alkesgroup-public/Eagle/downloads/tables/genetic_map_hg19_withX.txt.gz -O {GENETIC_MAP} |& tee -a {log}
+            wget {GENETIC_MAP_url} -O {GENETIC_MAP} |& tee -a {log}
         """
 
 rule download_genetic_map_GRCh37:
     output:
-        genetic_map_GRCh37 = expand("{REF_DIR}/genetic_map_GRCh37/genetic_map_GRCh37_chr{i}.txt", i=CHROMOSOMES, REF_DIR=REF_DIR)
+        genetic_map_GRCh37 = expand(GENETIC_MAP_GRCH37, chrom=CHROMOSOMES)
     conda:
         "../../envs/download.yaml"
     log:
@@ -98,7 +110,7 @@ rule download_genetic_map_GRCh37:
             set -e
             set -x
 
-            wget ftp://ftp.ncbi.nlm.nih.gov/hapmap/recombination/2011-01_phaseII_B37/genetic_map_HapMapII_GRCh37.tar.gz -P {REF_DIR} |& tee -a {log}
+            wget {GENETIC_MAP_GRCH37_url} -P {REF_DIR} |& tee -a {log}
             tar -zxvf {REF_DIR}/genetic_map_HapMapII_GRCh37.tar.gz -C {REF_DIR}/genetic_map_GRCh37 --exclude=README.txt |& tee -a {log}
             rm {REF_DIR}/genetic_map_HapMapII_GRCh37.tar.gz |& tee -a {log}
             # consider postprocessing? https://github.com/arq5x/gemini/blob/master/gemini/annotation_provenance/make-recombination.sh 
@@ -106,12 +118,8 @@ rule download_genetic_map_GRCh37:
 
 rule download_vcfRef:
     output:
-        expand("{REF_DIR}/1000genome/ALL.chr{i}.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz", i=CHROMOSOMES, REF_DIR=REF_DIR),
-        expand("{REF_DIR}/1000genome/ALL.chr{i}.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz.tbi", i=CHROMOSOMES, REF_DIR=REF_DIR)
-        # expand("{REF_DIR}/1000genome/ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz", REF_DIR=REF_DIR),
-        # expand("{REF_DIR}/1000genome/ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz.tbi", REF_DIR=REF_DIR),
-        # expand("{REF_DIR}/1000genome/ALL.chrY.phase3_integrated_v2a.20130502.genotypes.vcf.gz", REF_DIR=REF_DIR),
-        # expand("{REF_DIR}/1000genome/ALL.chrY.phase3_integrated_v2a.20130502.genotypes.vcf.gz.tbi", REF_DIR=REF_DIR)
+        vcfRef      =  expand(REF_VCF, chrom=CHROMOSOMES),
+        vcfRef_idx  =  expand(REF_VCF + '.csi', chrom=CHROMOSOMES)
     conda:
         "../../envs/download.yaml"
     log:
@@ -121,64 +129,30 @@ rule download_vcfRef:
             set -e
             set -x
 
-            for o in {output}; do
-                # potentially inf loop
-                # until wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/`basename $o` -P {REF_DIR}/1000genome; do :; done
-                # less error proof but w/o inf loop. would not handle "connection refused" or "not found"
-                wget --tries=100 ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/`basename $o` -P {REF_DIR}/1000genome |& tee -a {log}
-            done
+            wget {REF_VCF_url} -P {REF_DIR}/1000genome/bcf/ |& tee -a {log}
+            # wget {REF_VCF_url}.csi -P {REF_DIR}/1000genome/bcf/ |& tee -a {log}
         """
-
-rule process_vcfRef:
-    input:
-        rules.download_vcfRef.output
-    output:
-        vcfRef =  expand("{REF_DIR}/1000genome/bcf/1000genome_chr{{chrom}}.bcf", REF_DIR=REF_DIR)
-    conda:
-        "../../envs/download.yaml"
-    log:
-        "logs/ref/process_vcfRef-{chrom}.log"
-    shell:
-        """
-            set -e
-            set -x
-
-            mkdir -p {REF_DIR}/1000genome/bcf |& tee -a {log}
-            bcftools convert {REF_DIR}/1000genome/ALL.chr{wildcards.chrom}.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz -Ob -o {REF_DIR}/1000genome/bcf/1000genome_chr{wildcards.chrom}.bcf |& tee -a {log}
-            bcftools index -f {REF_DIR}/1000genome/bcf/1000genome_chr{wildcards.chrom}.bcf |& tee -a {log}
-            #rm {REF_DIR}/1000genome/ALL*
-        """
-
-
-rule get_minimac:
-    output: expand("{REF_DIR}/Minimac3Executable/bin/Minimac3", REF_DIR=REF_DIR)
-    log:
-        "logs/ref/process_vcfRef.log"
-    shell:
-        """
-            wget ftp://share.sph.umich.edu/minimac3/Minimac3Executable.tar.gz -O {REF_DIR}/Minimac3Executable.tar.gz |& tee -a {log}
-            tar -xzvf {REF_DIR}/Minimac3Executable.tar.gz -C {REF_DIR} |& tee -a {log}
-        """
-
 
 rule make_refHaps:
     input:
-        expand("{REF_DIR}/1000genome/ALL.chr{{chrom}}.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz", REF_DIR=REF_DIR),
-        minimac=rules.get_minimac.output
+        rules.download_vcfRef.output['vcfRef']
     output:
-        refHaps = expand("{REF_DIR}/Minimac/{{chrom}}.1000g.Phase3.v5.With.Parameter.Estimates.m3vcf.gz", REF_DIR=REF_DIR)
-    conda:
-        "../../envs/download.yaml"
+        refHaps = expand(REF_HAPS, chrom=CHROMOSOMES)
+    singularity:
+        "docker://genxnetwork/minimac3:stable"
     log:
-        "logs/ref/make_refHaps-{chrom}.log"
+        "logs/ref/make_refHaps.log"
     shell:
         """
             set -e
             set -x
-            bcftools view --min-ac 251 -i 'strlen(REF)=1 & strlen(ALT)=1' {input[0]} -O z -o {REF_DIR}/1000genome/chr{wildcards.chrom}.ac251.vcf.gz |& tee -a {log}
-            {REF_DIR}/Minimac3Executable/bin/Minimac3 --refHaps {REF_DIR}/1000genome/chr{wildcards.chrom}.ac251.vcf.gz \
-                --processReference --prefix {REF_DIR}/Minimac/{wildcards.chrom}.1000g.Phase3.v5.With.Parameter.Estimates |& tee -a {log}
-            rm {REF_DIR}/1000genome/chr{wildcards.chrom}.ac251.vcf.gz |& tee -a {log}
+            chrom=0
+            for ref in {input}; do
+                ((chrom=chrom+1))
+                bcftools view --min-ac 251 -i 'strlen(REF)=1 & strlen(ALT)=1' $ref -O z -o {REF_DIR}/1000genome/chr$chrom.ac251.vcf.gz |& tee -a {log}
+                Minimac3 --refHaps {REF_DIR}/1000genome/chr$chrom.ac251.vcf.gz --processReference --prefix {REF_DIR}/Minimac/$chrom.1000g.Phase3.v5.With.Parameter.Estimates |& tee -a {log}
+                rm {REF_DIR}/1000genome/chr$chrom.ac251.vcf.gz |& tee -a {log}
+            done
         """
 
 
@@ -194,7 +168,7 @@ rule download_lift_chain:
             set -e
             set -x
 
-            wget ftp://hgdownload.cse.ucsc.edu/goldenPath/hg38/liftOver/hg38ToHg19.over.chain.gz -P {REF_DIR} |& tee -a {log}
+            wget {LIFT_CHAIN_url} -P {REF_DIR} |& tee -a {log}
             gzip -d {REF_DIR}/hg38ToHg19.over.chain.gz |& tee -a {log}
             sed -e s/chr//g -i {REF_DIR}/hg38ToHg19.over.chain |& tee -a {log}
             gzip -c {REF_DIR}/hg38ToHg19.over.chain > {REF_DIR}/hg38ToHg19.over.chain.gz
@@ -203,7 +177,7 @@ rule download_lift_chain:
 
 rule download_cmmap:
     output:
-        cmmap = expand("{REF_DIR}/genetic_map_b37/genetic_map_chr{chrom}_combined_b37.txt", chrom=CHROMOSOMES, REF_DIR=REF_DIR)
+        cmmap = expand(CMMAP, chrom=CHROMOSOMES)
     conda:
         "../../envs/download.yaml"
     log:
@@ -215,7 +189,7 @@ rule download_cmmap:
 
             # found only processed maps from dropbox
             # TODO: need to find original and process it accordingly
-            wget https://www.dropbox.com/s/slchsd0uyd4hii8/genetic_map_b37.zip -P {REF_DIR} |& tee -a {log}
+            wget {CMMAP_url} -P {REF_DIR} |& tee -a {log}
             unzip {REF_DIR}/genetic_map_b37.zip -d {REF_DIR} |& tee -a {log}
             rm {REF_DIR}/genetic_map_b37.zip |& tee -a {log}
         """
@@ -233,12 +207,7 @@ rule download_SITE_1000GENOME:
             set -x
 
             mkdir -p {REF_DIR}/1000genome/allele_info |& tee -a {log}
-            wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5c.20130502.sites.vcf.gz -P {REF_DIR}/1000genome/allele_info |& tee -a {log}
-            # do we really need to ungzip?
-            # gzip -d {REF_DIR}/1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5c.20130502.sites.vcf.gz
-            # possible crash due OOM
-            # awk '$3~/^rs/ && $5~/^[ATCG]$/ && $4~/^[ATCG]$/ && !a[$3]++' ALL.wgs.phase3_shapeit2_mvncall_integrated_v5c.20130502.sites.vcf > ALL.wgs.phase3_shapeit2_mvncall_integrated_v5c.20130502.sites.only_rs.biallelic.tab
-            # alternative from https://github.com/aehrc/TRIBES/blob/branch-0.2/process.smake please note that output is not gzipped (why?)
+            wget {SITE_1000GENOME_url} -P {REF_DIR}/1000genome/allele_info |& tee -a {log}
             bcftools view --no-header -m2 -M2 -v snps -g ^miss -Ov -o {SITE_1000GENOME} {REF_DIR}/1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5c.20130502.sites.vcf.gz |& tee -a {log}
             rm {REF_DIR}/1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5c.20130502.sites.vcf.gz |& tee -a {log}
         """
@@ -252,7 +221,7 @@ rule download_hapmap_fam:
         "logs/ref/download_hapmap_fam.log"
     shell:
         """
-            wget ftp://ftp.ncbi.nlm.nih.gov/hapmap/phase_3/relationships_w_pops_121708.txt -O {HAPMAP_FAM} |& tee -a {log}
+            wget {HAPMAP_FAM_url} -O {HAPMAP_FAM} |& tee -a {log}
         """
 
 rule download_hd_genotype_chip:
@@ -265,8 +234,8 @@ rule download_hd_genotype_chip:
     shell:
         """
             mkdir -p {REF_DIR}/1000genome/hd_genotype_chip |& tee -a {log}
-            wget http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.chip.omni_broad_sanger_combined.20140818.snps.genotypes.vcf.gz -O {HD_GENOTYPE_CHIP} |& tee -a {log}
-            wget http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.chip.omni_broad_sanger_combined.20140818.snps.genotypes.vcf.gz.tbi -O {HD_GENOTYPE_CHIP}.tbi |& tee -a {log}
+            wget {HD_GENOTYPE_CHIP_url} -O {HD_GENOTYPE_CHIP} |& tee -a {log}
+            wget {HD_GENOTYPE_CHIP_url}.tbi -O {HD_GENOTYPE_CHIP}.tbi |& tee -a {log}
         """
 
 rule download_affymetrix_chip:
@@ -279,8 +248,8 @@ rule download_affymetrix_chip:
     shell:
         """
             mkdir -p {REF_DIR}/1000genome/affymetrix_chip |& tee -a {log}
-            wget http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.wgs.nhgri_coriell_affy_6.20140825.genotypes_has_ped.vcf.gz -O {AFFYMETRIX_CHIP} |& tee -a {log}
-            wget http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.wgs.nhgri_coriell_affy_6.20140825.genotypes_has_ped.vcf.gz.tbi -O {AFFYMETRIX_CHIP}.tbi |& tee -a {log}
+            wget {AFFYMETRIX_CHIP_url} -O {AFFYMETRIX_CHIP} |& tee -a {log}
+            wget {AFFYMETRIX_CHIP_url}.tbi -O {AFFYMETRIX_CHIP}.tbi |& tee -a {log}
         """
 
 rule download_pedsim_map:
@@ -292,7 +261,7 @@ rule download_pedsim_map:
         "logs/ref/download_pedsim_map.log"
     shell:
         """
-            wget https://github.com/cbherer/Bherer_etal_SexualDimorphismRecombination/raw/master/Refined_genetic_map_b37.tar.gz -P {REF_DIR} |& tee -a {log}
+            wget {PEDSIM_MAP_url} -P {REF_DIR} |& tee -a {log}
             tar xvzf {REF_DIR}/Refined_genetic_map_b37.tar.gz -C {REF_DIR} |& tee -a {log}
             printf "#chr\tpos\tmale_cM\tfemale_cM\n" > {REF_DIR}/refined_mf.simmap
             for chr in {{1..22}}; do
