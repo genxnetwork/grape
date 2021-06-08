@@ -142,6 +142,8 @@ rule make_refHaps:
         "docker://genxnetwork/minimac3:stable"
     log:
         "logs/ref/make_refHaps.log"
+    threads:
+        workflow.cores
     shell:
         """
             set -e
@@ -150,7 +152,7 @@ rule make_refHaps:
             for ref in {input}; do
                 ((chrom=chrom+1))
                 bcftools view --min-ac 251 -i 'strlen(REF)=1 & strlen(ALT)=1' $ref -O z -o {REF_DIR}/1000genome/chr$chrom.ac251.vcf.gz |& tee -a {log}
-                Minimac3 --refHaps {REF_DIR}/1000genome/chr$chrom.ac251.vcf.gz --processReference --prefix {REF_DIR}/Minimac/$chrom.1000g.Phase3.v5.With.Parameter.Estimates |& tee -a {log}
+                Minimac3 --cpus {threads} --refHaps {REF_DIR}/1000genome/chr$chrom.ac251.vcf.gz --processReference --prefix {REF_DIR}/Minimac/$chrom.1000g.Phase3.v5.With.Parameter.Estimates |& tee -a {log}
                 rm {REF_DIR}/1000genome/chr$chrom.ac251.vcf.gz |& tee -a {log}
             done
         """
