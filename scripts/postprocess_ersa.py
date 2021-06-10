@@ -79,18 +79,6 @@ def read_ersa(ersa_path):
 
 if __name__ == '__main__':
 
-    '''
-    ibd_path = 'test_data/merge_king_ersa/merged_ibd.tsv'
-    king_path = 'test_data/merge_king_ersa/merged_imputed_king.seg'
-    king_segments_path = 'test_data/merge_king_ersa/merged_imputed_king.segments.gz'
-    # within families
-    kinship_path = 'test_data/merge_king_ersa/merged_imputed_kinship.kin'
-    # across families
-    kinship0_path = 'test_data/merge_king_ersa/merged_imputed_kinship.kin0'
-    ersa_path = 'test_data/merge_king_ersa/relatives.tsv'
-    map_dir = '/media/pipeline_data/sim-vcf-to-ped/cm'
-    output_path = 'test_data/relatives_merge_king_ersa.tsv'
-    '''
     logging.basicConfig(filename=snakemake.log[0], level=logging.DEBUG, format='%(levelname)s:%(asctime)s %(message)s')
 
     ibd_path = snakemake.input['ibd']
@@ -107,9 +95,14 @@ if __name__ == '__main__':
     relatives = ibd.merge(ersa, how='outer', left_index=True, right_index=True)
     fs_mask = (relatives.total_seg_len > 2100) & (relatives.total_seg_len_ibd2 > 450)
     po_mask = (relatives.total_seg_len / 3540 > 0.8) & (~fs_mask)
+    print(f'fs_mask len: {sum(fs_mask)}, po_mask len is {sum(po_mask)}')
 
     relatives.loc[:, 'final_degree'] = relatives.ersa_degree
     relatives.loc[po_mask, 'final_degree'] = 1
+    print(relatives.loc[po_mask, :])
+    print()
+    print(relatives.loc[fs_mask, :].iloc[:10])
+    print()
     relatives.loc[(~po_mask) & (relatives.final_degree == 1)] = 2 # to eliminate some ersa false positives
     relatives.loc[fs_mask, 'final_degree'] = 2
     relatives.loc[:, 'relation'] = relatives.ersa_degree.astype(str)
