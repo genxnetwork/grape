@@ -20,8 +20,8 @@ reference:
     file: genetic_map_GRCh37/genetic_map_GRCh37_chr{chrom}.txt
     url: ftp://ftp.ncbi.nlm.nih.gov/hapmap/recombination/2011-01_phaseII_B37/genetic_map_HapMapII_GRCh37.tar.gz
   vcfRef:
-    file: 1000genome/bcf/ALL.chr{chrom}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.bcf
-    url: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/bcf_files/ALL.chr*
+    file: 1000genome/bcf/1000genome_chr{chrom}.bcf
+    url: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/bcf_files/ALL.chr$chrom.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.bcf
   refHaps:
     file: Minimac/{chrom}.1000g.Phase3.v5.With.Parameter.Estimates.m3vcf.gz
   lift_chain:

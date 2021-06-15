@@ -36,20 +36,38 @@ PEDSIM_MAP_url         = config["reference"]["pedsim_map"]["url"]
 
 CHROMOSOMES = [str(i) for i in range(1, 23)]
 
-rule all:
-    input:
-        GRCh37_fasta = GRCH37_FASTA,
-        GRCh37_fasta_dict = expand("{ref}.dict", ref=GRCH37_FASTA),
-        GENETIC_MAP = GENETIC_MAP,
-        genetic_map_GRCh37 = expand(GENETIC_MAP_GRCH37, chrom=CHROMOSOMES),
-        cmmap = expand(CMMAP, chrom=CHROMOSOMES),
-        vcfRef = expand(REF_VCF, chrom=CHROMOSOMES),
-        refHaps = expand(REF_HAPS, chrom=CHROMOSOMES),
-        lift_chain = LIFT_CHAIN,
-        SITE_1000GENOME = SITE_1000GENOME,
-        pedsim_map = PEDSIM_MAP,
-        hd_genotype_chip = HD_GENOTYPE_CHIP,
-        affymetrix_chip = AFFYMETRIX_CHIP
+# if any of these are True then download and process reference for the phase and imputation
+need_phase = config['phase']
+need_imputation = config['impute']
+
+if need_phase or need_imputation:
+    rule all:
+        input:
+            GRCh37_fasta = GRCH37_FASTA,
+            GRCh37_fasta_dict = expand("{ref}.dict", ref=GRCH37_FASTA),
+            GENETIC_MAP = GENETIC_MAP,
+            genetic_map_GRCh37 = expand(GENETIC_MAP_GRCH37, chrom=CHROMOSOMES),
+            cmmap = expand(CMMAP, chrom=CHROMOSOMES),
+            lift_chain = LIFT_CHAIN,
+            SITE_1000GENOME = SITE_1000GENOME,
+            pedsim_map = PEDSIM_MAP,
+            hd_genotype_chip = HD_GENOTYPE_CHIP,
+            affymetrix_chip = AFFYMETRIX_CHIP,
+            vcfRef = expand(REF_VCF, chrom=CHROMOSOMES),
+            refHaps = expand(REF_HAPS, chrom=CHROMOSOMES)
+else:
+    rule all:
+        input:
+            GRCh37_fasta = GRCH37_FASTA,
+            GRCh37_fasta_dict = expand("{ref}.dict", ref=GRCH37_FASTA),
+            GENETIC_MAP = GENETIC_MAP,
+            genetic_map_GRCh37 = expand(GENETIC_MAP_GRCH37, chrom=CHROMOSOMES),
+            cmmap = expand(CMMAP, chrom=CHROMOSOMES),
+            lift_chain = LIFT_CHAIN,
+            SITE_1000GENOME = SITE_1000GENOME,
+            pedsim_map = PEDSIM_MAP,
+            hd_genotype_chip = HD_GENOTYPE_CHIP,
+            affymetrix_chip = AFFYMETRIX_CHIP
 
 rule download_GRCh37_fasta:
     output:
@@ -129,8 +147,11 @@ rule download_vcfRef:
             set -e
             set -x
 
-            wget {REF_VCF_url} -P {REF_DIR}/1000genome/bcf/ |& tee -a {log}
-            # wget {REF_VCF_url}.csi -P {REF_DIR}/1000genome/bcf/ |& tee -a {log}
+            for chrom in {{1..22}}; do
+                wget {REF_VCF_url} -P {REF_DIR}/1000genome/bcf/ -O 1000genome_chr$chrom_tmp.bcf |& tee -a {log}
+                bcftools annotate --set-id '%CHROM:%POS:%REF:%FIRST_ALT' {REF_DIR}/1000genome/bcf/1000genome_chr$chrom_tmp.bcf -O z -o -Ob -o {REF_DIR}/1000genome/bcf/1000genome_chr$chrom.bcf |& tee -a {log}
+                bcftools index {REF_DIR}/1000genome/bcf/1000genome_chr$chrom.bcf |& tee -a {log}
+            done
         """
 
 rule make_refHaps:
@@ -152,7 +173,7 @@ rule make_refHaps:
             for ref in {input}; do
                 ((chrom=chrom+1))
                 bcftools view --min-ac 251 -i 'strlen(REF)=1 & strlen(ALT)=1' $ref -O z -o {REF_DIR}/1000genome/chr$chrom.ac251.vcf.gz |& tee -a {log}
-                Minimac3 --cpus {threads} --refHaps {REF_DIR}/1000genome/chr$chrom.ac251.vcf.gz --processReference --prefix {REF_DIR}/Minimac/$chrom.1000g.Phase3.v5.With.Parameter.Estimates |& tee -a {log}
+                Minimac3-omp --cpus {threads} --refHaps {REF_DIR}/1000genome/chr$chrom.ac251.vcf.gz --processReference --prefix {REF_DIR}/Minimac/$chrom.1000g.Phase3.v5.With.Parameter.Estimates |& tee -a {log}
                 rm {REF_DIR}/1000genome/chr$chrom.ac251.vcf.gz |& tee -a {log}
             done
         """
