@@ -23,10 +23,12 @@ AFFYMETRIX_CHIP    = join(REF_DIR, config["reference"]["affymetrix_chip"]["file"
 PEDSIM_MAP         = join(REF_DIR, config["reference"]["pedsim_map"]["file"])
 
 GRCH37_FASTA_url       = config["reference"]["GRCh37_fasta"]["url"]
+GRCH37_FASTA_mirror    = config["reference"]["GRCh37_fasta"]["mirror"]
 GRCH37_FASTA_basename  = basename(GRCH37_FASTA_url)
 GRCH37_FASTA_md5       = config["reference"]["GRCh37_fasta"]["md5"]
 
 GENETIC_MAP_url        = config["reference"]["GENETIC_MAP"]["url"]
+GENETIC_MAP_mirror     = config["reference"]["GENETIC_MAP"]["mirror"]
 GENETIC_MAP_md5        = config["reference"]["GENETIC_MAP"]["md5"]
 
 GENETIC_MAP_GRCH37_url = config["reference"]["genetic_map_GRCh37"]["url"]
@@ -108,7 +110,7 @@ rule download_GRCh37_fasta:
             set +e
             set -x
 
-            wget {GRCH37_FASTA_url} -P {REF_DIR} |& tee -a {log}
+            wget {GRCH37_FASTA_url} -P {REF_DIR} |& tee -a {log} || wget {GRCH37_FASTA_mirror} -P {REF_DIR} |& tee -a {log}
             sum=$(md5sum {REF_DIR}/{GRCH37_FASTA_basename} | cut -d " " -f1)
             if [ $sum != {GRCH37_FASTA_md5} ]; then
                 echo "md5 sum of GRCH37_FASTA is invalid" |& tee -a {log}
@@ -145,7 +147,7 @@ rule download_GENETIC_MAP:
             set -e
             set -x
 
-            wget {GENETIC_MAP_url} -O {GENETIC_MAP} |& tee -a {log}
+            wget {GENETIC_MAP_url} -O {GENETIC_MAP} |& tee -a {log} || wget {GENETIC_MAP_mirror} -O {GENETIC_MAP} |& tee -a {log}
             sum=$(md5sum {GENETIC_MAP} | cut -d " " -f1)
             if [ $sum != {GENETIC_MAP_md5} ]; then
                 echo "md5 sum of GENETIC_MAP is invalid" |& tee -a {log}
