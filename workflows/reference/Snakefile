@@ -110,7 +110,7 @@ rule download_GRCh37_fasta:
             set +e
             set -x
 
-            wget {GRCH37_FASTA_url} -P {REF_DIR} |& tee -a {log} || wget {GRCH37_FASTA_mirror} -P {REF_DIR} |& tee -a {log}
+            wget {GRCH37_FASTA_url} -P {REF_DIR} --tries 50 -c |& tee -a {log} || wget {GRCH37_FASTA_mirror} -P {REF_DIR} --tries 50 -c |& tee -a {log}
             sum=$(md5sum {REF_DIR}/{GRCH37_FASTA_basename} | cut -d " " -f1)
             if [ $sum != {GRCH37_FASTA_md5} ]; then
                 echo "md5 sum of GRCH37_FASTA is invalid" |& tee -a {log}
@@ -132,7 +132,7 @@ rule create_fasta_dict:
         "logs/ref/create_fasta_dict.log"
     shell:
         """
-            java -jar /picard/picard.jar CreateSequenceDictionary R={input.GRCh37_fasta} O={output} |& tee -a {log}
+            java -jar /picard/picard.jar CreateSequenceDictionary -R {input.GRCh37_fasta} -O {output} |& tee -a {log}
         """
 
 rule download_GENETIC_MAP:
@@ -147,7 +147,7 @@ rule download_GENETIC_MAP:
             set -e
             set -x
 
-            wget {GENETIC_MAP_url} -O {GENETIC_MAP} |& tee -a {log} || wget {GENETIC_MAP_mirror} -O {GENETIC_MAP} |& tee -a {log}
+            wget {GENETIC_MAP_url} -O {GENETIC_MAP} --tries 50 -c |& tee -a {log} || wget {GENETIC_MAP_mirror} -O {GENETIC_MAP} --tries 50 -c  |& tee -a {log}
             sum=$(md5sum {GENETIC_MAP} | cut -d " " -f1)
             if [ $sum != {GENETIC_MAP_md5} ]; then
                 echo "md5 sum of GENETIC_MAP is invalid" |& tee -a {log}
@@ -167,7 +167,7 @@ rule download_genetic_map_GRCh37:
             set -e
             set -x
 
-            wget {GENETIC_MAP_GRCH37_url} -P {REF_DIR} |& tee -a {log}
+            wget {GENETIC_MAP_GRCH37_url} --tries 50 -c  -P {REF_DIR} |& tee -a {log}
             sum=$(md5sum {REF_DIR}/{GENETIC_MAP_GRCH37_basename} | cut -d " " -f1)
             if [ $sum != {GENETIC_MAP_GRCH37_md5} ]; then
                 echo "md5 sum of genetic_map_GRCh37 is invalid" |& tee -a {log}
@@ -192,7 +192,7 @@ rule download_vcfRef:
             set -x
             md5array=({REF_VCF_md5})
             for chrom in {{1..22}}; do
-                wget {REF_VCF_url} -P {REF_DIR}/1000genome/bcf/ -O 1000genome_chr$chrom_tmp.bcf |& tee -a {log}
+                wget {REF_VCF_url} -P {REF_DIR}/1000genome/bcf/ -O 1000genome_chr$chrom_tmp.bcf --tries 50 -c  |& tee -a {log}
                 sum=$(md5sum {REF_DIR}/1000genome/bcf/1000genome_chr$chrom_tmp.bcf | cut -d " " -f1)
                 if [ $sum != ${{md5array[$chrom-1]}} ]; then
                     echo "md5 sum of vcfRef is invalid" |& tee -a {log}
@@ -240,7 +240,7 @@ rule download_lift_chain:
             set -e
             set -x
 
-            wget {LIFT_CHAIN_url} -P {REF_DIR} |& tee -a {log}
+            wget {LIFT_CHAIN_url} -P {REF_DIR} --tries 50 -c  |& tee -a {log}
             sum=$(md5sum {REF_DIR}/{LIFT_CHAIN_basename} | cut -d " " -f1)
             if [ $sum != {LIFT_CHAIN_md5} ]; then
                 echo "md5 sum of LIFT_CHAIN is invalid" |& tee -a {log}
@@ -266,7 +266,7 @@ rule download_cmmap:
 
             # found only processed maps from dropbox
             # TODO: need to find original and process it accordingly
-            wget {CMMAP_url} -P {REF_DIR} |& tee -a {log}
+            wget {CMMAP_url} -P {REF_DIR} --tries 50 -c  |& tee -a {log}
             sum=$(md5sum {REF_DIR}/{CMMAP_basename} | cut -d " " -f1)
             if [ $sum != {CMMAP_md5} ]; then
                 echo "md5 sum of cmmap is invalid" |& tee -a {log}
@@ -289,7 +289,7 @@ rule download_SITE_1000GENOME:
             set -x
 
             mkdir -p {REF_DIR}/1000genome/allele_info |& tee -a {log}
-            wget {SITE_1000GENOME_url} -P {REF_DIR}/1000genome/allele_info |& tee -a {log}
+            wget {SITE_1000GENOME_url} -P {REF_DIR}/1000genome/allele_info --tries 50 -c  |& tee -a {log}
             sum=$(md5sum {REF_DIR}/1000genome/allele_info/{SITE_1000GENOME_basename} | cut -d " " -f1)
             if [ $sum != {SITE_1000GENOME_md5} ]; then
                 echo "md5 sum of SITE_1000GENOME is invalid" |& tee -a {log}
@@ -308,7 +308,7 @@ rule download_hapmap_fam:
         "logs/ref/download_hapmap_fam.log"
     shell:
         """
-            wget {HAPMAP_FAM_url} -O {HAPMAP_FAM} |& tee -a {log}
+            wget {HAPMAP_FAM_url} -O {HAPMAP_FAM} --tries 50 -c  |& tee -a {log}
             sum=$(md5sum {HAPMAP_FAM} | cut -d " " -f1)
             if [ $sum != {HAPMAP_FAM_md5} ]; then
                 echo "md5 sum of HAPMAP_FAM is invalid" |& tee -a {log}
@@ -332,7 +332,7 @@ rule download_hd_genotype_chip:
                 echo "md5 sum of HD_GENOTYPE_CHIP is invalid" |& tee -a {log}
                 exit 1
             fi            
-            wget {HD_GENOTYPE_CHIP_url}.tbi -O {HD_GENOTYPE_CHIP}.tbi |& tee -a {log}
+            wget {HD_GENOTYPE_CHIP_url}.tbi -O {HD_GENOTYPE_CHIP}.tbi --tries 50 -c  |& tee -a {log}
         """
 
 rule download_affymetrix_chip:
@@ -345,13 +345,13 @@ rule download_affymetrix_chip:
     shell:
         """
             mkdir -p {REF_DIR}/1000genome/affymetrix_chip |& tee -a {log}
-            wget {AFFYMETRIX_CHIP_url} -O {AFFYMETRIX_CHIP} |& tee -a {log}
+            wget {AFFYMETRIX_CHIP_url} -O {AFFYMETRIX_CHIP} --tries 50 -c  |& tee -a {log}
             sum=$(md5sum {AFFYMETRIX_CHIP} | cut -d " " -f1)
             if [ $sum != {AFFYMETRIX_CHIP_md5} ]; then
                 echo "md5 sum of AFFYMETRIX_CHIP is invalid" |& tee -a {log}
                 exit 1
             fi  
-            wget {AFFYMETRIX_CHIP_url}.tbi -O {AFFYMETRIX_CHIP}.tbi |& tee -a {log}
+            wget {AFFYMETRIX_CHIP_url}.tbi -O {AFFYMETRIX_CHIP}.tbi --tries 50 -c  |& tee -a {log}
         """
 
 rule download_pedsim_map:
@@ -363,7 +363,7 @@ rule download_pedsim_map:
         "logs/ref/download_pedsim_map.log"
     shell:
         """
-            wget {PEDSIM_MAP_url} -P {REF_DIR} |& tee -a {log}
+            wget {PEDSIM_MAP_url} -P {REF_DIR} --tries 50 -c  |& tee -a {log}
             sum=$(md5sum {REF_DIR}/{PEDSIM_MAP_basename} | cut -d " " -f1)
             if [ $sum != {PEDSIM_MAP_md5} ]; then
                 echo "md5 sum of PEDSIM_MAP is invalid" |& tee -a {log}

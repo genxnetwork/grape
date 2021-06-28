@@ -74,7 +74,7 @@ reference:
   hd_genotype_chip:
     file: 1000genome/hd_genotype_chip/all.vcf.gz
     url: http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.chip.omni_broad_sanger_combined.20140818.snps.genotypes.vcf.gz
-    md5: e157e46b5a06165e24d27e117f43e47e
+    md5: 620462f7d8ffc9b82e1fff90c3aecd37
   affymetrix_chip:
     file: 1000genome/affymetrix_chip/all.vcf.gz
     url: http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.wgs.nhgri_coriell_affy_6.20140825.genotypes_has_ped.vcf.gz
