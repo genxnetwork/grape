@@ -9,18 +9,21 @@ reference:
   GRCh37_fasta:
     file: human_g1k_v37.fasta
     url: ftp://ftp.ncbi.nlm.nih.gov/1000genomes/ftp/technical/reference/human_g1k_v37.fasta.gz
+    filesize: 892331003
     md5: 45f81df94f0408d082363e34a081ed81
     mirror:
       - ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/human_g1k_v37.fasta.gz
   GENETIC_MAP:
     file: tables/genetic_map_hg19_withX.txt.gz
     url: https://storage.googleapis.com/broad-alkesgroup-public/Eagle/downloads/tables/genetic_map_hg19_withX.txt.gz
+    filesize: 52604097
     md5: 930ba8e1435d54f68fb7a723fd3f0fa4
     mirror:
       - https://data.broadinstitute.org/alkesgroup/Eagle/downloads/tables/genetic_map_hg19_withX.txt.gz
   genetic_map_GRCh37:
     file: genetic_map_GRCh37/genetic_map_GRCh37_chr{chrom}.txt
     url: ftp://ftp.ncbi.nlm.nih.gov/hapmap/recombination/2011-01_phaseII_B37/genetic_map_HapMapII_GRCh37.tar.gz
+    filesize: 37730100
     md5: 1bc10a34d985e68e1f38ceb137b87929
   vcfRef:
     file: 1000genome/bcf/1000genome_chr{chrom}.bcf
@@ -49,19 +52,26 @@ reference:
       'c63dd9cf0018883b4492c70983c9c2cd', # 21
       '5fbd47ed6b9edc15690e5fba07da2796', # 22
     ]
+    expand_rule:
+      key: $chrom
+      values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
+    filesize: [1004154825, 1084633520, 914542487, 922149598, 817845111, 826636182, 750819249, 711662593, 556593410, 639802490, 633698676, 613099190, 460817078, 418899669, 378463530, 408443782, 358580396, 360946073, 295923706, 282457469, 180550985, 177178725]
   refHaps:
     file: Minimac/{chrom}.1000g.Phase3.v5.With.Parameter.Estimates.m3vcf.gz
   lift_chain:
     file: hg38ToHg19.over.chain.gz
     url: ftp://hgdownload.cse.ucsc.edu/goldenPath/hg38/liftOver/hg38ToHg19.over.chain.gz
+    filesize: 1246411
     md5: ff3031d93792f4cbb86af44055efd903
   cmmap:
     file: genetic_map_b37/genetic_map_chr{chrom}_combined_b37.txt
     url: https://www.dropbox.com/s/slchsd0uyd4hii8/genetic_map_b37.zip
+    filesize: 50554370
     md5: 8d7d0bf2bfd13a39cad0e8d5012666a2
   SITE_1000GENOME:
     file: 1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.only_rs.biallelic.tab
     url: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5c.20130502.sites.vcf.gz
+    filesize: 1458224240
     md5: d9c22df30ea810d5c7d98391e482d1a3
   hapmap_ped:
     file: hapmap/ceu.ped
@@ -70,16 +80,20 @@ reference:
   hapmap_fam:
     file: hapmap/relations.txt
     url: ftp://ftp.ncbi.nlm.nih.gov/hapmap/phase_3/relationships_w_pops_121708.txt
+    filesize: 36765
     md5: a70333f0e0bd9d5a72a3a253895228b1
   hd_genotype_chip:
     file: 1000genome/hd_genotype_chip/all.vcf.gz
     url: http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.chip.omni_broad_sanger_combined.20140818.snps.genotypes.vcf.gz
+    filesize: 1331157654
     md5: 620462f7d8ffc9b82e1fff90c3aecd37
   affymetrix_chip:
     file: 1000genome/affymetrix_chip/all.vcf.gz
     url: http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.wgs.nhgri_coriell_affy_6.20140825.genotypes_has_ped.vcf.gz
+    filesize: 782884333
     md5: 019d00c28c1ff60906f72c11f7997c4c
   pedsim_map:
     file: refined_mf.simmap
     url: https://github.com/cbherer/Bherer_etal_SexualDimorphismRecombination/raw/master/Refined_genetic_map_b37.tar.gz
+    filesize: 41278300
     md5: 39e6e8620d616362875f2538eae2f279
