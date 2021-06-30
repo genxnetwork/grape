@@ -8,7 +8,7 @@ from urllib.request import Request, urlopen
 
 def retry(number):
     def dec(func):
-        @wraps
+        @wraps(func)
         def wrapper(*args, **kwargs):
             for i in range(number):
                 try:
