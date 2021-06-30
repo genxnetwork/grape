@@ -1,7 +1,7 @@
 
 rule vcf_stats:
     input:
-        vcf="vcf/merged_lifted.vcf.gz"
+        vcf="vcf/merged_lifted_id.vcf.gz"
     output:
         stats="stats/lifted_vcf.txt",
         psc="stats/lifted_vcf.psc"
@@ -33,7 +33,7 @@ rule select_bad_samples:
 
 rule plink_filter:
     input:
-        vcf="vcf/merged_lifted.vcf.gz",
+        vcf="vcf/merged_lifted_id.vcf.gz",
         bad_samples=rules.select_bad_samples.output.bad_samples
     output: temp(expand("plink/merged_filter.{ext}", ext=PLINK_FORMATS))
     conda:

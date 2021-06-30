@@ -55,6 +55,18 @@ else:
                 cp {input.vcf} {output.vcf}
             """
 
+rule recode_snp_ids:
+    input:
+        vcf="vcf/merged_lifted.vcf.gz"
+    output:
+        vcf="vcf/merged_lifted_id.vcf.gz"
+    conda:
+        "../envs/bcftools.yaml"
+    shell:
+        """
+            bcftools annotate --set-id '%CHROM:%POS:%REF:%FIRST_ALT' {input.vcf} -O z -o {output.vcf}
+        """
+
 include: "../rules/filter.smk"
 
 if need_phase:
@@ -83,21 +95,9 @@ else:
                 cp {input.vcf} {output.vcf}
              """
 
-rule recode_snp_ids:
-    input:
-        vcf="imputed/data.vcf.gz"
-    output:
-        vcf="preprocessed/data.vcf.gz"
-    conda:
-        "../envs/bcftools.yaml"
-    shell:
-        """
-            bcftools annotate --set-id '%CHROM:%POS:%REF:%FIRST_ALT' {input.vcf} -O z -o {output.vcf}
-        """
-
 rule convert_mapped_to_plink:
     input:
-        vcf="preprocessed/data.vcf.gz"
+        vcf="imputed/data.vcf.gz"
     output:
         bed="preprocessed/data.bed",
         fam="preprocessed/data.fam",
@@ -118,6 +118,9 @@ rule convert_mapped_to_plink:
 rule ibis_mapping:
     input:
         bim=rules.convert_mapped_to_plink.output['bim']
+    params:
+        input = "preprocessed/data",
+        genetic_map_GRCh37 = expand(GENETIC_MAP_GRCH37, chrom=CHROMOSOMES)
     singularity:
         "docker://genxnetwork/ibis:stable"
     output:
@@ -128,5 +131,5 @@ rule ibis_mapping:
         "benchmarks/ibis/run_ibis_mapping.txt"
     shell:
         """
-        (add-map-plink.pl -cm {input.bim} {GENETIC_MAP_GRCH37}> {output}) |& tee -a {log}
+        (add-map-plink.pl -cm {input.bim} {params.genetic_map_GRCh37}> {output}) |& tee -a {log}
         """
