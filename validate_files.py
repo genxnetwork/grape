@@ -1,10 +1,26 @@
 import yaml
 import sys
+from functools import wraps
 from ftplib import FTP
 from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 from urllib.request import Request, urlopen
 
 
+def retry(number):
+    def dec(func):
+        @wraps
+        def wrapper(*args, **kwargs):
+            for i in range(number):
+                try:
+                    result = func(*args, **kwargs)
+                    return result
+                except Exception:
+                    pass
+        return wrapper
+    return dec
+
+
+@retry(number=3)
 def get_ftp_filesize(url):
     with FTP(urlparse(url).hostname) as ftp:
         ftp.login()
@@ -12,6 +28,7 @@ def get_ftp_filesize(url):
         return ftp.size(urlparse(url).path)
 
 
+@retry(number=3)
 def get_http_filesize(url):
     url_parsed = urlparse(url)
     if 'dropbox' in url_parsed.hostname:
@@ -24,7 +41,7 @@ def get_http_filesize(url):
         url = urlunparse(url_parsed)
 
     file = urlopen(Request(url, method='HEAD'))
-    return file.headers.get('Content-Length', -1)
+    return file.headers.get('Content-Length')
 
 
 def get_filesize(data):
