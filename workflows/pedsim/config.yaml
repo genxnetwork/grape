@@ -5,18 +5,46 @@ use_rapid: False
 use_ibis: False
 ref_dir: /media/ref
 reference:
-    GRCh37_fasta: human_g1k_v37.fasta
-    GENETIC_MAP: tables/genetic_map_hg19_withX.txt.gz
-    genetic_map_GRCh37: genetic_map_GRCh37/genetic_map_GRCh37_chr{1..22}.txt
-    vcfRef: 1000genome/bcf/1000genome_chr{chrom}.bcf
-    refHaps: Minimac/{chrom}.1000g.Phase3.v5.With.Parameter.Estimates.m3vcf.gz
-    lift_chain: hg38ToHg19.over.chain.gz
-    cmmap: genetic_map_b37/genetic_map_chr{chrom}_combined_b37.txt
-    SITE_1000GENOME: 1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.only_rs.biallelic.tab
-    hapmap_ped: hapmap/ceu.ped
-    hapmap_mp: hapmap/ceu.map
-    hapmap_fam: hapmap/relations.txt
-    hd_genotype_chip: 1000genome/hd_genotype_chip/all.vcf.gz
-    affymetrix_chip: 1000genome/affymetrix_chip/all.vcf.gz
-    pedsim_map: refined_mf.simmap
-    beagle_map: beagle_map_b37/plink.chr{chrom}.GRCh37.map
+  GRCh37_fasta:
+    file: human_g1k_v37.fasta
+    url: ftp://ftp.ncbi.nlm.nih.gov/1000genomes/ftp/technical/reference/human_g1k_v37.fasta.gz
+    mirror:
+      - ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/human_g1k_v37.fasta.gz
+  GENETIC_MAP:
+    file: tables/genetic_map_hg19_withX.txt.gz
+    url: https://storage.googleapis.com/broad-alkesgroup-public/Eagle/downloads/tables/genetic_map_hg19_withX.txt.gz
+    mirror:
+      - https://data.broadinstitute.org/alkesgroup/Eagle/downloads/tables/genetic_map_hg19_withX.txt.gz
+  genetic_map_GRCh37:
+    file: genetic_map_GRCh37/genetic_map_GRCh37_chr{chrom}.txt
+    url: ftp://ftp.ncbi.nlm.nih.gov/hapmap/recombination/2011-01_phaseII_B37/genetic_map_HapMapII_GRCh37.tar.gz
+  vcfRef:
+    file: 1000genome/bcf/1000genome_chr{chrom}.bcf
+    url: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/bcf_files/ALL.chr$chrom.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.bcf
+  refHaps:
+    file: Minimac/{chrom}.1000g.Phase3.v5.With.Parameter.Estimates.m3vcf.gz
+  lift_chain:
+    file: hg38ToHg19.over.chain.gz
+    url: ftp://hgdownload.cse.ucsc.edu/goldenPath/hg38/liftOver/hg38ToHg19.over.chain.gz
+  cmmap:
+    file: genetic_map_b37/genetic_map_chr{chrom}_combined_b37.txt
+    url: https://www.dropbox.com/s/slchsd0uyd4hii8/genetic_map_b37.zip
+  SITE_1000GENOME:
+    file: 1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.only_rs.biallelic.tab
+    url: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5c.20130502.sites.vcf.gz
+  hapmap_ped:
+    file: hapmap/ceu.ped
+  hapmap_mp:
+    file: hapmap/ceu.map
+  hapmap_fam:
+    file: hapmap/relations.txt
+    url: ftp://ftp.ncbi.nlm.nih.gov/hapmap/phase_3/relationships_w_pops_121708.txt
+  hd_genotype_chip:
+    file: 1000genome/hd_genotype_chip/all.vcf.gz
+    url: http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.chip.omni_broad_sanger_combined.20140818.snps.genotypes.vcf.gz
+  affymetrix_chip:
+    file: 1000genome/affymetrix_chip/all.vcf.gz
+    url: http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.wgs.nhgri_coriell_affy_6.20140825.genotypes_has_ped.vcf.gz
+  pedsim_map:
+    file: refined_mf.simmap
+    url: https://github.com/cbherer/Bherer_etal_SexualDimorphismRecombination/raw/master/Refined_genetic_map_b37.tar.gz
