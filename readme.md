@@ -302,7 +302,7 @@ CEU data consists of trios, and we select no more than one member of each trio a
 
 Visualization of structure of simulated pedigree is given below:
 
-![pedigree](https://bitbucket.org/genxglobal/genx-relatives-snakemake/downloads/pedsim.png)
+![image](https://user-images.githubusercontent.com/19895289/123947763-6a3cc500-d9a9-11eb-8cf9-8bd8d47e6e33.png)
 
 #### How to run simulation
 
@@ -318,7 +318,7 @@ launcher.py simulate --directory /media/pipeline_data/simulation --ref-directory
 #### Evaluation results
 
 
-![results](https://bitbucket.org/genxglobal/genx-relatives-snakemake/downloads/accuracy_merged2.png)
+![image](https://user-images.githubusercontent.com/19895289/123947788-70cb3c80-d9a9-11eb-8cff-e27eccae0847.png)
 
 The pipeline shows good accuracy for degrees from 1 to 6.  
 The results for degrees from 7 to 8 been improved by merging small IBD segments together if they are located near each other, thus,  
