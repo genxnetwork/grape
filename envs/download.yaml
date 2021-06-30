@@ -1,0 +1,12 @@
+name: download
+channels:
+  - conda-forge
+  - bioconda
+  - anaconda
+  - defaults
+dependencies:
+  - unzip
+  - wget
+  - bcftools==1.9
+  - openssl==1.0.2u
+  - parallel

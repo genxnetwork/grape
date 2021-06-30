@@ -2,25 +2,42 @@ from os.path import join
 
 configfile: "config.yaml"
 
-use_rapid       = config["use_rapid"]
+flow            = config["flow"]
 is_client       = False
 use_simulated_ibd = config["use_simulated_ibd"] if "use_simulated_ibd" in config else False
-REF_DIR         = config["reference"]["ref_dir"]
-GRCh37_fasta    = join(REF_DIR, config["reference"]["GRCh37_fasta"])
-GENETIC_MAP     = join(REF_DIR, config["reference"]["GENETIC_MAP"])
-vcfRef          = join(REF_DIR, config["reference"]["vcfRef"])
-refHaps         = join(REF_DIR, config["reference"]["refHaps"])
-lift_chain      = join(REF_DIR, config["reference"]["lift_chain"])
-cmmap           = join(REF_DIR, config["reference"]["cmmap"])
-SITE_1000GENOME = join(REF_DIR, config["reference"]["SITE_1000GENOME"])
-hapmap_ped      = join(REF_DIR, config["reference"]["hapmap_ped"])
-hapmap_mp       = join(REF_DIR, config["reference"]["hapmap_mp"])
-hapmap_fam      = join(REF_DIR, config["reference"]["hapmap_fam"])
-hd_genotype_chip= join(REF_DIR, config["reference"]["hd_genotype_chip"])
-pedsim_map      = join(REF_DIR, config["reference"]["pedsim_map"])
+
+REF_DIR            = config["ref_dir"]
+GRCH37_FASTA       = join(REF_DIR, config["reference"]["GRCh37_fasta"])
+GENETIC_MAP        = join(REF_DIR, config["reference"]["GENETIC_MAP"])
+GENETIC_MAP_GRCH37 = join(REF_DIR, config["reference"]["genetic_map_GRCh37"])
+REF_VCF            = join(REF_DIR, config["reference"]["vcfRef"])
+REF_HAPS           = join(REF_DIR, config["reference"]["refHaps"])
+LIFT_CHAIN         = join(REF_DIR, config["reference"]["lift_chain"])
+CMMAP              = join(REF_DIR, config["reference"]["cmmap"])
+SITE_1000GENOME    = join(REF_DIR, config["reference"]["SITE_1000GENOME"])
+HAPMAP_PED         = join(REF_DIR, config["reference"]["hapmap_ped"])
+HAPMAP_MP          = join(REF_DIR, config["reference"]["hapmap_mp"])
+HAPMAP_FAM         = join(REF_DIR, config["reference"]["hapmap_fam"])
+HD_GENOTYPE_CHIP   = join(REF_DIR, config["reference"]["hd_genotype_chip"])
+PEDSIM_MAP         = join(REF_DIR, config["reference"]["pedsim_map"])
+AFFYMETRIX_CHIP    = join(REF_DIR, config["reference"]["affymetrix_chip"])
 
 SAMPLES = [str(s) for s in range(10)]
 CHROMOSOMES     = [str(i) for i in range(1, 23)]
+
+PLINK_FORMATS   = ['bed', 'bim', 'fam']
+
+assembly = config['assembly']
+need_phase = config['phase']
+need_imputation = config['impute']
+need_remove_imputation = config['remove_imputation']
+
+_IDEAL_LARGE_MEM_GB = 20
+
+# if available, return the ideal pretty-large amount for most jobs (20GB)
+def _mem_gb_for_ram_hungry_jobs():
+  return min(_IDEAL_LARGE_MEM_GB, config["mem_gb"])
+
 
 #CHIP_DATA_LINK = 'ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.chip.omni_broad_sanger_combined.20140818.snps.genotypes.vcf.gz'
 #CHIP_INDEX_LINK = 'ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.chip.omni_broad_sanger_combined.20140818.snps.genotypes.vcf.gz.tbi'
@@ -34,8 +51,8 @@ rule all:
 
 rule intersect:
     input:
-        hd_genotype_chip=hd_genotype_chip,
-        vcfRef=vcfRef
+        hd_genotype_chip=AFFYMETRIX_CHIP,
+        vcfRef=REF_VCF
     output: "pedsim/phased/chr{chrom}.phased.vcf.gz"
     conda: "../../envs/bcftools.yaml"
     shell:
@@ -47,7 +64,7 @@ rule intersect:
 rule merge_background:
     input:
         data=expand("pedsim/phased/chr{chrom}.phased.vcf.gz", chrom=CHROMOSOMES),
-        eu="ceph_unrelated_all.tsv"
+        eu=config['sim_samples_file']
     output:
         "pedsim/phased/background.vcf.gz"
     params:
@@ -69,28 +86,11 @@ rule merge_background:
             bcftools concat -f {params.list} | bcftools view --force-samples --samples-file {input.eu} -O z -o {output}
         """
 
-'''
-rule prepare_map:
-    output:
-        "params/refined_mf.simmap"
-    shell:
-        """
-            wget https://github.com/cbherer/Bherer_etal_SexualDimorphismRecombination/raw/master/Refined_genetic_map_b37.tar.gz
-            tar xvzf Refined_genetic_map_b37.tar.gz
-            printf "#chr\tpos\tmale_cM\tfemale_cM\n" > {output}
-            for chr in {{1..22}}; do
-              paste Refined_genetic_map_b37/male_chr$chr.txt Refined_genetic_map_b37/female_chr$chr.txt \
-                | awk -v OFS="\t" 'NR > 1 && $2 == $6 {{print $1,$2,$4,$8}}' \
-                | sed 's/^chr//' >> {output};
-            done
-            rm -rf Refined_genetic_map_b37
-        """
-'''
 
 rule simulate:
     input:
         bg=rules.merge_background.output,
-        _map=pedsim_map,
+        _map=PEDSIM_MAP,
         _def=config['sim_params_file'],
         intf='params/nu_p_campbell.tsv'
     output:
@@ -100,59 +100,87 @@ rule simulate:
     params:
         prefix='pedsim/simulated/data'
     singularity:
-        "docker://alexgenx/pedsim:stable"
+        "docker://genxnetwork/pedsim:stable"
     shell:
         """
             pedsim -d {input._def} -m {input._map} -i {input.bg} -o {params.prefix} --intf {input.intf} --fam
         """
 
+rule shuffle_phase:
+        input: vcf=rules.simulate.output.vcf
+        output: vcf="pedsim/simulated/data_shuffled.vcf.gz",
+                plink=temp(expand("plink/data_shuffled.{ext}", ext=PLINK_FORMATS))
+        params:
+            plink="plink/data_shuffled",
+            vcf="pedsim/simulated/data_shuffled"
+        conda: "../../envs/plink.yaml"
+        shell:
+            """
+                plink --vcf {input.vcf} --make-bed --out {params.plink} 
+                plink --bfile {params.plink} --export vcf bgz --out {params.vcf}
+            """
 
 rule postprocess:
     input:
-        vcf='pedsim/simulated/data.vcf.gz',
+        vcf=rules.shuffle_phase.output.vcf,
         fam='pedsim/simulated/data-everyone.fam'
     output:
         kin='pedsim/simulated/reheaded_data.kinship',
-        vcf='vcf/merged_mapped_sorted.vcf.gz',
+        vcf='input.vcf.gz',
         fam='pedsim/simulated/reheaded_data.fam'
     conda:
         "../../envs/postprocess.yaml"
     script:
         "../../scripts/postprocess.py"
 
-rule index:
-    input:
-        vcf=rules.postprocess.output['vcf'],
-    output:
-        idx='vcf/merged_mapped_sorted.vcf.gz.csi'
-    conda:
-        '../../envs/bcftools.yaml'
-    shell:
-        "bcftools index {input}"
+include: "../../rules/preprocessing.smk"
 
-include: "../../rules/imputation.smk"
-
-include: "../../rules/relatives.smk"
+if flow == 'ibis':
+    include: "../../rules/relatives_ibis.smk"
+elif flow == 'germline':
+    include: "../../rules/relatives.smk"
+elif flow == 'ibis_king':
+    include: "../../rules/relatives_ibis_king.smk"
 
 rule evaluate_accuracy:
     input:
-        rel=rules.merge_king_ersa.output[0],
+        rel='results/relatives.tsv',
         fam=rules.postprocess.output['fam']
     output:
         accuracy='results/accuracy.png',
-        pr='results/precision_recall.png'
+        pr='results/precision_recall.png',
+        conf_matrix='results/confusion_matrix.png',
+        updated_rel='results/updated_relatives.tsv',
+        pedigree_plot='results/pedigree_plot.png'
+    params:
+        source='both',
+        po_fs_plot='results/po_fs_plot.png' if flow == 'ibis' else None
+    log:
+        "logs/evaluation/accuracy.log"
     conda:
         "../../envs/evaluation.yaml"
     script:
          '../../scripts/evaluate.py'
 
+rule split_map_for_ibd:
+    input:
+        bim = "preprocessed/data.bim"
+    output: expand("cm2/chr{chrom}.cm.map", chrom=CHROMOSOMES)
+    params:
+        cm_dir='cm2'
+    conda:
+        "../../envs/evaluation.yaml"
+    script:
+        "../../scripts/split_map.py"
+
 rule evaluate_ibd:
     input:
         pedsim=rules.simulate.output['seg'],
-        ibd=rules.merge_ibd_segments.output[0]
+        ibd="ibd/merged_ibd.tsv",
+        cm=expand("cm2/chr{chrom}.cm.map", chrom=CHROMOSOMES)
     params:
-        cm_dir='cm',
-        is_rapid_ibd=use_rapid
+        cm_dir='cm2',
+        is_rapid_ibd=False
     conda:
         '../../envs/evaluation.yaml'
     output:

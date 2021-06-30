@@ -1,76 +1,132 @@
-rule convert_23andme_to_plink:
-    input:
-        get_samples_path
-    output:
-        expand("plink/{{sample}}.{ext}", ext=PLINK_FORMATS)
-    params:
-        get_samples_name
-    conda:
-        "../envs/plink.yaml"
-    log:
-        "logs/plink/convert_23andme_to_plink-{sample}.log"
-    benchmark:
-        "benchmarks/plink/convert_23andme_to_plink-{sample}.txt"
-    shell:
-        """
-        # by default plink write output in the same --out option. need to use tee to redirect
-        plink --23file {input} {params} {params} i --output-chr M --make-bed --out plink/{params} | tee {log}
-        """
-
-rule merge_list:
-    input:
-        expand("plink/{sample}.{ext}", sample=SAMPLES_NAME, ext=PLINK_FORMATS)
-    output:
-        "plink/merge.list"
-    shell:
-        """
-        true > {output} && for i in {SAMPLES_NAME}; do echo "plink/$i" >> {output}; done
-        """
-
-rule merge_to_vcf:
-    input: rules.merge_list.output
-    output:
-        plink_clean     = expand("plink/{i}_clean.{ext}", i=SAMPLES_NAME, ext=PLINK_FORMATS),
-        plink_merged    = expand("vcf/merged.{ext}", ext=PLINK_FORMATS),
-        vcf             = "vcf/merged.vcf.gz"
-        #merge_list      = "plink/merge_clean.list"
-    conda:
-        "../envs/plink.yaml"
-    log:
-        "logs/plink/merge_to_vcf.log"
-    benchmark:
-        "benchmarks/plink/merge_to_vcf.txt"
-    shell:
-        """
-        set +e
-        plink --merge-list {input} --output-chr 26 --export vcf bgz --out vcf/merged
-        exitcode=$?
-
-        if [[ -f "vcf/merged.missnp" ]]; then
-            for i in `cat {input}`;
-                do plink --bfile $i --exclude vcf/merged.missnp --make-bed --out $i\_clean;
-            done
-            true > {input} && for i in {SAMPLES_NAME}; do echo plink/$i\_clean >> {input}; done
-            plink --merge-list {input} --output-chr 26  --snps-only --export vcf bgz --out vcf/merged
-            exit 0
-        fi
-        exit 1
-        """
 
 rule recode_vcf:
-    input: vcf=rules.merge_to_vcf.output['vcf']
+    input: vcf='input.vcf.gz'
     output: vcf = "vcf/merged_recoded.vcf.gz"
+    log: "logs/plink/recode_vcf.log"
     conda: "../envs/plink.yaml"
-    shell: "plink --vcf {input.vcf} --snps-only just-acgt --output-chr M --not-chr XY,MT --export vcf bgz --out vcf/merged_recoded"
+    shell: "plink --vcf {input.vcf} --chr 1-22 --snps-only just-acgt --output-chr M --not-chr XY,MT --export vcf bgz --out vcf/merged_recoded |& tee {log}"
 
-rule liftover:
+
+if need_remove_imputation:
+    rule remove_imputation:
+        input:
+            vcf=rules.recode_vcf.output['vcf']
+        output:
+            vcf='vcf/imputation_removed.vcf.gz'
+        log: "logs/vcf/remove_imputation.log"
+        script: '../scripts/remove_imputation.py'
+else:
+    rule copy_vcf:
+        input:
+            vcf=rules.recode_vcf.output['vcf']
+        output:
+            vcf='vcf/imputation_removed.vcf.gz'
+        shell:
+            """
+                cp {input.vcf} {output.vcf}
+            """
+
+if assembly == "hg38":
+    rule liftover:
+        input:
+            vcf='vcf/imputation_removed.vcf.gz'
+        output:
+            vcf="vcf/merged_lifted.vcf.gz"
+        singularity:
+            "docker://genxnetwork/picard:stable"
+        log:
+            "logs/liftover/liftover.log"
+        params:
+            mem_gb = _mem_gb_for_ram_hungry_jobs()
+        resources:
+            mem_mb = _mem_gb_for_ram_hungry_jobs() * 1024
+        shell:
+             """
+                java -Xmx{params.mem_gb}g -jar /picard/picard.jar LiftoverVcf WARN_ON_MISSING_CONTIG=true MAX_RECORDS_IN_RAM=25000 I={input.vcf} O={output.vcf} CHAIN={LIFT_CHAIN} REJECT=vcf/rejected.vcf.gz R={GRCH37_FASTA} |& tee -a {log}
+             """
+else:
+    rule copy_liftover:
+        input:
+            vcf='vcf/imputation_removed.vcf.gz'
+        output:
+            vcf="vcf/merged_lifted.vcf.gz"
+        shell:
+            """
+                cp {input.vcf} {output.vcf}
+            """
+
+include: "../rules/filter.smk"
+
+if need_phase:
+    include: "../rules/phasing.smk"
+else:
+    rule copy_phase:
+        input:
+            vcf="vcf/merged_mapped_sorted.vcf.gz"
+        output:
+            vcf="phase/merged_phased.vcf.gz"
+        shell:
+            """
+                cp {input.vcf} {output.vcf}
+            """
+
+if need_imputation:
+    include: "../rules/imputation.smk"
+else:
+    rule copy_imputation:
+        input:
+            vcf="phase/merged_phased.vcf.gz"
+        output:
+            vcf="imputed/data.vcf.gz"
+        shell:
+             """
+                cp {input.vcf} {output.vcf}
+             """
+
+rule recode_snp_ids:
     input:
-        vcf=rules.recode_vcf.output['vcf']
+        vcf="imputed/data.vcf.gz"
     output:
-        vcf="vcf/merged_lifted.vcf"
-
-    singularity: "docker://alexgenx/picard:latest"
+        vcf="preprocessed/data.vcf.gz"
+    conda:
+        "../envs/bcftools.yaml"
     shell:
-        """      
-            java -jar /picard/picard.jar LiftoverVcf I={input.vcf} O={output.vcf} CHAIN={lift_chain} REJECT=vcf/rejected.vcf R={GRCh37_fasta}
+        """
+            bcftools annotate --set-id '%CHROM:%POS:%REF:%FIRST_ALT' {input.vcf} -O z -o {output.vcf}
+        """
+
+rule convert_mapped_to_plink:
+    input:
+        vcf="preprocessed/data.vcf.gz"
+    output:
+        bed="preprocessed/data.bed",
+        fam="preprocessed/data.fam",
+        bim="preprocessed/data.bim"
+    params:
+        out = "preprocessed/data"
+    conda:
+        "../envs/plink.yaml"
+    log:
+        "logs/plink/convert_mapped_to_plink.log"
+    benchmark:
+        "benchmarks/plink/convert_mapped_to_plink.txt"
+    shell:
+        """
+        plink --vcf {input} --make-bed --out {params.out} |& tee {log}
+        """
+
+rule ibis_mapping:
+    input:
+        bim=rules.convert_mapped_to_plink.output['bim']
+    singularity:
+        "docker://genxnetwork/ibis:stable"
+    output:
+        "preprocessed/data_mapped.bim"
+    log:
+        "logs/ibis/run_ibis_mapping.log"
+    benchmark:
+        "benchmarks/ibis/run_ibis_mapping.txt"
+    shell:
+        """
+        (add-map-plink.pl -cm {input.bim} {GENETIC_MAP_GRCH37}> {output}) |& tee -a {log}
         """

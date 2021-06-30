@@ -16,9 +16,14 @@ germline/*
 hap/*
 ped/*
 ersa/*
+ibis/*
+stats/*
 dag.png
 .idea
 results/relatives.tsv
 scripts/__pycache__/*
 logs/*
 scripts/utils/__pycache__/*
+.zattrs/*
+zarr/*
+/analysis_data/

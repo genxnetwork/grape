@@ -80,7 +80,7 @@ def interpolate(segments, cm_map):
 
     cm_starts = numpy.interp(bp_starts, cm_map.bp_pos.values, cm_map.cm_pos.values)
     cm_ends = numpy.interp(bp_ends, cm_map.bp_pos.values, cm_map.cm_pos.values)
-
+    # print('cm_map max is ', cm_map.cm_pos.values.max())
     for seg, cm_start, cm_end in zip(segments, cm_starts, cm_ends):
         seg.cm_start = cm_start
         seg.cm_end = cm_end
@@ -93,6 +93,28 @@ def read_cm_map(path):
     # 1       1:249233056_C_T 293.397 249233056
     cm_map = pandas.read_table(path, header=None, names=['chrom', 'snp', 'cm_pos', 'bp_pos'])
     return cm_map
+
+
+def read_king_segments(path):
+    # FID1    ID1     FID2    ID2     IBDType Chr StartMB StopMB StartSNP StopSNP N_SNP Length
+    data = pandas.read_table(path, compression='gzip', dtype={'FID1': str, 'ID1': str, 'FID2': str, 'ID2': str})
+    segments = {}
+    for i, row in data.iterrows():
+        id1 = row['FID1'] + '_' + row['ID1']
+        id2 = row['FID2'] + '_' + row['ID2']
+        seg = Segment(id1, id2, row['Chr'],
+                      bp_start=row['StartMB']*1e+6, bp_end=row['StopMB']*1e+6)
+        key = tuple(sorted((seg.id1, seg.id2)))
+        if key not in segments:
+            segments[key] = [seg]
+        else:
+            segments[key].append(seg)
+
+        if i < 5:
+            print(f'segment number {i}:', seg.id1, seg.id2, seg.chrom, seg.bp_start, seg.bp_end)
+
+    print(f'len of segments is {len(segments)}')
+    return segments
 
 
 def read_pedsim_segments(path: str) -> dict:
@@ -113,7 +135,7 @@ def read_pedsim_segments(path: str) -> dict:
 
 
 def read_germline_segments(path):
-    # first1_g6-b4-s1 first1_g6-b4-s1	first1_g7-b4-i1 first1_g7-b4-i1	1	752721 2352280	1:752721_A_G 1:2352280_G_A	896	2.643	cM	0	0	0
+    # 0 first1_g2-b1-i1       0 first1_g2-b2-i1       1       102586656 120506032     1:102586656:T:C 1:120506032:G:A 4416019.386  cM      0       0       0
     germline_names = [
         'fid_iid1',
         'fid_iid2',
@@ -132,7 +154,7 @@ def read_germline_segments(path):
     segments = {}
     for i, row in data[data.len_units == 'cM'].iterrows():
 
-        id1 = row['fid_iid1'].split()[0]
+        id1 = row['fid_iid1'].split()[1]
         id2 = row['fid_iid2'].split()[1]
 
         bp_start, bp_end = [int(b) for b in row['start_end_bp'].split()]

@@ -3,5 +3,6 @@ channels:
     - bioconda
     - soil
 dependencies:
-    - bcftools
-    - plink
+    - bcftools==1.9
+    - plink==1.90b6.18
+    - openssl==1.0.2u

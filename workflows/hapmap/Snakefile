@@ -1,25 +1,36 @@
 from os.path import join
 
-configfile: "workflows/pedsim/config.yaml"
+configfile: "config.yaml"
 
-REF_DIR         = config["reference"]["ref_dir"]
-GRCh37_fasta    = join(REF_DIR, config["reference"]["GRCh37_fasta"])
+REF_DIR         = config["ref_dir"]
+GRCH37_FASTA    = join(REF_DIR, config["reference"]["GRCh37_fasta"])
 GENETIC_MAP     = join(REF_DIR, config["reference"]["GENETIC_MAP"])
+GENETIC_MAP_GRCH37 = join(REF_DIR, config["reference"]["genetic_map_GRCh37"])
 vcfRef          = join(REF_DIR, config["reference"]["vcfRef"])
 refHaps         = join(REF_DIR, config["reference"]["refHaps"])
 lift_chain      = join(REF_DIR, config["reference"]["lift_chain"])
 cmmap           = join(REF_DIR, config["reference"]["cmmap"])
 SITE_1000GENOME = join(REF_DIR, config["reference"]["SITE_1000GENOME"])
-hapmap_ped      = join(REF_DIR, config["reference"]["hapmap_ped"])
-hapmap_mp       = join(REF_DIR, config["reference"]["hapmap_mp"])
 hapmap_fam      = join(REF_DIR, config["reference"]["hapmap_fam"])
-hd_genotype_chip= join(REF_DIR, config["reference"]["hd_genotype_chip"])
+AFFYMETRIX_CHIP = join(REF_DIR, config["reference"]["affymetrix_chip"])
 pedsim_map      = join(REF_DIR, config["reference"]["pedsim_map"])
+flow            = config["flow"]
+
+PLINK_FORMATS   = ['bed', 'bim', 'fam']
 
 CHROMOSOMES     = [str(i) for i in range(1, 23)]
 
-CHIP_DATA_LINK = 'ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.chip.omni_broad_sanger_combined.20140818.snps.genotypes.vcf.gz'
-CHIP_INDEX_LINK = 'ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.chip.omni_broad_sanger_combined.20140818.snps.genotypes.vcf.gz.tbi'
+assembly = config['assembly']
+need_phase = config['phase']
+need_imputation = config['impute']
+need_remove_imputation = config['remove_imputation']
+
+_IDEAL_LARGE_MEM_GB = 20
+
+# if available, return the ideal pretty-large amount for most jobs (20GB)
+def _mem_gb_for_ram_hungry_jobs():
+  return min(_IDEAL_LARGE_MEM_GB, config["mem_gb"])
+
 
 rule all:
     input:
@@ -27,50 +38,51 @@ rule all:
         "results/accuracy.png"
 
 
-rule recode_vcf:
-    input:
-        ped=hapmap_ped,
-        mp=hapmap_mp
-    output:
-        vcf='vcf/merged_recoded.vcf.gz'
-    params:
-        out='vcf/merged_recoded'
-    conda: "../../envs/plink.yaml"
-    shell: "plink --ped {input.ped} --map {input.mp} --snps-only just-acgt --output-chr M --not-chr XY,MT --export vcf bgz --out {params.out}"
-
-
 rule postprocess:
     input:
-        vcf=rules.recode_vcf.output['vcf'],
+        vcf=AFFYMETRIX_CHIP,
         fam=hapmap_fam
     output:
         kin='kinship/reheaded_data.kinship',
-        vcf='vcf/merged_sorted.vcf.gz',
+        vcf='input.vcf.gz',
+        iid_vcf=temp('input_iid.vcf.gz'),
+        samples='input.samples',
         fam='kinship/reheaded_data.fam'
     conda:
         "envs/hapmap.yaml"
     script:
         "scripts/hapmap.py"
 
-rule liftover:
+include: "../../rules/preprocessing.smk"
+
+if flow == 'ibis':
+    include: "../../rules/relatives_ibis.smk"
+elif flow == 'germline':
+    include: "../../rules/relatives.smk"
+elif flow == 'ibis_king':
+    include: "../../rules/relatives_ibis_king.smk"
+
+rule evaluate_accuracy:
     input:
-        vcf=rules.postprocess.output['vcf'],
-        chain=lift_chain,
-        ref=GRCh37_fasta
+        rel='results/relatives.tsv',
+        fam=rules.postprocess.output['fam']
     output:
-        vcf="vcf/merged_mapped_sorted.vcf.gz"
+        accuracy='results/accuracy.png',
+        pr='results/precision_recall.png',
+        conf_matrix='results/confusion_matrix.png',
+        updated_rel='results/updated_relatives.tsv',
+        pedigree_plot='results/pedigree_plot.png'
+    params:
+        source='ersa' if flow == 'ibis' else 'both',
+        po_fs_plot='results/po_fs_plot.png' if flow == 'ibis' else None
+    log:
+        "logs/evaluation/accuracy.log"
+    conda:
+        "../../envs/evaluation.yaml"
+    script:
+         '../../scripts/evaluate.py'
 
-    #conda: "envs/crossmap.yaml"
-    singularity: "docker://alexgenx/picard:latest"
-    shell:
-        """
-            java -Xmx16G -jar /picard/picard.jar LiftoverVcf MAX_RECORDS_IN_RAM=100000 I={input.vcf} O={output.vcf} CHAIN={input.chain} REJECT=vcf/rejected.vcf R={input.ref}
-        """
-
-include: "../../rules/imputation.smk"
-
-include: "../../rules/relatives.smk"
-
+'''
 rule evaluate_accuracy:
     input:
         rel=rules.merge_king_ersa.output[0],
@@ -79,5 +91,5 @@ rule evaluate_accuracy:
         'results/accuracy.png'
     script:
         '../../scripts/evaluate.py'
-
+'''
 

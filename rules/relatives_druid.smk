@@ -16,7 +16,7 @@ rule run_king:
         # TODO: add cores
         KING_DEGREE=4
 
-        king -b {params.input}.bed --cpus {threads} --ibdseg --degree $KING_DEGREE --prefix {params.out} | tee {log}
+        king -b {params.input}.bed --cpus {threads} --ibdseg --degree $KING_DEGREE --prefix {params.out} |& tee {log}
         """
 
 
@@ -31,7 +31,7 @@ rule index_and_split:
         "benchmarks/vcf/index_and_split-{chrom}.txt"
     shell:
         """
-        bcftools filter {input} -r {wildcards.chrom} | bcftools norm --rm-dup none -O z -o vcf/imputed_chr{wildcards.chrom}.vcf.gz | tee {log}
+        bcftools filter {input} -r {wildcards.chrom} | bcftools norm --rm-dup none -O z -o vcf/imputed_chr{wildcards.chrom}.vcf.gz |& tee {log}
         """
 
 
@@ -44,7 +44,7 @@ rule refined_ibd:
     params:
         out="ibd/chr{chrom}"
     singularity:
-        "docker://alexgenx/refined_ibd:latest"
+        "docker://genxnetwork/refined_ibd:stable"
     shell:
         """
             java -Xss5m -jar /app/refined-ibd.jar gt={input.vcf} map={input.cmmap} out={params.out}

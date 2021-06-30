@@ -1,58 +1,34 @@
 CHROMOSOMES     = [str(i) for i in range(1, 23)]
-PLINK_FORMATS   = ['bed', 'bim', 'fam', 'log']
-PLINK_FORMATS_EXT   = ['bed', 'bim', 'fam', 'log', 'nosex']
+PLINK_FORMATS   = ['bed', 'bim', 'fam', ]
+PLINK_FORMATS_EXT   = ['bed', 'bim', 'fam', 'nosex']
 
-
-rule phase:
-    input:
-        vcf="vcf/merged_mapped_sorted.vcf.gz",
-        #idx="vcf/merged_mapped_sorted.vcf.gz.csi"
-        vcfRef=vcfRef
-    output: "phase/chr{chrom}.phased.vcf.gz"
-    threads: 1
-    singularity:
-        "docker://biocontainers/bio-eagle:v2.4.1-1-deb_cv1"
-    log:
-        "logs/phase/eagle-{chrom}.log"
-    benchmark:
-        "benchmarks/phase/eagle-{chrom}.txt"
-    shell:
-        """
-        /usr/bin/bio-eagle --vcfRef {input.vcfRef} \
-        --numThreads {threads} \
-        --vcfTarget {input.vcf}  \
-        --geneticMapFile {GENETIC_MAP} \
-        --chrom {wildcards.chrom} \
-        --vcfOutFormat z \
-        --outPrefix phase/chr{wildcards.chrom}.phased | tee {log}
-        """
 
 rule impute:
     input:
         rules.phase.output,
-        refHaps=refHaps
-    output: "imputed/chr{chrom}.imputed.dose.vcf.gz"
+        refHaps=REF_HAPS
+    output: temp("imputed/chr{chrom}.imputed.dose.vcf.gz")
     threads: 1
     singularity:
-        "docker://biocontainers/minimac4:v1.0.0-2-deb_cv1"
+        "docker://genxnetwork/minimac4:stable"
     log:
         "logs/impute/minimac4-{chrom}.log"
     benchmark:
         "benchmarks/impute/minimac4-{chrom}.txt"
     shell:
         """
-        /usr/bin/minimac4 \
-        --refHaps {input.refHaps} \
-        --haps phase/chr{wildcards.chrom}.phased.vcf.gz \
-        --format GT,GP \
-        --prefix imputed/chr{wildcards.chrom}.imputed \
-        --cpus {threads} | tee {log}
+            minimac4 \
+            --refHaps {input.refHaps} \
+            --haps phase/chr{wildcards.chrom}.phased.vcf.gz \
+            --format GT,GP \
+            --prefix imputed/chr{wildcards.chrom}.imputed \
+            --minRatio 0.01 \
+            --cpus {threads} |& tee {log}
         """
-
 
 rule imputation_filter:
     input: rules.impute.output
-    output: "imputed/chr{chrom}.imputed.dose.pass.vcf.gz"
+    output: temp("imputed/chr{chrom}.imputed.dose.pass.vcf.gz")
     # TODO: because "The option is currently used only for the compression of the output stream"
     # threads: workflow.cores
     conda:
@@ -63,9 +39,9 @@ rule imputation_filter:
         "benchmarks/impute/imputation_filter-{chrom}.txt"
     shell:
         """
-        FILTER="'R2>0.3 & strlen(REF)=1 & strlen(ALT)=1'"
+        FILTER="'strlen(REF)=1 & strlen(ALT)=1'"
 
-        bcftools view -i 'R2>0.3 & strlen(REF)=1 & strlen(ALT)=1' imputed/chr{wildcards.chrom}.imputed.dose.vcf.gz -v snps -m 2 -M 2 -O z -o imputed/chr{wildcards.chrom}.imputed.dose.pass.vcf.gz | tee {log}
+        bcftools view -i 'strlen(REF)=1 & strlen(ALT)=1' imputed/chr{wildcards.chrom}.imputed.dose.vcf.gz -v snps -m 2 -M 2 -O z -o imputed/chr{wildcards.chrom}.imputed.dose.pass.vcf.gz |& tee {log}
         """
 
 
@@ -76,7 +52,7 @@ rule merge_imputation_filter:
         # TODO: wildcard violation
         # rules.imputation_filter.output
     output:
-        "vcf/merged_imputed.vcf.gz"
+        "preprocessed/data.vcf.gz"
     params:
         list="vcf/imputed.merge.list",
         mode=config["mode"]
@@ -99,14 +75,14 @@ rule merge_imputation_filter:
             fi
         done
 
-        bcftools concat -f {params.list} -O z -o {output} | tee -a {log}
-        bcftools index -f {output} | tee -a {log}
+        bcftools concat -f {params.list} -O z -o {output} |& tee -a {log}
+        bcftools index -f {output} |& tee -a {log}
 
         # check if there is a background data and merge it
         if [ -f "background/merged_imputed.vcf.gz" && {params.mode} = "client" ]; then
             mv {output} {output}.client
-            bcftools merge --force-samples background/merged_imputed.vcf.gz {output}.client -O z -o {output} | tee -a {log}
-            bcftools index -f {output} | tee -a {log}
+            bcftools merge --force-samples background/merged_imputed.vcf.gz {output}.client -O z -o {output} |& tee -a {log}
+            bcftools index -f {output} |& tee -a {log}
         fi
         """
 
@@ -123,7 +99,7 @@ rule convert_imputed_to_plink:
         "benchmarks/plink/convert_imputed_to_plink.txt"
     shell:
         """
-        plink --vcf {input} --make-bed --out {params.out} | tee {log}
+        plink --vcf {input} --make-bed --out {params.out} |& tee {log}
         """
 
 # no need it bc it was done earlier in merge_imputation_filter
@@ -143,5 +119,5 @@ rule merge_convert_imputed_to_plink:
         """
         # please mind a merge step in merge_imputation_filter for germline
         plink --vcf {input} --make-bed --out {params.out} | tee {log}
-        plink --bfile {params.background} --bmerge {params.out} --make-bed --out plink/merged_imputed | tee {log}
+        plink --bfile {params.background} --bmerge {params.out} --make-bed --out plink/merged_imputed |& tee {log}
         """

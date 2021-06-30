@@ -2,7 +2,8 @@ name: evaluation
 channels:
     - conda-forge
 dependencies:
-    - networkx
-    - seaborn
-    - matplotlib
-    - pandas
+    - networkx==2.5
+    - seaborn==0.10.1
+    - matplotlib==3.3.1
+    - pandas==1.1.1
+    - pydot==1.4.2

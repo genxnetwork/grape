@@ -16,7 +16,7 @@ rule run_king:
         # TODO: add cores
         KING_DEGREE=4
 
-        king -b {params.input}.bed --cpus {threads} --ibdseg --degree $KING_DEGREE --prefix {params.out} | tee {log}
+        king -b {params.input}.bed --cpus {threads} --ibdseg --degree $KING_DEGREE --prefix {params.out} |& tee {log}
         """
 
 rule index_and_split:
@@ -30,7 +30,7 @@ rule index_and_split:
         "benchmarks/vcf/index_and_split-{chrom}.txt"
     shell:
         """
-        bcftools filter {input} -r {wildcards.chrom} | bcftools norm --rm-dup none -O z -o vcf/imputed_chr{wildcards.chrom}.vcf.gz | tee {log}
+        bcftools filter {input} -r {wildcards.chrom} | bcftools norm --rm-dup none -O z -o vcf/imputed_chr{wildcards.chrom}.vcf.gz |& tee {log}
         """
 
 rule interpolate:
@@ -62,7 +62,7 @@ rule rapid:
         vcf=rules.erase_dosages.output['vcf'],
         g=rules.interpolate.output
     singularity:
-        "docker://alexgenx/rapid:latest"
+        "docker://genxnetwork/rapid:stable"
     params:
         min_cm_len=1.0,
         window_size=50,
@@ -102,7 +102,7 @@ rule ersa:
     output:
         "ersa/relatives.tsv"
     singularity:
-        "docker://alexgenx/ersa:stable"
+        "docker://genxnetwork/ersa:stable"
     log:
         "logs/ersa/ersa.log"
     benchmark:
@@ -112,7 +112,7 @@ rule ersa:
         ERSA_L=5.0 # the average number of IBD segments in population
         ERSA_TH=1.5 # the average length of IBD segment
         ERSA_T=1.0 # min length of segment to be considered in segment aggregation
-        ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd} -o {output} | tee {log}
+        ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd} -o {output} |& tee {log}
         """
 
 rule merge_king_ersa:

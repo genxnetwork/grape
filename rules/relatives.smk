@@ -1,9 +1,36 @@
-rule run_king:
-    input: rules.convert_imputed_to_plink.output
-    output: "king/merged_imputed_king.seg"
+rule convert_mapped_to_plink:
+    input:
+        vcf="preprocessed/data.vcf.gz",
+        index="preprocessed/data.vcf.gz.csi"
+    output:
+        plink=expand("plink/{i}.{ext}", i="data", ext=PLINK_FORMATS),
+        vcf=temp('vcf/merged_mapped_sorted_22.vcf.gz')
     params:
-        input = "plink/merged_imputed",
-        out = "king/merged_imputed_king"
+        out = "plink/data"
+    conda:
+        "../envs/bcf_plink.yaml"
+    log:
+        "logs/plink/convert_mapped_to_plink.log"
+    benchmark:
+        "benchmarks/plink/convert_mapped_to_plink.txt"
+    shell:
+        """
+        # leave only chr1..22 because we need to map it later
+        bcftools view {input.vcf} --regions 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 -O z -o {output.vcf}
+        plink --vcf {output.vcf} --make-bed --out {params.out} |& tee {log}
+        """
+
+rule run_king:
+    input: rules.convert_mapped_to_plink.output
+    output:
+        king="king/data.seg",
+        kinship="king/data.kin",
+        kinship0="king/data.kin0",
+        segments="king/data.segments.gz"
+    params:
+        input = "plink/data",
+        out = "king/data",
+        kin = "king/data"
     threads: workflow.cores
     singularity:
         "docker://lifebitai/king:latest"
@@ -13,84 +40,74 @@ rule run_king:
         "benchmarks/king/run_king.txt"
     shell:
         """
-        # TODO: add cores
-        KING_DEGREE=4
+        KING_DEGREE=3
 
-        king -b {params.input}.bed --cpus {threads} --ibdseg --degree $KING_DEGREE --prefix {params.out} | tee {log}
+        king -b {params.input}.bed --cpus {threads} --ibdseg --degree $KING_DEGREE --prefix {params.out} |& tee {log}
+        king -b {params.input}.bed --cpus {threads} --kinship --degree $KING_DEGREE --prefix {params.kin} |& tee -a {log}
 
         # we need at least an empty file for the downstream analysis
-        if [ ! -f "{output}" ]; then
-            touch {output}
+        if [ ! -f "{output.king}" ]; then
+            touch {output.king}
+        fi
+        if [ ! -f "{output.kinship}" ]; then
+            touch {output.kinship}
+        fi
+        if [ ! -f "{output.kinship0}" ]; then
+            touch {output.kinship0}
+        fi
+        if [ ! -f "{output.segments}" ]; then
+            touch {output.segments}
         fi
         """
 
+rule index_input:
+    input: "preprocessed/data.vcf.gz"
+    output: "preprocessed/data.vcf.gz.csi"
+    conda: "../envs/bcftools.yaml"
+    shell: "bcftools index -f {input}"
+
 rule index_and_split:
-    input: rules.merge_imputation_filter.output
+    input:
+        vcf="preprocessed/data.vcf.gz",
+        index="preprocessed/data.vcf.gz.csi"
     output: "vcf/imputed_chr{chrom}.vcf.gz"
     conda:
         "../envs/bcftools.yaml"
     # TODO: because "The option is currently used only for the compression of the output stream"
-    # threads: workflow.cores
     log:
         "logs/vcf/index_and_split-{chrom}.log"
     benchmark:
         "benchmarks/vcf/index_and_split-{chrom}.txt"
     shell:
         """
-        bcftools filter {input} -r {wildcards.chrom} -O z -o vcf/imputed_chr{wildcards.chrom}.vcf.gz | tee {log}
+        bcftools filter -r {wildcards.chrom} {input.vcf} | bcftools norm --rm-dup none -O z -o vcf/imputed_chr{wildcards.chrom}.vcf.gz |& tee {log}
         """
 
-rule convert_to_hap:
-    input: rules.index_and_split.output
-    output: "hap/imputed_chr{chrom}.hap"
+
+rule vcf_to_ped:
+    # --a2-allele <uncompressed VCF filename> 4 3 '#'
+    input:
+        vcf=rules.index_and_split.output
+    output:
+        ped="ped/imputed_chr{chrom}.ped",
+        map_file="ped/imputed_chr{chrom}.map"
+    params:
+        zarr="zarr/imputed_chr{chrom}.zarr"
     conda:
-        "../envs/bcftools.yaml"
-    # TODO: because "The option is currently used only for the compression of the output stream"
-    # threads: workflow.cores
+        "../envs/vcf_to_ped.yaml"
     log:
-        "logs/vcf/convert_to_hap-{chrom}.log"
+        "logs/ped/vcf_to_ped-{chrom}.log"
     benchmark:
-        "benchmarks/vcf/convert_to_hap-{chrom}.txt"
-    shell:
-        """
-        bcftools convert vcf/imputed_chr{wildcards.chrom}.vcf.gz --hapsample hap/imputed_chr{wildcards.chrom} | tee {log}
-        gunzip -f hap/imputed_chr{wildcards.chrom}.hap.gz | tee -a {log}
-        """
+        "benchmarks/vcf/vcf_to_ped-{chrom}.txt"
+    script:
+        "../scripts/vcf_to_ped.py"
 
-rule convert_to_ped:
-    input: rules.convert_to_hap.output
-    output: "ped/imputed_chr{chrom}.ped"
-    singularity:
-        "docker://alexgenx/germline:stable"
-    log:
-        "logs/ped/convert_to_ped-{chrom}.log"
-    benchmark:
-        "benchmarks/ped/convert_to_ped-{chrom}.txt"
-    shell:
-        """
-        impute_to_ped hap/imputed_chr{wildcards.chrom}.hap hap/imputed_chr{wildcards.chrom}.sample ped/imputed_chr{wildcards.chrom} | tee {log}
-        """
-
-# TODO: skip this step for now
-rule split_map:
-    input: rules.convert_to_ped.output
-    output: expand("chr{i}.map", i=CHROMOSOMES)
-    shell:
-        """
-        echo parallel -k -j 100% \
-        grep ^{{}} {{}}.map '>' chr{{}}.map \
-        ::: `seq 1 22`
-
-        for i in {output}; do
-            touch $i;
-        done
-        """
 
 rule interpolate:
     input:
-        rules.convert_to_ped.output,
-        cmmap=cmmap
-    output: "cm/chr{chrom}.cm.ped"
+        rules.vcf_to_ped.output,
+        cmmap=CMMAP
+    output: "cm/chr{chrom}.cm.map"
     conda:
         "../envs/plink.yaml"
     log:
@@ -99,21 +116,21 @@ rule interpolate:
         "benchmarks/cm/interpolate-{chrom}.txt"
     shell:
         """
-        plink --file ped/imputed_chr{wildcards.chrom} --cm-map {input.cmmap} {wildcards.chrom} --recode --out cm/chr{wildcards.chrom}.cm | tee {log}
+        plink --file ped/imputed_chr{wildcards.chrom} --keep-allele-order --cm-map {input.cmmap} {wildcards.chrom} --recode --out cm/chr{wildcards.chrom}.cm |& tee {log}
         """
 
 rule germline:
     input: rules.interpolate.output
     output: "germline/chr{chrom}.germline.match"
     singularity:
-        "docker://alexgenx/germline:stable"
+        "docker://genxnetwork/germline:stable"
     log:
         "logs/germline/germline-{chrom}.log"
     benchmark:
         "benchmarks/germline/germline-{chrom}.txt"
     shell:
         """
-        germline -input ped/imputed_chr{wildcards.chrom}.ped cm/chr{wildcards.chrom}.cm.map -homoz -min_m 2.5 -err_hom 2 -err_het 1 -output germline/chr{wildcards.chrom}.germline | tee {log}
+        germline -input ped/imputed_chr{wildcards.chrom}.ped cm/chr{wildcards.chrom}.cm.map -min_m 2.5 -err_hom 2 -err_het 1 -output germline/chr{wildcards.chrom}.germline |& tee {log}
         # TODO: germline returns some length in BP instead of cM - clean up is needed
         set +e
         grep -v MB germline/chr{wildcards.chrom}.germline.match > germline/chr{wildcards.chrom}.germline.match.clean && mv germline/chr{wildcards.chrom}.germline.match.clean germline/chr{wildcards.chrom}.germline.match
@@ -148,7 +165,7 @@ rule ersa:
     output:
         "ersa/relatives.tsv"
     singularity:
-        "docker://alexgenx/ersa:stable"
+        "docker://genxnetwork/ersa:stable"
     log:
         "logs/ersa/ersa.log"
     benchmark:
@@ -158,15 +175,21 @@ rule ersa:
         ERSA_L=2.0 # the average number of IBD segments in population
         ERSA_TH=1.5 # the average length of IBD segment
         ERSA_T=1.0 # min length of segment to be considered in segment aggregation
-        ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd} -o {output} | tee {log}
+        ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd} -o {output} |& tee {log}
         """
 
 
 rule merge_king_ersa:
     input:
-        king=rules.run_king.output,
-        germline=rules.merge_ibd_segments.output['ibd'],
-        ersa=rules.ersa.output
+        king=rules.run_king.output['king'],
+        king_segments=rules.run_king.output['segments'],
+        ibd=rules.merge_ibd_segments.output['ibd'],
+        ersa=rules.ersa.output[0],
+        kinship=rules.run_king.output['kinship'],
+        kinship0=rules.run_king.output['kinship0']
+    params:
+        cm_dir='cm'
     output: "results/relatives.tsv"
     conda: "../envs/evaluation.yaml"
-    script: "../scripts/ersa_king.py"
+    log: "logs/merge/merge-king-ersa.log"
+    script: "../scripts/merge_king_ersa.py"

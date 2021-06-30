@@ -3,27 +3,33 @@ from os.path import join
 configfile: "config.yaml"
 
 CHROMOSOMES     = [str(i) for i in range(1, 23)]
-PLINK_FORMATS   = ['bed', 'bim', 'fam', 'log']
-PLINK_FORMATS_EXT   = ['bed', 'bim', 'fam', 'log', 'nosex']
+PLINK_FORMATS   = ['bed', 'bim', 'fam']
+PLINK_FORMATS_EXT   = ['bed', 'bim', 'fam', 'nosex']
 
-REF_DIR         = config["reference"]["ref_dir"]
+REF_DIR         = config["ref_dir"]
 lift_chain      = join(REF_DIR, config["reference"]["lift_chain"])
 GRCh37_fasta    = join(REF_DIR, config["reference"]["GRCh37_fasta"])
 
 assembly = config['assembly']
 
+_IDEAL_LARGE_MEM_GB = 20
+
+# if available, return the ideal pretty-large amount for most jobs (20GB)
+def _mem_gb_for_ram_hungry_jobs():
+  return min(_IDEAL_LARGE_MEM_GB, config["mem_gb"])
 
 rule all:
     input:
-        vcf="vcf/merged_lifted.vcf",
+        vcf="vcf/merged_lifted.vcf"
         # rules.report_benchmark_summary.output
 
 
 rule recode_vcf:
     input: vcf='input.vcf'
     output: vcf = "vcf/merged_recoded.vcf.gz"
+    log: "logs/plink/recode_vcf.log"
     conda: "../../envs/plink.yaml"
-    shell: "plink --vcf {input.vcf} --snps-only just-acgt --output-chr M --not-chr XY,MT --export vcf bgz --out vcf/merged_recoded"
+    shell: "plink --vcf {input.vcf} --chr 1-22 --snps-only just-acgt --output-chr M --not-chr XY,MT --export vcf bgz --out vcf/merged_recoded |& tee {log}"
 
 
 rule liftover:
@@ -31,12 +37,20 @@ rule liftover:
         vcf=rules.recode_vcf.output['vcf']
     output:
         vcf="vcf/merged_lifted.vcf"
-    singularity: "docker://alexgenx/picard:latest"
+    singularity:
+        "docker://genxnetwork/picard:stable"
+    log:
+        "logs/liftover/liftover.log"
+    params:
+        mem_gb = _mem_gb_for_ram_hungry_jobs()
+    resources:
+        mem_mb = _mem_gb_for_ram_hungry_jobs() * 1024
     shell:
         """
             if [[ "{assembly}" == "hg38" ]]; then
-                java -jar /picard/picard.jar LiftoverVcf I={input.vcf} O={output.vcf} CHAIN={lift_chain} REJECT=vcf/rejected.vcf R={GRCh37_fasta}
+                java -Xmx{params.mem_gb}g -jar /picard/picard.jar LiftoverVcf WARN_ON_MISSING_CONTIG=true MAX_RECORDS_IN_RAM=25000 I={input.vcf} O={output.vcf} CHAIN={lift_chain} REJECT=vcf/rejected.vcf R={GRCh37_fasta} |& tee -a {log}
             else
                 cp {input.vcf} {output.vcf}
             fi
         """
+
