@@ -120,7 +120,7 @@ rule ibis_mapping:
     input:
         bim=rules.convert_mapped_to_plink.output['bim']
     params:
-        input = "preprocessed/data"
+        input = "preprocessed/data",
         genetic_map_GRCh37 = expand(GENETIC_MAP_GRCH37, chrom=CHROMOSOMES)
     singularity:
         "docker://genxnetwork/ibis:stable"
