@@ -76,10 +76,10 @@ docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB 
 #### Reference downloading
 
 Firstly, one needs to download all needed references to the `--ref-directory` of your choice.
-These references will take up to 40GB of disk space. `--ref-directory` argument can now be used in all subsequent commands
+These references will take up to **40GB** of disk space. `--ref-directory` argument can now be used in all subsequent commands
 ```
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py reference  --ref-directory /media/ref
+launcher.py reference --real-run --ref-directory /media/ref --directory /media/ref
 ```
 
 #### Preprocessing
@@ -244,12 +244,14 @@ https://snakemake.readthedocs.io/en/stable/getting_started/installation.html
 
 5. Setup env vars for temp / cache directories for Singularity, ex:
 
+```bash
 export SINGULARITY_TMPDIR=/media/tmp
 export SINGULARITY_CACHEDIR=/media/tmp
+```
 
 You can also pass this values using Snakemake:
---singularity-prefix DIR
---singularity-args ARGS
+`--singularity-prefix DIR`
+`--singularity-args ARGS`
 
 6. Launch
 
@@ -257,7 +259,7 @@ You can also pass this values using Snakemake:
 snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media --singularity-args="-B /media:/media" -p all -n
 ```
 
-Please mind '-n' flag for dry-run
+Please mind `-n` flag for dry-run
 
 7. Useful commands
 
@@ -304,7 +306,7 @@ Visualization of structure of simulated pedigree is given below:
 
 Use command simulate. Options --input and --samples are not needed in this case.
 
-```text
+```bash
 docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
 
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
@@ -325,7 +327,7 @@ it detects more than a half of pairs with those degrees of kinship.
 Use command HapMap for preparing Hapmap CEU data. Options --input and --samples are not needed in this case.
 Then, use find
 
-```text
+```bash
 docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
 
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
