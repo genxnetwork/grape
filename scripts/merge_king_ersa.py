@@ -2,7 +2,7 @@ import pandas
 import numpy
 import os
 import logging
-from collections import Counter
+from collections import Counter, namedtuple
 from utils.ibd import read_king_segments as rks, interpolate_all
 
 
@@ -225,28 +225,30 @@ def read_ersa2(ersa_path):
     data.loc[:, 'ersa_lower_bound'] = lower
     data.loc[:, 'ersa_upper_bound'] = upper
 
-    print(f'read {data.shape[0]} pairs from ersa output')
-    print(data.iloc[0, :])
-
-    print(len(numpy.unique(data.id1)), len(numpy.unique(data.id2)))
     cols = ['id1', 'id2', 'ersa_degree', 'ersa_lower_bound', 'ersa_upper_bound', 'shared_ancestors']
     return data.loc[data.id1 != data.id2, cols].set_index(['id1', 'id2'])
 
 
 if __name__ == '__main__':
 
-    '''
-    ibd_path = 'test_data/merge_king_ersa/merged_ibd.tsv'
-    king_path = 'test_data/merge_king_ersa/merged_imputed_king.seg'
-    king_segments_path = 'test_data/merge_king_ersa/merged_imputed_king.segments.gz'
-    # within families
-    kinship_path = 'test_data/merge_king_ersa/merged_imputed_kinship.kin'
-    # across families
-    kinship0_path = 'test_data/merge_king_ersa/merged_imputed_kinship.kin0'
-    ersa_path = 'test_data/merge_king_ersa/relatives.tsv'
-    map_dir = '/media/pipeline_data/sim-vcf-to-ped/cm'
-    output_path = 'test_data/relatives_merge_king_ersa.tsv'
-    '''
+    try:
+        snakemake
+    except NameError:
+        test_dir = '/media_ssd/pipeline_data/TF-CEU-TRIBES-ibis-king-2'
+        Snakemake = namedtuple('Snakemake', ['input', 'output', 'params', 'log'])
+        snakemake = Snakemake(
+            input={'ibd': f'{test_dir}/ibd/merged_ibd.tsv',
+                   'king': f'{test_dir}/king/data.seg',
+                   'king_segments': f'{test_dir}/king/data.segments.gz',
+                   'kinship': f'{test_dir}/king/data.kin',
+                   'kinship0': f'{test_dir}/king/data.kin0',
+                   'ersa': f'{test_dir}/ersa/relatives.tsv'},
+
+            output=[f'test_data/merge_king_ersa.tsv'],
+            params={'cm_dir': f'{test_dir}/cm'},
+            log=['test_data/merge_king_ersa.log']
+        )
+
     logging.basicConfig(filename=snakemake.log[0], level=logging.DEBUG, format='%(levelname)s:%(asctime)s %(message)s')
 
     ibd_path = snakemake.input['ibd']
@@ -282,23 +284,6 @@ if __name__ == '__main__':
     logging.info(f'king is null or more than 3: {prefer_ersa_mask.sum()}')
     logging.info(f'ersa is not null: {pandas.notna(relatives.ersa_degree).sum()}')
 
-    '''
-    niece_aunt_mask = (relatives.king_relation == 2) & (relatives.shared_ancestors == 2)
-    logging.info(f'We will change {niece_aunt_mask.sum()} 2 degree relationships to the niece/aunt 3 degree relationship')
-    print(f'We will change {niece_aunt_mask.sum()} 2 degree relationships to the niece/aunt 3 degree relationship')
-
-    relatives.loc[niece_aunt_mask, 'final_degree'] = 3
-
-    grand_niece_aunt_mask = (relatives.king_relation == 3) & (relatives.shared_ancestors == 2)
-    logging.info(
-        f'We will change {grand_niece_aunt_mask.sum()} 3 degree relationships to the grandniece/grandaunt 3 degree relationship')
-    print(f'We will change {grand_niece_aunt_mask.sum()} 3 degree relationships to the grandniece/grandaunt 3 degree relationship')
-
-    relatives.loc[grand_niece_aunt_mask, 'final_degree'] = 4
-
-    # strictly for the evaluation purposes
-    relatives.loc[grand_niece_aunt_mask, 'ersa_degree'] = 4
-    '''
     if 'total_seg_len_king' in relatives.columns:
         relatives.loc[:, 'total_seg_len'] = relatives.total_seg_len_king
         relatives.loc[:, 'seg_count'] = relatives.seg_count_king
@@ -310,10 +295,6 @@ if __name__ == '__main__':
     relatives.loc[prefer_ersa_mask, 'shared_genome_proportion'] = 0.5*relatives.loc[prefer_ersa_mask, 'total_seg_len'] / 3540
     relatives.drop(['total_seg_len_king', 'seg_count_king', 'total_seg_len_germline', 'seg_count_germline'],
                    axis='columns', inplace=True)
-
-    '''
-    relatives.loc[niece_aunt_mask].to_csv(output_path + '.aunts', sep='\t')
-    '''
 
     logging.info(f'final degree not null: {pandas.notna(relatives.final_degree).sum()}')
 

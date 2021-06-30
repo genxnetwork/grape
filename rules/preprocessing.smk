@@ -101,7 +101,7 @@ rule convert_mapped_to_plink:
     output:
         bed="preprocessed/data.bed",
         fam="preprocessed/data.fam",
-        bim="preprocessed/data_unmapped.bim"
+        bim="preprocessed/data.bim"
     params:
         out = "preprocessed/data"
     conda:
@@ -113,7 +113,6 @@ rule convert_mapped_to_plink:
     shell:
         """
         plink --vcf {input} --make-bed --out {params.out} |& tee {log}
-        mv {params.out}.bim {output.bim}
         """
 
 rule ibis_mapping:
@@ -125,7 +124,7 @@ rule ibis_mapping:
     singularity:
         "docker://genxnetwork/ibis:stable"
     output:
-        "preprocessed/data.bim"
+        "preprocessed/data_mapped.bim"
     log:
         "logs/ibis/run_ibis_mapping.log"
     benchmark:

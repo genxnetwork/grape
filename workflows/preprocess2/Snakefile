@@ -37,7 +37,8 @@ rule all:
         vcf="preprocessed/data.vcf.gz",
         bed="preprocessed/data.bed",
         bim="preprocessed/data.bim",
-        fam="preprocessed/data.fam"
+        fam="preprocessed/data.fam",
+        fam_mapped="preprocessed/data_mapped.bim"
         # rules.report_benchmark_summary.output
 
 
