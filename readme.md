@@ -1,7 +1,9 @@
-## Degree of kinship estimation pipeline
+## GRAPE – Genomic relatedness detection pipeline
 ### Description
 
 The project intends to implement best-practices of estimation of recent shared ancestry in a production-ready way.
+
+Support: https://t.me/joinchat/NsX48w4OzcpkNTRi
 
 Main features:
 
