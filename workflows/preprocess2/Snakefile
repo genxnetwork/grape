@@ -7,16 +7,16 @@ PLINK_FORMATS   = ['bed', 'bim', 'fam']
 PLINK_FORMATS_EXT   = ['bed', 'bim', 'fam', 'nosex']
 
 REF_DIR            = config["ref_dir"]
-LIFT_CHAIN         = join(REF_DIR, config["reference"]["lift_chain"])
-GRCH37_FASTA       = join(REF_DIR, config["reference"]["GRCh37_fasta"])
+LIFT_CHAIN         = join(REF_DIR, config["reference"]["lift_chain"]["file"])
+GRCH37_FASTA       = join(REF_DIR, config["reference"]["GRCh37_fasta"]["file"])
 IS_CLIENT          = config["mode"] == "client"
 USE_SIMULATED_IBD  = config["use_simulated_ibd"] if "use_simulated_ibd" in config else False
-GENETIC_MAP        = join(REF_DIR, config["reference"]["GENETIC_MAP"])
-GENETIC_MAP_GRCH37 =join(REF_DIR, config["reference"]["genetic_map_GRCh37"])
-REF_VCF            = join(REF_DIR, config["reference"]["vcfRef"])
-REF_HAPS           = join(REF_DIR, config["reference"]["refHaps"])
-CMMAP              = join(REF_DIR, config["reference"]["cmmap"])
-SITE_1000GENOME    = join(REF_DIR, config["reference"]["SITE_1000GENOME"])
+GENETIC_MAP        = join(REF_DIR, config["reference"]["GENETIC_MAP"]["file"])
+GENETIC_MAP_GRCH37 =join(REF_DIR, config["reference"]["genetic_map_GRCh37"]["file"])
+REF_VCF            = join(REF_DIR, config["reference"]["vcfRef"]["file"])
+REF_HAPS           = join(REF_DIR, config["reference"]["refHaps"]["file"])
+CMMAP              = join(REF_DIR, config["reference"]["cmmap"]["file"])
+SITE_1000GENOME    = join(REF_DIR, config["reference"]["SITE_1000GENOME"]["file"])
 
 assembly = config['assembly']
 need_remove_imputation = config['remove_imputation']
