@@ -1,0 +1,40 @@
+name: Simulate
+
+on:
+  pull_request:
+    branches: [ master ]
+    types: [ opened ]
+    
+jobs:
+  run_simulate:
+    runs-on: ubuntu-latest
+    outputs:
+      id: ${{ steps.call_simulation.outputs.funnel_id }}
+    steps:
+    - id: call_simuation
+      run: |
+        funnel_id=(ssh ${{ secrets.FUNNEL_USER }}@${{ secrets.FUNNEL_HOST }} simulation-hash.sh ${{ github.sha }})
+        echo "::set-output name=funnel_id::$(funnel_id)"
+      
+  send_message:
+    runs-on: ubuntu-latest
+    needs: run_simulate
+    steps:
+    - uses: mshick/add-pr-comment@v1
+      with:
+        message: |
+          Simulation status can be viewed here: http://${{ secrets.FUNNEL_HOST }}:8000/tasks/${{ needs.run_simulate.outputs.id }}
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        repo-token-user-login: 'github-actions[bot]'
+    
+  slack_notification:
+    runs-on: ubuntu-latest
+    needs: run_simulate
+    steps:
+    - uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_CHANNEL: github
+        SLACK_MESSAGE: |
+          'Pull request by ${{ github.event.sender.login }} opened: ${{ github.event.pull_request.url }}'
+        SLACK_USERNAME: GitHub Pull Request Report
+      
