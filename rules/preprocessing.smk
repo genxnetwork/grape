@@ -89,7 +89,7 @@ else:
         input:
             vcf="phase/merged_phased.vcf.gz"
         output:
-            vcf="imputed/data.vcf.gz"
+            vcf="preprocessed/data.vcf.gz"
         shell:
              """
                 cp {input.vcf} {output.vcf}
@@ -97,7 +97,7 @@ else:
 
 rule convert_mapped_to_plink:
     input:
-        vcf="imputed/data.vcf.gz"
+        vcf="preprocessed/data.vcf.gz"
     output:
         bed="preprocessed/data.bed",
         fam="preprocessed/data.fam",
