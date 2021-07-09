@@ -7,6 +7,7 @@ on:
 jobs:
   run_simulate:
     runs-on: ubuntu-latest
+    if: ${{ github.event.pull_request.head.repo.fork == false }}
     outputs:
       id: ${{ steps.call_simulation.outputs.funnel_id }}
     steps:
@@ -22,13 +23,14 @@ jobs:
       
     - name: Call simulation
       run: |
-        funnel_id=(ssh ${{ secrets.FUNNEL_USER }}@${{ secrets.FUNNEL_HOST }} simulation.sh ${{ github.event.pull_request.head.repo.git_url }} ${{ github.head_ref }} ${{ github.event.pull_request.head.sha }})
+        funnel_id=(ssh ${{ secrets.FUNNEL_USER }}@${{ secrets.FUNNEL_HOST }} "bash -s" < simulation.sh "${{ github.event.pull_request.head.repo.git_url }}" "${{ github.head_ref }}" "${{ github.event.pull_request.head.sha }}")
         echo "::set-output name=funnel_id::$(funnel_id)"
       
   send_message:
     runs-on: ubuntu-latest
     needs: run_simulate
     steps:
+    - uses: actions/checkout@v2
     - uses: mshick/add-pr-comment@v1
       with:
         message: |
@@ -38,7 +40,6 @@ jobs:
     
   slack_notification:
     runs-on: ubuntu-latest
-    needs: run_simulate
     steps:
     - uses: actions/checkout@v2
     - name: Notification
