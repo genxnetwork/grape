@@ -11,6 +11,7 @@ jobs:
     outputs:
       id: ${{ steps.call_simulation.outputs.funnel_id }}
     steps:
+    - uses: actions/checkout@v2
     - name: Install SSH Key
       uses: shimataro/ssh-key-action@v2
       with:        
@@ -23,8 +24,7 @@ jobs:
       
     - name: Call simulation
       run: |
-        funnel_id=$(ssh ${{ secrets.FUNNEL_USER }}@${{ secrets.FUNNEL_HOST }} "bash -s" < simulation.sh "${{ github.event.pull_request.head.repo.git_url }}" "${{ github.head_ref }}" "${{ github.event.pull_request.head.sha }}" | awk 'END {print $NF}')
-        echo "::set-output name=funnel_id::$(funnel_id)"
+        echo "::set-output name=funnel_id::$(ssh ${{ secrets.FUNNEL_USER }}@${{ secrets.FUNNEL_HOST }} "bash -s" < simulation.sh "${{ github.event.pull_request.head.repo.git_url }}" "${{ github.head_ref }}" "${{ github.event.pull_request.head.sha }}" | awk 'END {print $NF}')"
       
   send_message:
     runs-on: ubuntu-latest
