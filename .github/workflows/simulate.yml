@@ -25,8 +25,7 @@ jobs:
     - name: Call simulation
       id: simulation
       run: |
-        ls
-        sshpass -p '${{ secrets.FUNNEL_PASS }}' ssh ${{ secrets.FUNNEL_USER }}@${{ secrets.FUNNEL_HOST }} "bash -s" < simulation.sh "${{ github.event.pull_request.head.repo.git_url }}" "${{ github.head_ref }}" "${{ github.event.pull_request.head.sha }}"
+        sshpass -p '${{ secrets.FUNNEL_PASS }}' ssh -o StrictHostKeyChecking=no ${{ secrets.FUNNEL_USER }}@${{ secrets.FUNNEL_HOST }} "bash -s" < simulation.sh "${{ github.event.pull_request.head.repo.git_url }}" "${{ github.head_ref }}" "${{ github.event.pull_request.head.sha }}"
         # f_id=$(sshpass -p '${{ secrets.FUNNEL_PASS }}' ssh ${{ secrets.FUNNEL_USER }}@${{ secrets.FUNNEL_HOST }} "bash -s" < simulation.sh "${{ github.event.pull_request.head.repo.git_url }}" "${{ github.head_ref }}" "${{ github.event.pull_request.head.sha }}" | awk 'END {print $NF}')
         echo "::set-output name=funnel_id::$f_id"
       
