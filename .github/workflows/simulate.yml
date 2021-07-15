@@ -47,7 +47,7 @@ jobs:
       env:
         SLACK_CHANNEL: github
         SLACK_MESSAGE: |
-          'Pull request by ${{ github.event.sender.login }} opened: ${{ github.event.pull_request.url }}'
+          'Pull request by ${{ github.event.sender.login }} opened: ${{ github.event.pull_request.html_url }}'
         SLACK_USERNAME: GitHub Pull Request Report
         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
       
