@@ -40,16 +40,16 @@ jobs:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         repo-token-user-login: 'github-actions[bot]'
     
-  slack_notification:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Notification
-      uses: rtCamp/action-slack-notify@v2
-      env:
-        SLACK_CHANNEL: github
-        SLACK_MESSAGE: |
-          'Pull request by ${{ github.event.sender.login }} opened: ${{ github.event.pull_request.html_url }}'
-        SLACK_USERNAME: GitHub Pull Request Report
-        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+  #slack_notification:
+  #  runs-on: ubuntu-latest
+  #  steps:
+  #  - uses: actions/checkout@v2
+  #  - name: Notification
+  #    uses: rtCamp/action-slack-notify@v2
+  #    env:
+  #      SLACK_CHANNEL: github
+  #      SLACK_MESSAGE: |
+  #       'Pull request by ${{ github.event.sender.login }} opened: ${{ github.event.pull_request.html_url }}'
+  #      SLACK_USERNAME: GitHub Pull Request Report
+  #      SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
       
