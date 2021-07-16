@@ -3,7 +3,7 @@ vcf_file: pedsim/simulated/reheaded_data.vcf.gz
 use_simulated_ibd: True
 use_rapid: False
 use_ibis: False
-ref_dir: /media/ref
+ref_dir: /media/ref_test
 reference:
   GRCh37_fasta:
     file: human_g1k_v37.fasta
