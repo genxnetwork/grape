@@ -193,7 +193,7 @@ rule download_vcfRef:
             md5array=({REF_VCF_md5})
             mkdir -p {REF_DIR}/1000genome/bcf/
             for chrom in {{1..22}}; do
-                wget {REF_VCF_url} -P {REF_DIR}/1000genome/bcf/ -O 1000genome_chr$chrom.tmp.bcf --tries 50 -c  |& tee -a {log}
+                wget {REF_VCF_url} -O {REF_DIR}/1000genome/bcf/1000genome_chr$chrom.tmp.bcf --tries 50 -c  |& tee -a {log}
                 sum=$(md5sum {REF_DIR}/1000genome/bcf/1000genome_chr$chrom.tmp.bcf | cut -d " " -f1)
                 if [ $sum != ${{md5array[$chrom-1]}} ]; then
                     echo "md5 sum of vcfRef is invalid" |& tee -a {log}
