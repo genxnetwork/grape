@@ -4,7 +4,7 @@ vcf_file: vcf/merged.vcf.gz
 use_simulated_ibd: False
 use_rapid: False
 use_ibis: False
-ref_dir: /media/ref_test
+ref_dir: /media/ref
 reference:
   GRCh37_fasta:
     file: human_g1k_v37.fasta
@@ -13,6 +13,13 @@ reference:
     md5: 45f81df94f0408d082363e34a081ed81
     mirror:
       - ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/human_g1k_v37.fasta.gz
+  GRCh37_fasta_fai:
+    file: human_g1k_v37.fasta.fai
+    url: ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/technical/reference/human_g1k_v37.fasta.fai
+    filesize: 2746
+    md5: 772484cc07983aba1355c7fb50f176d4
+    mirror:
+      - ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/human_g1k_v37.fasta.fai
   GENETIC_MAP:
     file: tables/genetic_map_hg19_withX.txt.gz
     url: https://storage.googleapis.com/broad-alkesgroup-public/Eagle/downloads/tables/genetic_map_hg19_withX.txt.gz
