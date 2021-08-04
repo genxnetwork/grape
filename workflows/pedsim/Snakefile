@@ -99,8 +99,8 @@ rule simulate:
         fam='pedsim/simulated/data-everyone.fam'
     params:
         prefix='pedsim/simulated/data'
-    singularity:
-        "docker://genxnetwork/pedsim:stable"
+    conda:
+        "../../envs/ped-sim.yaml"
     shell:
         """
             pedsim -d {input._def} -m {input._map} -i {input.bg} -o {params.prefix} --intf {input.intf} --fam

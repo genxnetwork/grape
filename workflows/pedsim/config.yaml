@@ -1,3 +1,15 @@
+flow: ibis
+ibis_seg_len: 7.0
+ibis_min_snp: 500
+zero_seg_count: 0.5
+zero_seg_len: 5.0
+alpha: 0.01
+assembly: hg37
+phase: False
+impute: False
+remove_imputation: False
+sim_samples_file: ceph_unrelated_all.tsv
+sim_params_file: params/Relatives.def
 samples_file: samples.tsv
 vcf_file: pedsim/simulated/reheaded_data.vcf.gz
 use_simulated_ibd: True

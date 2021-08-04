@@ -1,0 +1,6 @@
+version: 1.2
+workflows:
+   - name: GRAPE simulation
+     subclass: CWL
+     publish: true
+     primaryDescriptorPath: /simulation.cwl

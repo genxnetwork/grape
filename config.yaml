@@ -1,4 +1,10 @@
 mode: all
+flow: ibis
+ibis_seg_len: 7.0
+ibis_min_snp: 500
+zero_seg_count: 0.5
+zero_seg_len: 5.0
+alpha: 0.01
 samples_file: samples.tsv
 vcf_file: vcf/merged.vcf.gz
 use_simulated_ibd: False
