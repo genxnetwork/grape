@@ -121,8 +121,8 @@ rule ibis_mapping:
     params:
         input = "preprocessed/data",
         genetic_map_GRCh37 = expand(GENETIC_MAP_GRCH37, chrom=CHROMOSOMES)
-    singularity:
-        "docker://genxnetwork/ibis:stable"
+    conda:
+        "../envs/ibis.yaml"
     output:
         "preprocessed/data_mapped.bim"
     log:

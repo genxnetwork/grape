@@ -1,0 +1,5 @@
+name: ibis
+channels:
+    - b3bg
+dependencies:
+    - ibis

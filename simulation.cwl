@@ -7,9 +7,14 @@ cwlVersion: v1.1
 doc: |
     A Docker container for the GRAPE simulation workflow. See the [GRAPE](https://github.com/genxnetwork/grape) GitHub repo for more information.
 requirements:
-  - class: DockerRequirement
-    dockerPull: genx_relatives:cwl
-  - class: InitialWorkDirRequirement
+  DockerRequirement:
+    dockerPull: grape:cwl
+  NetworkAccess:
+    networkAccess: true
+  EnvVarRequirement:
+    envDef:
+      SINGULARITY_TMPDIR: /tmp
+  InitialWorkDirRequirement:
     listing:
       - $(inputs.reference)
 inputs:
@@ -22,4 +27,4 @@ outputs:
   dry_run:
     type: stdout
 baseCommand:
-    ["/src/repo/launcher.py", "simulate", "--flow", "ibis", "--conda-prefix", "/tmp", "--configfile", "workflows/pedsim/config.yaml", "--assembly", "hg37", "--ref-directory", "media", "--real-run"]
+    ["/src/repo/launcher.py", "simulate", "--flow", "ibis", "--conda-prefix", "/tmp", "--configfile", "workflows/pedsim/config.yaml", "--assembly", "hg37", "--ref-directory", "media", "--real-run", "--use-singularity"]
