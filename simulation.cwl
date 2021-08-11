@@ -8,7 +8,7 @@ doc: |
     A Docker container for the GRAPE simulation workflow. See the [GRAPE](https://github.com/genxnetwork/grape) GitHub repo for more information.
 requirements:
   DockerRequirement:
-    dockerPull: grape:cwl
+    dockerPull: genxnetwork/grape:cwl
   NetworkAccess:
     networkAccess: true
   EnvVarRequirement:
@@ -26,5 +26,37 @@ inputs:
 outputs:
   dry_run:
     type: stdout
+  log:
+    type: File
+    outputBinding:
+        glob: "outputs/output.txt"
+  accuracy:
+    type: File
+    outputBinding:
+        glob: "results/accuracy.png"
+  overlaps:
+    type: File
+    outputBinding:
+        glob: "results/overlaps.tsv"
+  relatives:
+    type: File
+    outputBinding:
+        glob: "results/relatives.tsv"
+  precision_recall:
+    type: File
+    outputBinding:
+        glob: "results/precision_recall.png"
+  confusion_matrix:
+    type: File
+    outputBinding:
+        glob: "results/confusion_matrix.png"
+  updated_relatives:
+    type: File
+    outputBinding:
+        glob: "results/updated_relatives.tsv"
+  pedigree_plot:
+    type: File
+    outputBinding:
+        glob: "results/pedigree_plot.png"
 baseCommand:
-    ["/src/repo/launcher.py", "simulate", "--flow", "ibis", "--conda-prefix", "/tmp", "--configfile", "workflows/pedsim/config.yaml", "--assembly", "hg37", "--ref-directory", "media", "--real-run", "--use-singularity"]
+    ["/src/repo/launcher.py", "simulate", "--flow", "ibis", "--conda-prefix", "/tmp", "--configfile", "workflows/pedsim/config.yaml", "--assembly", "hg37", "--ref-directory", "/home/sashaaero/ref", "--real-run", "--use-singularity"]
