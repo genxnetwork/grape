@@ -8,6 +8,7 @@ configfile: "config.yaml"
 # it's where they will be stored ~40G
 REF_DIR            = config["ref_dir"]
 GRCH37_FASTA       = join(REF_DIR, config["reference"]["GRCh37_fasta"]["file"])
+GRCH37_FASTA_FAI   = join(REF_DIR, config["reference"]["GRCh37_fasta_fai"]["file"])
 GENETIC_MAP        = join(REF_DIR, config["reference"]["GENETIC_MAP"]["file"])
 GENETIC_MAP_GRCH37 = join(REF_DIR, config["reference"]["genetic_map_GRCh37"]["file"])
 REF_VCF            = join(REF_DIR, config["reference"]["vcfRef"]["file"])
@@ -26,6 +27,11 @@ GRCH37_FASTA_url       = config["reference"]["GRCh37_fasta"]["url"]
 GRCH37_FASTA_mirror    = config["reference"]["GRCh37_fasta"]["mirror"]
 GRCH37_FASTA_basename  = basename(GRCH37_FASTA_url)
 GRCH37_FASTA_md5       = config["reference"]["GRCh37_fasta"]["md5"]
+
+GRCH37_FASTA_FAI_url       = config["reference"]["GRCh37_fasta_fai"]["url"]
+GRCH37_FASTA_FAI_mirror    = config["reference"]["GRCh37_fasta_fai"]["mirror"]
+GRCH37_FASTA_FAI_basename  = basename(GRCH37_FASTA_FAI_url)
+GRCH37_FASTA_FAI_md5       = config["reference"]["GRCh37_fasta_fai"]["md5"]
 
 GENETIC_MAP_url        = config["reference"]["GENETIC_MAP"]["url"]
 GENETIC_MAP_mirror     = config["reference"]["GENETIC_MAP"]["mirror"]
@@ -74,6 +80,7 @@ if need_phase or need_imputation:
         input:
             GRCh37_fasta = GRCH37_FASTA,
             GRCh37_fasta_dict = expand("{ref}.dict", ref=GRCH37_FASTA),
+            GRCh37_fasta_fai = GRCH37_FASTA_FAI,
             GENETIC_MAP = GENETIC_MAP,
             genetic_map_GRCh37 = expand(GENETIC_MAP_GRCH37, chrom=CHROMOSOMES),
             cmmap = expand(CMMAP, chrom=CHROMOSOMES),
@@ -89,6 +96,7 @@ else:
         input:
             GRCh37_fasta = GRCH37_FASTA,
             GRCh37_fasta_dict = expand("{ref}.dict", ref=GRCH37_FASTA),
+            GRCh37_fasta_fai= GRCH37_FASTA_FAI,
             GENETIC_MAP = GENETIC_MAP,
             genetic_map_GRCh37 = expand(GENETIC_MAP_GRCH37, chrom=CHROMOSOMES),
             cmmap = expand(CMMAP, chrom=CHROMOSOMES),
@@ -100,7 +108,8 @@ else:
 
 rule download_GRCh37_fasta:
     output:
-        GRCh37_fasta = GRCH37_FASTA
+        GRCh37_fasta = GRCH37_FASTA,
+        GRCh37_fasta_fai = GRCH37_FASTA_FAI
     conda:
         "../../envs/download.yaml"
     log:
@@ -118,6 +127,13 @@ rule download_GRCh37_fasta:
             fi
             # gzip exit with "decompression OK, trailing garbage ignored". need to silence
             gzip -d {REF_DIR}/human_g1k_v37.fasta.gz |& tee -a {log}
+            
+            wget {GRCH37_FASTA_FAI_url} -P {REF_DIR} --tries 50 -c |& tee -a {log} || wget {GRCH37_FASTA_FAI_mirror} -P {REF_DIR} --tries 50 -c |& tee -a {log}
+            sum2=$(md5sum {REF_DIR}/{GRCH37_FASTA_FAI_basename} | cut -d " " -f1)
+            if [ $sum2 != {GRCH37_FASTA_FAI_md5} ]; then 
+                echo "md5 sum of GRCH37_FAST_FAI is invalid" |& tee -a {log}
+                exit 1
+            fi           
             exit 0
         """
 
@@ -175,7 +191,7 @@ rule download_genetic_map_GRCh37:
             fi
             tar -zxvf {REF_DIR}/genetic_map_HapMapII_GRCh37.tar.gz -C {REF_DIR}/genetic_map_GRCh37 --exclude=README.txt |& tee -a {log}
             rm {REF_DIR}/genetic_map_HapMapII_GRCh37.tar.gz |& tee -a {log}
-            # consider postprocessing? https://github.com/arq5x/gemini/blob/master/gemini/annotation_provenance/make-recombination.sh 
+            # consider postprocessing? https://github.com/arq5x/gemini/blob/master/gemini/annotation_provenance/make-recombination.sh
         """
 
 rule download_vcfRef:
@@ -191,14 +207,15 @@ rule download_vcfRef:
             set -e
             set -x
             md5array=({REF_VCF_md5})
+            mkdir -p {REF_DIR}/1000genome/bcf/
             for chrom in {{1..22}}; do
-                wget {REF_VCF_url} -P {REF_DIR}/1000genome/bcf/ -O 1000genome_chr$chrom_tmp.bcf --tries 50 -c  |& tee -a {log}
-                sum=$(md5sum {REF_DIR}/1000genome/bcf/1000genome_chr$chrom_tmp.bcf | cut -d " " -f1)
+                wget {REF_VCF_url} -O {REF_DIR}/1000genome/bcf/1000genome_chr$chrom.tmp.bcf --tries 50 -c  |& tee -a {log}
+                sum=$(md5sum {REF_DIR}/1000genome/bcf/1000genome_chr$chrom.tmp.bcf | cut -d " " -f1)
                 if [ $sum != ${{md5array[$chrom-1]}} ]; then
                     echo "md5 sum of vcfRef is invalid" |& tee -a {log}
                     exit 1
                 fi
-                bcftools annotate --set-id '%CHROM:%POS:%REF:%FIRST_ALT' {REF_DIR}/1000genome/bcf/1000genome_chr$chrom_tmp.bcf -O z -o -Ob -o {REF_DIR}/1000genome/bcf/1000genome_chr$chrom.bcf |& tee -a {log}
+                bcftools annotate --set-id '%CHROM:%POS:%REF:%FIRST_ALT' {REF_DIR}/1000genome/bcf/1000genome_chr$chrom.tmp.bcf -O z -o -Ob -o {REF_DIR}/1000genome/bcf/1000genome_chr$chrom.bcf |& tee -a {log}
                 bcftools index {REF_DIR}/1000genome/bcf/1000genome_chr$chrom.bcf |& tee -a {log}
             done
         """
@@ -331,7 +348,7 @@ rule download_hd_genotype_chip:
             if [ $sum != {HD_GENOTYPE_CHIP_md5} ]; then
                 echo "md5 sum of HD_GENOTYPE_CHIP is invalid" |& tee -a {log}
                 exit 1
-            fi            
+            fi
             wget {HD_GENOTYPE_CHIP_url}.tbi -O {HD_GENOTYPE_CHIP}.tbi --tries 50 -c  |& tee -a {log}
         """
 
@@ -350,7 +367,7 @@ rule download_affymetrix_chip:
             if [ $sum != {AFFYMETRIX_CHIP_md5} ]; then
                 echo "md5 sum of AFFYMETRIX_CHIP is invalid" |& tee -a {log}
                 exit 1
-            fi  
+            fi
             wget {AFFYMETRIX_CHIP_url}.tbi -O {AFFYMETRIX_CHIP}.tbi --tries 50 -c  |& tee -a {log}
         """
 
@@ -368,7 +385,7 @@ rule download_pedsim_map:
             if [ $sum != {PEDSIM_MAP_md5} ]; then
                 echo "md5 sum of PEDSIM_MAP is invalid" |& tee -a {log}
                 exit 1
-            fi  
+            fi
             tar xvzf {REF_DIR}/Refined_genetic_map_b37.tar.gz -C {REF_DIR} |& tee -a {log}
             printf "#chr\tpos\tmale_cM\tfemale_cM\n" > {REF_DIR}/refined_mf.simmap
             for chr in {{1..22}}; do

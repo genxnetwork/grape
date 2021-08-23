@@ -18,7 +18,7 @@ Main features:
 
 The pipeline is implemented with the Snakemake framework. All used components are wrapped in Singularity containers or isolated in a Conda environment.
 
-The visualisation of execution graph: [svg](https://bitbucket.org/genxglobal/genx-relatives-snakemake/raw/077f33cfdd421ae17b5c02a3a5f8eb34bd20e1fd/dag.svg).
+The visualisation of execution graph: [svg](https://raw.githubusercontent.com/genxnetwork/grape/master/dag.svg).
 
 Multi-core parallelization is highly utilized due to the ability to split input data by each sample/chromosome.
 
@@ -61,6 +61,8 @@ docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localti
 launcher.py reference  --ref-directory /media/ref
 
 ```
+
+If you want to run simulation after reference downloading you should add either `--impute` or `--phase` flag
 
 4. (Optional) Compile Funnel from https://github.com/messwith/funnel with go 1.12+ and make. Then one can just use bin/funnel binary.  
 This Funnel fork simply adds the ‘--privileged’ flag to all task docker commands.  
