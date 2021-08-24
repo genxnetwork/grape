@@ -1,0 +1,12 @@
+{
+  "reference": {
+    "class": "Directory",
+    "basename": "media",
+    "path": "/media"
+  },
+  "vcf": {
+    "class": "File",
+    "basename": "vcf_file",
+    "path": "path-to-vcf-file"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "config": {
+    "class": "Directory",
+    "basename": "media",
+    "path": "/media"
+  }
+}

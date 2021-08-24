@@ -8,7 +8,7 @@ doc: |
     A Docker container for the GRAPE simulation workflow. See the [GRAPE](https://github.com/genxnetwork/grape) GitHub repo for more information.
 requirements:
   DockerRequirement:
-    dockerPull: genxnetwork/grape:cwl
+    dockerPull: grape:cwl
   NetworkAccess:
     networkAccess: true
   EnvVarRequirement:
@@ -26,10 +26,10 @@ inputs:
 outputs:
   dry_run:
     type: stdout
-  log:
-    type: File
-    outputBinding:
-        glob: "outputs/output.txt"
+  #log:
+  #  type: File
+  #  outputBinding:
+  #      glob: "outputs/output.txt"
   accuracy:
     type: File
     outputBinding:
@@ -59,4 +59,13 @@ outputs:
     outputBinding:
         glob: "results/pedigree_plot.png"
 baseCommand:
-    ["/src/repo/launcher.py", "simulate", "--flow", "ibis", "--conda-prefix", "/tmp", "--configfile", "workflows/pedsim/config.yaml", "--assembly", "hg37", "--ref-directory", "/home/sashaaero/ref", "--real-run", "--use-singularity"]
+    [
+        "/src/repo/launcher.py",
+        "simulate",
+        "--flow", "ibis",
+        "--conda-prefix", "/tmp",
+        "--configfile", "/src/repo/config.yaml",
+        "--assembly", "hg37",
+        "--ref-directory", "media",
+        "--real-run"
+    ]

@@ -60,3 +60,5 @@ reference:
   pedsim_map:
     file: refined_mf.simmap
     url: https://github.com/cbherer/Bherer_etal_SexualDimorphismRecombination/raw/master/Refined_genetic_map_b37.tar.gz
+  chr_phased:
+    file: 1000genome/bcf/chr{chrom}.phased.vcf.gz

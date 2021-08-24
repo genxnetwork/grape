@@ -1,7 +1,5 @@
 from os.path import join
 
-configfile: "config.yaml"
-
 REF_DIR         = config["ref_dir"]
 GRCH37_FASTA    = join(REF_DIR, config["reference"]["GRCh37_fasta"])
 GENETIC_MAP     = join(REF_DIR, config["reference"]["GENETIC_MAP"])

@@ -2,11 +2,9 @@
 
 from os.path import join, basename
 
-configfile: "config.yaml"
-
-# read reference directory from config
-# it's where they will be stored ~40G
 REF_DIR            = config["ref_dir"]
+AZURE_KEY          = config["azure_public_key"]
+DATASET_KEY        = config["1000g_public_key"]
 GRCH37_FASTA       = join(REF_DIR, config["reference"]["GRCh37_fasta"]["file"])
 GRCH37_FASTA_FAI   = join(REF_DIR, config["reference"]["GRCh37_fasta_fai"]["file"])
 GENETIC_MAP        = join(REF_DIR, config["reference"]["GENETIC_MAP"]["file"])
@@ -19,26 +17,19 @@ SITE_1000GENOME    = join(REF_DIR, config["reference"]["SITE_1000GENOME"]["file"
 HAPMAP_PED         = join(REF_DIR, config["reference"]["hapmap_ped"]["file"])
 HAPMAP_MP          = join(REF_DIR, config["reference"]["hapmap_mp"]["file"])
 HAPMAP_FAM         = join(REF_DIR, config["reference"]["hapmap_fam"]["file"])
-HD_GENOTYPE_CHIP   = join(REF_DIR, config["reference"]["hd_genotype_chip"]["file"])
 AFFYMETRIX_CHIP    = join(REF_DIR, config["reference"]["affymetrix_chip"]["file"])
 PEDSIM_MAP         = join(REF_DIR, config["reference"]["pedsim_map"]["file"])
 
-GRCH37_FASTA_url       = config["reference"]["GRCh37_fasta"]["url"]
-GRCH37_FASTA_mirror    = config["reference"]["GRCh37_fasta"]["mirror"]
-GRCH37_FASTA_basename  = basename(GRCH37_FASTA_url)
-GRCH37_FASTA_md5       = config["reference"]["GRCh37_fasta"]["md5"]
+GRCH37_FASTA_url            = config["reference"]["GRCh37_fasta"]["url"]
+GRCH37_FASTA_md5            = config["reference"]["GRCh37_fasta"]["md5"]
 
 GRCH37_FASTA_FAI_url       = config["reference"]["GRCh37_fasta_fai"]["url"]
-GRCH37_FASTA_FAI_mirror    = config["reference"]["GRCh37_fasta_fai"]["mirror"]
-GRCH37_FASTA_FAI_basename  = basename(GRCH37_FASTA_FAI_url)
 GRCH37_FASTA_FAI_md5       = config["reference"]["GRCh37_fasta_fai"]["md5"]
 
 GENETIC_MAP_url        = config["reference"]["GENETIC_MAP"]["url"]
-GENETIC_MAP_mirror     = config["reference"]["GENETIC_MAP"]["mirror"]
 GENETIC_MAP_md5        = config["reference"]["GENETIC_MAP"]["md5"]
 
 GENETIC_MAP_GRCH37_url = config["reference"]["genetic_map_GRCh37"]["url"]
-GENETIC_MAP_GRCH37_basename = basename(GENETIC_MAP_GRCH37_url)
 GENETIC_MAP_GRCH37_md5 = config["reference"]["genetic_map_GRCh37"]["md5"]
 
 REF_VCF_url            = config["reference"]["vcfRef"]["url"]
@@ -53,14 +44,10 @@ CMMAP_basename         = basename(CMMAP_url)
 CMMAP_md5              = config["reference"]["cmmap"]["md5"]
 
 SITE_1000GENOME_url    = config["reference"]["SITE_1000GENOME"]["url"]
-SITE_1000GENOME_basename = basename(SITE_1000GENOME_url)
 SITE_1000GENOME_md5    = config["reference"]["SITE_1000GENOME"]["md5"]
 
 HAPMAP_FAM_url         = config["reference"]["hapmap_fam"]["url"]
 HAPMAP_FAM_md5         = config["reference"]["hapmap_fam"]["md5"]
-
-HD_GENOTYPE_CHIP_url   = config["reference"]["hd_genotype_chip"]["url"]
-HD_GENOTYPE_CHIP_md5   = config["reference"]["hd_genotype_chip"]["md5"]
 
 AFFYMETRIX_CHIP_url    = config["reference"]["affymetrix_chip"]["url"]
 AFFYMETRIX_CHIP_md5    = config["reference"]["affymetrix_chip"]["md5"]
@@ -69,42 +56,31 @@ PEDSIM_MAP_url         = config["reference"]["pedsim_map"]["url"]
 PEDSIM_MAP_basename    = basename(PEDSIM_MAP_url)
 PEDSIM_MAP_md5         = config["reference"]["pedsim_map"]["md5"]
 
+PICARD_url             = config["reference"]["picard"]["url"]
+PICARD        = config["reference"]["picard"]["file"]
+
 CHROMOSOMES = [str(i) for i in range(1, 23)]
 
 # if any of these are True then download and process reference for the phase and imputation
 need_phase = config['phase']
 need_imputation = config['impute']
 
-if need_phase or need_imputation:
-    rule all:
-        input:
-            GRCh37_fasta = GRCH37_FASTA,
-            GRCh37_fasta_dict = expand("{ref}.dict", ref=GRCH37_FASTA),
-            GRCh37_fasta_fai = GRCH37_FASTA_FAI,
-            GENETIC_MAP = GENETIC_MAP,
-            genetic_map_GRCh37 = expand(GENETIC_MAP_GRCH37, chrom=CHROMOSOMES),
-            cmmap = expand(CMMAP, chrom=CHROMOSOMES),
-            lift_chain = LIFT_CHAIN,
-            SITE_1000GENOME = SITE_1000GENOME,
-            pedsim_map = PEDSIM_MAP,
-            hd_genotype_chip = HD_GENOTYPE_CHIP,
-            affymetrix_chip = AFFYMETRIX_CHIP,
-            vcfRef = expand(REF_VCF, chrom=CHROMOSOMES),
-            refHaps = expand(REF_HAPS, chrom=CHROMOSOMES)
-else:
-    rule all:
-        input:
-            GRCh37_fasta = GRCH37_FASTA,
-            GRCh37_fasta_dict = expand("{ref}.dict", ref=GRCH37_FASTA),
-            GRCh37_fasta_fai= GRCH37_FASTA_FAI,
-            GENETIC_MAP = GENETIC_MAP,
-            genetic_map_GRCh37 = expand(GENETIC_MAP_GRCH37, chrom=CHROMOSOMES),
-            cmmap = expand(CMMAP, chrom=CHROMOSOMES),
-            lift_chain = LIFT_CHAIN,
-            SITE_1000GENOME = SITE_1000GENOME,
-            pedsim_map = PEDSIM_MAP,
-            hd_genotype_chip = HD_GENOTYPE_CHIP,
-            affymetrix_chip = AFFYMETRIX_CHIP
+
+rule all:
+    input:
+        GRCh37_fasta = GRCH37_FASTA,
+        GRCh37_fasta_dict = expand("{ref}.dict", ref=GRCH37_FASTA),
+        GRCh37_fasta_fai= GRCH37_FASTA_FAI,
+        GENETIC_MAP = GENETIC_MAP,
+        genetic_map_GRCh37 = expand(GENETIC_MAP_GRCH37, chrom=CHROMOSOMES),
+        cmmap = expand(CMMAP, chrom=CHROMOSOMES),
+        lift_chain = LIFT_CHAIN,
+        SITE_1000GENOME = SITE_1000GENOME,
+        pedsim_map = PEDSIM_MAP,
+        affymetrix_chip = AFFYMETRIX_CHIP,
+        vcfRef = expand(REF_VCF, chrom=CHROMOSOMES if need_phase or need_imputation else []),
+        refHaps = expand(REF_HAPS, chrom=CHROMOSOMES if need_phase or need_imputation else [])
+
 
 rule download_GRCh37_fasta:
     output:
@@ -119,8 +95,8 @@ rule download_GRCh37_fasta:
             set +e
             set -x
 
-            wget {GRCH37_FASTA_url} -P {REF_DIR} --tries 50 -c |& tee -a {log} || wget {GRCH37_FASTA_mirror} -P {REF_DIR} --tries 50 -c |& tee -a {log}
-            sum=$(md5sum {REF_DIR}/{GRCH37_FASTA_basename} | cut -d " " -f1)
+            wget "{GRCH37_FASTA_url}{DATASET_KEY}" -O {GRCH37_FASTA} -P {REF_DIR} --tries 50 |& tee -a {log}           
+            sum=$(md5sum {REF_DIR}/{GRCH37_FASTA} | cut -d " " -f1)
             if [ $sum != {GRCH37_FASTA_md5} ]; then
                 echo "md5 sum of GRCH37_FASTA is invalid" |& tee -a {log}
                 exit 1
@@ -128,8 +104,8 @@ rule download_GRCh37_fasta:
             # gzip exit with "decompression OK, trailing garbage ignored". need to silence
             gzip -d {REF_DIR}/human_g1k_v37.fasta.gz |& tee -a {log}
             
-            wget {GRCH37_FASTA_FAI_url} -P {REF_DIR} --tries 50 -c |& tee -a {log} || wget {GRCH37_FASTA_FAI_mirror} -P {REF_DIR} --tries 50 -c |& tee -a {log}
-            sum2=$(md5sum {REF_DIR}/{GRCH37_FASTA_FAI_basename} | cut -d " " -f1)
+            wget "{GRCH37_FASTA_FAI_url}{DATASET_KEY}" -O {GRCH37_FAST_FAI} -P {REF_DIR} --tries 50 |& tee -a {log}
+            sum2=$(md5sum {REF_DIR}/{GRCH37_FASTA_FAI} | cut -d " " -f1)
             if [ $sum2 != {GRCH37_FASTA_FAI_md5} ]; then 
                 echo "md5 sum of GRCH37_FAST_FAI is invalid" |& tee -a {log}
                 exit 1
@@ -142,13 +118,13 @@ rule create_fasta_dict:
         GRCh37_fasta = GRCH37_FASTA
     output:
         expand("{ref}.dict", ref=GRCH37_FASTA)
-    singularity:
-        "docker://genxnetwork/picard:stable"
     log:
         "logs/ref/create_fasta_dict.log"
     shell:
         """
-            java -jar /picard/picard.jar CreateSequenceDictionary -R {input.GRCh37_fasta} -O {output} |& tee -a {log}
+            wget {PICARD_url} --tries 50 -c |& tee -a {log}
+            java -jar {PICARD} CreateSequenceDictionary -R {input.GRCh37_fasta} -O {output} |& tee -a {log}
+            rm {PICARD}
         """
 
 rule download_GENETIC_MAP:
@@ -163,7 +139,7 @@ rule download_GENETIC_MAP:
             set -e
             set -x
 
-            wget {GENETIC_MAP_url} -O {GENETIC_MAP} --tries 50 -c |& tee -a {log} || wget {GENETIC_MAP_mirror} -O {GENETIC_MAP} --tries 50 -c  |& tee -a {log}
+            wget {GENETIC_MAP_url} -O {GENETIC_MAP} --tries 50 -c |& tee -a {log}
             sum=$(md5sum {GENETIC_MAP} | cut -d " " -f1)
             if [ $sum != {GENETIC_MAP_md5} ]; then
                 echo "md5 sum of GENETIC_MAP is invalid" |& tee -a {log}
@@ -183,8 +159,8 @@ rule download_genetic_map_GRCh37:
             set -e
             set -x
 
-            wget {GENETIC_MAP_GRCH37_url} --tries 50 -c  -P {REF_DIR} |& tee -a {log}
-            sum=$(md5sum {REF_DIR}/{GENETIC_MAP_GRCH37_basename} | cut -d " " -f1)
+            wget {GENETIC_MAP_GRCH37_url} --tries 50 -P {REF_DIR} |& tee -a {log}
+            sum=$(md5sum {REF_DIR}/{GENETIC_MAP_GRCH37} | cut -d " " -f1)
             if [ $sum != {GENETIC_MAP_GRCH37_md5} ]; then
                 echo "md5 sum of genetic_map_GRCh37 is invalid" |& tee -a {log}
                 exit 1
@@ -209,7 +185,7 @@ rule download_vcfRef:
             md5array=({REF_VCF_md5})
             mkdir -p {REF_DIR}/1000genome/bcf/
             for chrom in {{1..22}}; do
-                wget {REF_VCF_url} -O {REF_DIR}/1000genome/bcf/1000genome_chr$chrom.tmp.bcf --tries 50 -c  |& tee -a {log}
+                wget "{REF_VCF_url}{DATASET_KEY}" -O {REF_DIR}/1000genome/bcf/1000genome_chr$chrom.tmp.bcf --tries 50 -c  |& tee -a {log}
                 sum=$(md5sum {REF_DIR}/1000genome/bcf/1000genome_chr$chrom.tmp.bcf | cut -d " " -f1)
                 if [ $sum != ${{md5array[$chrom-1]}} ]; then
                     echo "md5 sum of vcfRef is invalid" |& tee -a {log}
@@ -217,6 +193,7 @@ rule download_vcfRef:
                 fi
                 bcftools annotate --set-id '%CHROM:%POS:%REF:%FIRST_ALT' {REF_DIR}/1000genome/bcf/1000genome_chr$chrom.tmp.bcf -O z -o -Ob -o {REF_DIR}/1000genome/bcf/1000genome_chr$chrom.bcf |& tee -a {log}
                 bcftools index {REF_DIR}/1000genome/bcf/1000genome_chr$chrom.bcf |& tee -a {log}
+                rm {REF_DIR}/1000genome/bcf/1000genome_chr$chrom.tmp.bcf
             done
         """
 
@@ -225,8 +202,8 @@ rule make_refHaps:
         rules.download_vcfRef.output['vcfRef']
     output:
         refHaps = expand(REF_HAPS, chrom=CHROMOSOMES)
-    singularity:
-        "docker://genxnetwork/minimac3:stable"
+    #singularity:
+    #    "docker://genxnetwork/minimac3:stable"
     log:
         "logs/ref/make_refHaps.log"
     threads:
@@ -257,15 +234,15 @@ rule download_lift_chain:
             set -e
             set -x
 
-            wget {LIFT_CHAIN_url} -P {REF_DIR} --tries 50 -c  |& tee -a {log}
-            sum=$(md5sum {REF_DIR}/{LIFT_CHAIN_basename} | cut -d " " -f1)
+            wget {LIFT_CHAIN_url} -P {REF_DIR} --tries 50 |& tee -a {log}
+            sum=$(md5sum {REF_DIR}/{LIFT_CHAIN} | cut -d " " -f1)
             if [ $sum != {LIFT_CHAIN_md5} ]; then
                 echo "md5 sum of LIFT_CHAIN is invalid" |& tee -a {log}
                 exit 1
             fi
-            gzip -d {REF_DIR}/hg38ToHg19.over.chain.gz |& tee -a {log}
+            gzip -d {REF_DIR}/{LIFT_CHAIN} |& tee -a {log}
             sed -e s/chr//g -i {REF_DIR}/hg38ToHg19.over.chain |& tee -a {log}
-            gzip -c {REF_DIR}/hg38ToHg19.over.chain > {REF_DIR}/hg38ToHg19.over.chain.gz
+            gzip -c {REF_DIR}/hg38ToHg19.over.chain > {REF_DIR}/{LIFT_CHAIN}
             rm {REF_DIR}/hg38ToHg19.over.chain |& tee -a {log}
         """
 
@@ -306,14 +283,14 @@ rule download_SITE_1000GENOME:
             set -x
 
             mkdir -p {REF_DIR}/1000genome/allele_info |& tee -a {log}
-            wget {SITE_1000GENOME_url} -P {REF_DIR}/1000genome/allele_info --tries 50 -c  |& tee -a {log}
-            sum=$(md5sum {REF_DIR}/1000genome/allele_info/{SITE_1000GENOME_basename} | cut -d " " -f1)
+            wget "{SITE_1000GENOME_url}{DATASET_KEY}" -O "{REF_DIR}/{SITE_1000GENOME}" --tries 50 |& tee -a {log}
+            sum=$(md5sum {REF_DIR}/1000genome/allele_info/{SITE_1000GENOME} | cut -d " " -f1)
             if [ $sum != {SITE_1000GENOME_md5} ]; then
                 echo "md5 sum of SITE_1000GENOME is invalid" |& tee -a {log}
                 exit 1
             fi
-            bcftools view --no-header -m2 -M2 -v snps -g ^miss -Ov -o {SITE_1000GENOME} {REF_DIR}/1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5c.20130502.sites.vcf.gz |& tee -a {log}
-            rm {REF_DIR}/1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5c.20130502.sites.vcf.gz |& tee -a {log}
+            bcftools view --no-header -m2 -M2 -v snps -g ^miss -Ov -o {SITE_1000GENOME} {REF_DIR}/{SITE_1000GENOME} |& tee -a {log}
+            rm {REF_DIR}/{SITE_1000GENOME} |& tee -a {log}
         """
 
 rule download_hapmap_fam:
@@ -325,31 +302,12 @@ rule download_hapmap_fam:
         "logs/ref/download_hapmap_fam.log"
     shell:
         """
-            wget {HAPMAP_FAM_url} -O {HAPMAP_FAM} --tries 50 -c  |& tee -a {log}
+            wget {HAPMAP_FAM_url} -O {HAPMAP_FAM} --tries 50 |& tee -a {log}
             sum=$(md5sum {HAPMAP_FAM} | cut -d " " -f1)
             if [ $sum != {HAPMAP_FAM_md5} ]; then
                 echo "md5 sum of HAPMAP_FAM is invalid" |& tee -a {log}
                 exit 1
             fi
-        """
-
-rule download_hd_genotype_chip:
-    output:
-        hd_genotype_chip=HD_GENOTYPE_CHIP
-    conda:
-        "../../envs/download.yaml"
-    log:
-        "logs/ref/download_hd_genotype_chip.log"
-    shell:
-        """
-            mkdir -p {REF_DIR}/1000genome/hd_genotype_chip |& tee -a {log}
-            wget {HD_GENOTYPE_CHIP_url} -O {HD_GENOTYPE_CHIP} --tries 100 |& tee -a {log}
-            sum=$(md5sum {HD_GENOTYPE_CHIP} | cut -d " " -f1)
-            if [ $sum != {HD_GENOTYPE_CHIP_md5} ]; then
-                echo "md5 sum of HD_GENOTYPE_CHIP is invalid" |& tee -a {log}
-                exit 1
-            fi
-            wget {HD_GENOTYPE_CHIP_url}.tbi -O {HD_GENOTYPE_CHIP}.tbi --tries 50 -c  |& tee -a {log}
         """
 
 rule download_affymetrix_chip:
@@ -362,7 +320,7 @@ rule download_affymetrix_chip:
     shell:
         """
             mkdir -p {REF_DIR}/1000genome/affymetrix_chip |& tee -a {log}
-            wget {AFFYMETRIX_CHIP_url} -O {AFFYMETRIX_CHIP} --tries 50 -c  |& tee -a {log}
+            wget "{AFFYMETRIX_CHIP_url}{DATASET_KEY}" -O {AFFYMETRIX_CHIP} --tries 50 |& tee -a {log}
             sum=$(md5sum {AFFYMETRIX_CHIP} | cut -d " " -f1)
             if [ $sum != {AFFYMETRIX_CHIP_md5} ]; then
                 echo "md5 sum of AFFYMETRIX_CHIP is invalid" |& tee -a {log}
@@ -386,11 +344,12 @@ rule download_pedsim_map:
                 echo "md5 sum of PEDSIM_MAP is invalid" |& tee -a {log}
                 exit 1
             fi
-            tar xvzf {REF_DIR}/Refined_genetic_map_b37.tar.gz -C {REF_DIR} |& tee -a {log}
+            tar xvzf {REF_DIR}/{PEDSIM_MAP_basename} -C {REF_DIR} |& tee -a {log}
             printf "#chr\tpos\tmale_cM\tfemale_cM\n" > {REF_DIR}/refined_mf.simmap
             for chr in {{1..22}}; do
             paste {REF_DIR}/Refined_genetic_map_b37/male_chr$chr.txt {REF_DIR}/Refined_genetic_map_b37/female_chr$chr.txt \
                 | awk -v OFS="\t" 'NR > 1 && $2 == $6 {{print $1,$2,$4,$8}}' \
                 | sed 's/^chr//' >> {REF_DIR}/refined_mf.simmap;
             done
+            rm -f {REF_DIR}/{PEDSIM_MAP_basename} |& tee -a {log}
         """
