@@ -1,11 +1,17 @@
-
 rule recode_vcf:
-    input: vcf='input.vcf.gz'
-    output: vcf = "vcf/merged_recoded.vcf.gz"
-    log: "logs/plink/recode_vcf.log"
-    conda: "../envs/plink.yaml"
-    shell: "plink --vcf {input.vcf} --chr 1-22 --snps-only just-acgt --output-chr M --not-chr XY,MT --export vcf bgz --out vcf/merged_recoded |& tee {log}"
-
+    input: vcf = 'input.vcf.gz'
+    output: vcf = 'vcf/merged_recoded.vcf.gz'
+    conda: "../envs/bcftools.yaml"
+    shell:
+        """
+        rm -f chr_name_conv.txt
+        for i in {{1..22}} X Y XY MT
+        do
+            echo "chr$i $i" >> chr_name_conv.txt
+        done
+        
+        bcftools annotate --rename-chrs chr_name_conv.txt {input.vcf} | bcftools view -m2 -M2 -v snps -t "^X,Y,XY,MT" -O v -o {output.vcf} 
+        """
 
 if need_remove_imputation:
     rule remove_imputation:
