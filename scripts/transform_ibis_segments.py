@@ -33,10 +33,15 @@ def transform(input_ibd, output_ibd):
         'error_count',
         'error_density'
     ]
+    with open(output_ibd, "w"):  # always create output to avoid error
+        pass
     chunksize = int(1e+6)
     for i, chunk in enumerate(pandas.read_csv(input_ibd, header=None, names=names, sep='\t', chunksize=chunksize)):
-        transform_chunk(chunk, output_ibd)
-        logging.info(f'Chunk {i} of size {chunksize} was written to {output_ibd}')
+        if not chunk.empty:
+            transform_chunk(chunk, output_ibd)
+            logging.info(f'Chunk {i} of size {chunksize} was written to {output_ibd}')
+        else:
+            logging.info('Empty chunk')
 
 
 if __name__ == '__main__':

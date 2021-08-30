@@ -77,18 +77,14 @@ def read_ersa(ersa_path):
         set_index(['id1', 'id2'])
 
 
-if __name__ == '__main__':
-
-    logging.basicConfig(filename=snakemake.log[0], level=logging.DEBUG, format='%(levelname)s:%(asctime)s %(message)s')
-
-    ibd_path = snakemake.input['ibd']
-    # within families
-    # across families
-    ersa_path = snakemake.input['ersa']
-    output_path = snakemake.output[0]
-
+def postprocess(ibd_path, ersa_path, output_path):
     ibd = read_ibis(ibd_path)
     ersa = read_ersa(ersa_path)
+
+    if ibd.empty or ersa.empty:
+        logging.error("ersa postprocess input is empty")
+        with open(output_path, "w"):  # create empty output to avoid error
+            return
 
     logging.info(f'ibd shape: {ibd.shape[0]}, ersa shape: {ersa.shape[0]}')
 
@@ -117,3 +113,14 @@ if __name__ == '__main__':
 
     logging.info(f'final degree not null: {pandas.notna(relatives.final_degree).sum()}')
     relatives.loc[pandas.notna(relatives.final_degree), :].to_csv(output_path, sep='\t')
+
+
+if __name__ == '__main__':
+    logging.basicConfig(filename=snakemake.log[0], level=logging.DEBUG, format='%(levelname)s:%(asctime)s %(message)s')
+    postprocess(
+        ibd_path=snakemake.input['ibd'],
+        # within families
+        # across families
+        ersa_path=snakemake.input['ersa'],
+        output_path=snakemake.output[0]
+    )
