@@ -104,10 +104,10 @@ rule download_GRCh37_fasta:
             # gzip exit with "decompression OK, trailing garbage ignored". need to silence
             gzip -d {REF_DIR}/human_g1k_v37.fasta.gz |& tee -a {log}
             
-            wget "{GRCH37_FASTA_FAI_url}{DATASET_KEY}" -O {GRCH37_FAST_FAI} -P {REF_DIR} --tries 50 |& tee -a {log}
+            wget "{GRCH37_FASTA_FAI_url}{DATASET_KEY}" -O {GRCH37_FASTA_FAI} -P {REF_DIR} --tries 50 |& tee -a {log}
             sum2=$(md5sum {REF_DIR}/{GRCH37_FASTA_FAI} | cut -d " " -f1)
             if [ $sum2 != {GRCH37_FASTA_FAI_md5} ]; then 
-                echo "md5 sum of GRCH37_FAST_FAI is invalid" |& tee -a {log}
+                echo "md5 sum of GRCH37_FASTA_FAI is invalid" |& tee -a {log}
                 exit 1
             fi           
             exit 0

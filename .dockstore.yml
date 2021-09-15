@@ -3,4 +3,6 @@ workflows:
    - name: GRAPE simulation
      subclass: CWL
      publish: true
-     primaryDescriptorPath: /simulation.cwl
+     primaryDescriptorPath: /workflows/preprocess2/cwl/simulation.cwl
+     testParameterFiles:
+      - /workflows/preprocess2/cwl/config.json
