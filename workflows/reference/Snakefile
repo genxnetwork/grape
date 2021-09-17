@@ -31,6 +31,7 @@ GENETIC_MAP_md5        = config["reference"]["GENETIC_MAP"]["md5"]
 
 GENETIC_MAP_GRCH37_url = config["reference"]["genetic_map_GRCh37"]["url"]
 GENETIC_MAP_GRCH37_md5 = config["reference"]["genetic_map_GRCh37"]["md5"]
+GENETIC_MAP_GRCH37_filename = join(REF_DIR, basename(config["reference"]["genetic_map_GRCh37"]["url"]))
 
 REF_VCF_url            = config["reference"]["vcfRef"]["url"]
 REF_VCF_md5            = config["reference"]["vcfRef"]["md5"]
@@ -95,8 +96,8 @@ rule download_GRCh37_fasta:
             set +e
             set -x
 
-            wget "{GRCH37_FASTA_url}{DATASET_KEY}" -O {GRCH37_FASTA} -P {REF_DIR} --tries 50 |& tee -a {log}           
-            sum=$(md5sum {REF_DIR}/{GRCH37_FASTA} | cut -d " " -f1)
+            wget "{GRCH37_FASTA_url}{DATASET_KEY}" -O {GRCH37_FASTA} --tries 50 |& tee -a {log}           
+            sum=$(md5sum {GRCH37_FASTA} | cut -d " " -f1)
             if [ $sum != {GRCH37_FASTA_md5} ]; then
                 echo "md5 sum of GRCH37_FASTA is invalid" |& tee -a {log}
                 exit 1
@@ -104,8 +105,8 @@ rule download_GRCh37_fasta:
             # gzip exit with "decompression OK, trailing garbage ignored". need to silence
             gzip -d {REF_DIR}/human_g1k_v37.fasta.gz |& tee -a {log}
             
-            wget "{GRCH37_FASTA_FAI_url}{DATASET_KEY}" -O {GRCH37_FASTA_FAI} -P {REF_DIR} --tries 50 |& tee -a {log}
-            sum2=$(md5sum {REF_DIR}/{GRCH37_FASTA_FAI} | cut -d " " -f1)
+            wget "{GRCH37_FASTA_FAI_url}{DATASET_KEY}" -O {GRCH37_FASTA_FAI} --tries 50 |& tee -a {log}
+            sum2=$(md5sum {GRCH37_FASTA_FAI} | cut -d " " -f1)
             if [ $sum2 != {GRCH37_FASTA_FAI_md5} ]; then 
                 echo "md5 sum of GRCH37_FASTA_FAI is invalid" |& tee -a {log}
                 exit 1
@@ -159,14 +160,14 @@ rule download_genetic_map_GRCh37:
             set -e
             set -x
 
-            wget {GENETIC_MAP_GRCH37_url} --tries 50 -P {REF_DIR} |& tee -a {log}
-            sum=$(md5sum {REF_DIR}/{GENETIC_MAP_GRCH37} | cut -d " " -f1)
+            wget {GENETIC_MAP_GRCH37_url} --tries 50 -O {GENETIC_MAP_GRCH37_filename} |& tee -a {log}
+            sum=$(md5sum GENETIC_MAP_GRCH37_filename | cut -d " " -f1)
             if [ $sum != {GENETIC_MAP_GRCH37_md5} ]; then
                 echo "md5 sum of genetic_map_GRCh37 is invalid" |& tee -a {log}
                 exit 1
             fi
-            tar -zxvf {REF_DIR}/genetic_map_HapMapII_GRCh37.tar.gz -C {REF_DIR}/genetic_map_GRCh37 --exclude=README.txt |& tee -a {log}
-            rm {REF_DIR}/genetic_map_HapMapII_GRCh37.tar.gz |& tee -a {log}
+            tar -zxvf {GENETIC_MAP_GRCH37_filename} -C {REF_DIR}/genetic_map_GRCh37 --exclude=README.txt |& tee -a {log}
+            rm {GENETIC_MAP_GRCH37_filename} |& tee -a {log}
             # consider postprocessing? https://github.com/arq5x/gemini/blob/master/gemini/annotation_provenance/make-recombination.sh
         """
 
@@ -234,15 +235,15 @@ rule download_lift_chain:
             set -e
             set -x
 
-            wget {LIFT_CHAIN_url} -P {REF_DIR} --tries 50 |& tee -a {log}
-            sum=$(md5sum {REF_DIR}/{LIFT_CHAIN} | cut -d " " -f1)
+            wget {LIFT_CHAIN_url} -O {LIFT_CHAIN} --tries 50 |& tee -a {log}
+            sum=$(md5sum {LIFT_CHAIN} | cut -d " " -f1)
             if [ $sum != {LIFT_CHAIN_md5} ]; then
                 echo "md5 sum of LIFT_CHAIN is invalid" |& tee -a {log}
                 exit 1
             fi
-            gzip -d {REF_DIR}/{LIFT_CHAIN} |& tee -a {log}
+            gzip -d {LIFT_CHAIN} |& tee -a {log}
             sed -e s/chr//g -i {REF_DIR}/hg38ToHg19.over.chain |& tee -a {log}
-            gzip -c {REF_DIR}/hg38ToHg19.over.chain > {REF_DIR}/{LIFT_CHAIN}
+            gzip -c {REF_DIR}/hg38ToHg19.over.chain > {LIFT_CHAIN}
             rm {REF_DIR}/hg38ToHg19.over.chain |& tee -a {log}
         """
 
@@ -266,8 +267,8 @@ rule download_cmmap:
                 echo "md5 sum of cmmap is invalid" |& tee -a {log}
                 exit 1
             fi
-            unzip {REF_DIR}/genetic_map_b37.zip -d {REF_DIR} |& tee -a {log}
-            rm {REF_DIR}/genetic_map_b37.zip |& tee -a {log}
+            unzip {REF_DIR}/{CMMAP_basename} -d {REF_DIR} |& tee -a {log}
+            rm {REF_DIR}/{CMMAP_basename} |& tee -a {log}
         """
 
 rule download_SITE_1000GENOME:
@@ -283,14 +284,16 @@ rule download_SITE_1000GENOME:
             set -x
 
             mkdir -p {REF_DIR}/1000genome/allele_info |& tee -a {log}
-            wget "{SITE_1000GENOME_url}{DATASET_KEY}" -O "{REF_DIR}/{SITE_1000GENOME}" --tries 50 |& tee -a {log}
-            sum=$(md5sum {REF_DIR}/1000genome/allele_info/{SITE_1000GENOME} | cut -d " " -f1)
+            echo {REF_DIR}
+            echo {SITE_1000GENOME}
+            wget "{SITE_1000GENOME_url}{DATASET_KEY}" -O "{SITE_1000GENOME}" --tries 50 |& tee -a {log}
+            sum=$(md5sum {SITE_1000GENOME} | cut -d " " -f1)
             if [ $sum != {SITE_1000GENOME_md5} ]; then
                 echo "md5 sum of SITE_1000GENOME is invalid" |& tee -a {log}
                 exit 1
             fi
-            bcftools view --no-header -m2 -M2 -v snps -g ^miss -Ov -o {SITE_1000GENOME} {REF_DIR}/{SITE_1000GENOME} |& tee -a {log}
-            rm {REF_DIR}/{SITE_1000GENOME} |& tee -a {log}
+            bcftools view --no-header -m2 -M2 -v snps -g ^miss -Ov -o {SITE_1000GENOME} {SITE_1000GENOME} |& tee -a {log}
+            rm {SITE_1000GENOME} |& tee -a {log}
         """
 
 rule download_hapmap_fam:
