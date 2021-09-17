@@ -293,7 +293,6 @@ rule download_SITE_1000GENOME:
                 exit 1
             fi
             bcftools view --no-header -m2 -M2 -v snps -g ^miss -Ov -o {SITE_1000GENOME} {SITE_1000GENOME} |& tee -a {log}
-            rm {SITE_1000GENOME} |& tee -a {log}
         """
 
 rule download_hapmap_fam:
