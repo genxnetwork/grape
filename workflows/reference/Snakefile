@@ -176,8 +176,8 @@ rule download_vcfRef:
     output:
         #vcfRef      =  expand(REF_VCF, chrom=CHROMOSOMES),
         #vcfRef_idx  =  expand(REF_VCF + '.csi', chrom=CHROMOSOMES)
-        vcfRef=REF_VCF,
-        vcfRef_idx=REF_VCF + '.csi'
+        vcfRef = REF_VCF,
+        vcfRef_idx = REF_VCF + '.csi'
     wildcard_constraints:
         chrom="((2[0-2])|(1[0-9])|([1-9]))" # all numbers from 1 to 22
     conda:
@@ -204,13 +204,13 @@ rule download_vcfRef:
 
 rule make_refHaps:
     input:
-        vcfRef=REF_VCF
+        vcfRef = REF_VCF
     output:
-        refHaps=REF_HAPS
+        refHaps = REF_HAPS
     wildcard_constraints:
         chrom="((2[0-2])|(1[0-9])|([1-9]))" # all numbers from 1 to 22
-    #singularity:
-    #    "docker://genxnetwork/minimac3:stable"
+    conda:
+        "../../envs/download.yaml"
     log:
         "logs/ref/make_refHaps{chrom}.log"
     threads:
