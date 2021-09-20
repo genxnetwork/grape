@@ -3,6 +3,27 @@ workflows:
    - name: GRAPE simulation
      subclass: CWL
      publish: true
-     primaryDescriptorPath: /workflows/preprocess2/cwl/simulation.cwl
+     primaryDescriptorPath: workflows/preprocess2/cwl/preprocess.cwl
      testParameterFiles:
-      - /workflows/preprocess2/cwl/config.json
+      - workflows/preprocess2/cwl/config.json
+
+   - name: GRAPE reference downloading
+     subclass: CWL
+     publish: true
+     primaryDescriptorPath: workflows/reference/cwl/reference.cwl
+     testParameterFiles:
+       - workflows/reference/cwl/config.json
+
+   - name: GRAPE bundle downloading
+     subclass: CWL
+     publish: true
+     primaryDescriptor: workflows/bundle/cwl/bundle.cwl
+     testParameterFiles:
+       - workflows/bundle/cwl/config.json
+
+   - name: GRAPE simulation
+     subclass: CWL
+     publish: true
+     primaryDescriptorPath: workflows/pedsim/cwl/simulation.cwl
+     testParameterFiles:
+       - workflows/pedsim/cwl/config.json
