@@ -326,7 +326,7 @@ rule download_affymetrix_chip:
                 echo "md5 sum of AFFYMETRIX_CHIP is invalid" |& tee -a {log}
                 exit 1
             fi
-            wget {AFFYMETRIX_CHIP_url}.tbi -O {AFFYMETRIX_CHIP}.tbi --tries 50 -c  |& tee -a {log}
+            wget "{AFFYMETRIX_CHIP_url}.tbi{DATASET_KEY}" -O {AFFYMETRIX_CHIP}.tbi --tries 50 -c  |& tee -a {log}
         """
 
 rule download_pedsim_map:
