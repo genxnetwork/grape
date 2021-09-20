@@ -47,6 +47,7 @@ CMMAP_md5              = config["reference"]["cmmap"]["md5"]
 
 SITE_1000GENOME_url    = config["reference"]["SITE_1000GENOME"]["url"]
 SITE_1000GENOME_md5    = config["reference"]["SITE_1000GENOME"]["md5"]
+SITE_1000GENOME_basename = basename(SITE_1000GENOME_url)
 
 HAPMAP_FAM_url         = config["reference"]["hapmap_fam"]["url"]
 HAPMAP_FAM_md5         = config["reference"]["hapmap_fam"]["md5"]
@@ -162,7 +163,7 @@ rule download_genetic_map_GRCh37:
             set -x
 
             wget {GENETIC_MAP_GRCH37_url} --tries 50 -O {GENETIC_MAP_GRCH37_filename} |& tee -a {log}
-            sum=$(md5sum GENETIC_MAP_GRCH37_filename | cut -d " " -f1)
+            sum=$(md5sum {GENETIC_MAP_GRCH37_filename} | cut -d " " -f1)
             if [ $sum != {GENETIC_MAP_GRCH37_md5} ]; then
                 echo "md5 sum of genetic_map_GRCh37 is invalid" |& tee -a {log}
                 exit 1
@@ -284,13 +285,14 @@ rule download_SITE_1000GENOME:
             set -x
 
             mkdir -p {REF_DIR}/1000genome/allele_info |& tee -a {log}
-            wget "{SITE_1000GENOME_url}{DATASET_KEY}" -O "{SITE_1000GENOME}" --tries 50 |& tee -a {log}
-            sum=$(md5sum {SITE_1000GENOME} | cut -d " " -f1)
+            wget "{SITE_1000GENOME_url}{DATASET_KEY}" -O "{REF_DIR}/1000genome/allele_info/{SITE_1000GENOME_basename}" --tries 50 |& tee -a {log}
+            sum=$(md5sum "{REF_DIR}/1000genome/allele_info/{SITE_1000GENOME_basename}" | cut -d " " -f1)
             if [ $sum != {SITE_1000GENOME_md5} ]; then
                 echo "md5 sum of SITE_1000GENOME is invalid" |& tee -a {log}
                 exit 1
             fi
-            bcftools view --no-header -m2 -M2 -v snps -g ^miss -Ov -o {SITE_1000GENOME} {SITE_1000GENOME} |& tee -a {log}
+            bcftools view --no-header -m2 -M2 -v snps -g ^miss -Ov -o {SITE_1000GENOME} "{REF_DIR}/1000genome/allele_info/{SITE_1000GENOME_basename}" |& tee -a {log}
+            rm "{REF_DIR}/1000genome/allele_info/{SITE_1000GENOME_basename}" |& tee -a {log}
         """
 
 rule download_hapmap_fam:

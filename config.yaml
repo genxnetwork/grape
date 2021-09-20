@@ -80,7 +80,7 @@ reference:
     filesize: 50554370
     md5: 8d7d0bf2bfd13a39cad0e8d5012666a2
   SITE_1000GENOME:
-    file: 1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5c.20130502.sites.vcf.gz
+    file: 1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.only_rs.biallelic.tab
     url: https://dataset1000genomes.blob.core.windows.net/dataset/release/20130502/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5c.20130502.sites.vcf.gz
     filesize: 1458224240
     md5: d9c22df30ea810d5c7d98391e482d1a3
