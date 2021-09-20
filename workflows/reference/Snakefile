@@ -59,7 +59,7 @@ PEDSIM_MAP_basename    = basename(PEDSIM_MAP_url)
 PEDSIM_MAP_md5         = config["reference"]["pedsim_map"]["md5"]
 
 PICARD_url             = config["reference"]["picard"]["url"]
-PICARD        = config["reference"]["picard"]["file"]
+PICARD                 = config["reference"]["picard"]["file"]
 
 CHROMOSOMES = [str(i) for i in range(1, 23)]
 
@@ -70,16 +70,16 @@ need_imputation = config['impute']
 
 rule all:
     input:
-        #GRCh37_fasta = GRCH37_FASTA,
-        #GRCh37_fasta_dict = expand("{ref}.dict", ref=GRCH37_FASTA),
-        #GRCh37_fasta_fai= GRCH37_FASTA_FAI,
-        #GENETIC_MAP = GENETIC_MAP,
-        #genetic_map_GRCh37 = expand(GENETIC_MAP_GRCH37, chrom=CHROMOSOMES),
-        #cmmap = expand(CMMAP, chrom=CHROMOSOMES),
-        #lift_chain = LIFT_CHAIN,
-        #SITE_1000GENOME = SITE_1000GENOME,
-        #pedsim_map = PEDSIM_MAP,
-        #affymetrix_chip = AFFYMETRIX_CHIP,
+        GRCh37_fasta = GRCH37_FASTA,
+        GRCh37_fasta_dict = expand("{ref}.dict", ref=GRCH37_FASTA),
+        GRCh37_fasta_fai= GRCH37_FASTA_FAI,
+        GENETIC_MAP = GENETIC_MAP,
+        genetic_map_GRCh37 = expand(GENETIC_MAP_GRCH37, chrom=CHROMOSOMES),
+        cmmap = expand(CMMAP, chrom=CHROMOSOMES),
+        lift_chain = LIFT_CHAIN,
+        SITE_1000GENOME = SITE_1000GENOME,
+        pedsim_map = PEDSIM_MAP,
+        affymetrix_chip = AFFYMETRIX_CHIP,
         vcfRef = expand(REF_VCF, chrom=CHROMOSOMES if need_phase or need_imputation else []),
         refHaps = expand(REF_HAPS, chrom=CHROMOSOMES if need_phase or need_imputation else [])
 
@@ -174,8 +174,6 @@ rule download_genetic_map_GRCh37:
 
 rule download_vcfRef:
     output:
-        #vcfRef      =  expand(REF_VCF, chrom=CHROMOSOMES),
-        #vcfRef_idx  =  expand(REF_VCF + '.csi', chrom=CHROMOSOMES)
         vcfRef = REF_VCF,
         vcfRef_idx = REF_VCF + '.csi'
     wildcard_constraints:

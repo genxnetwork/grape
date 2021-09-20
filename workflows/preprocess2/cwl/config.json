@@ -2,7 +2,7 @@
   "reference": {
     "class": "Directory",
     "basename": "media",
-    "path": "/media"
+    "path": "reference-folder"
   },
   "vcf": {
     "class": "File",

@@ -2,6 +2,6 @@
   "reference": {
     "type": "Directory",
     "basename": "ref",
-    "path": "absolute-path"
+    "path": "reference-folder"
   }
 }

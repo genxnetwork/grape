@@ -2,6 +2,6 @@
     "reference": {
         "class": "Directory",
         "basename": "media",
-        "path": "path-to-reference-folder"
+        "path": "reference-folder"
     }
 }
