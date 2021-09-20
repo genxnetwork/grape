@@ -285,8 +285,6 @@ rule download_SITE_1000GENOME:
             set -x
 
             mkdir -p {REF_DIR}/1000genome/allele_info |& tee -a {log}
-            echo {REF_DIR}
-            echo {SITE_1000GENOME}
             wget "{SITE_1000GENOME_url}{DATASET_KEY}" -O "{SITE_1000GENOME}" --tries 50 |& tee -a {log}
             sum=$(md5sum {SITE_1000GENOME} | cut -d " " -f1)
             if [ $sum != {SITE_1000GENOME_md5} ]; then
