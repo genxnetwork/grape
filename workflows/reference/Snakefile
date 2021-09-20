@@ -181,6 +181,8 @@ rule download_vcfRef:
         chrom="((2[0-2])|(1[0-9])|([1-9]))" # all numbers from 1 to 22
     conda:
         "../../envs/download.yaml"
+    threads:
+        workflow.cores
     log:
         "logs/ref/download_vcfRef{chrom}.log"
     shell:
@@ -218,7 +220,7 @@ rule make_refHaps:
         """
             set -e
             set -x
-            bcftools view --min-ac 251 -i 'strlen(REF)=1 & strlen(ALT)=1' {REF_DIR}/1000genome/chr{wildcards.chrom}.bcf -O z -o {REF_DIR}/1000genome/chr{wildcards.chrom}.ac251.vcf.gz |& tee -a {log}
+            bcftools view --min-ac 251 -i 'strlen(REF)=1 & strlen(ALT)=1' {REF_DIR}/1000genome/bcf/1000genome_chr{wildcards.chrom}.bcf -O z -o {REF_DIR}/1000genome/chr{wildcards.chrom}.ac251.vcf.gz |& tee -a {log}
             Minimac3-omp --cpus {threads} --refHaps {REF_DIR}/1000genome/chr{wildcards.chrom}.ac251.vcf.gz --processReference --prefix {REF_DIR}/Minimac/{wildcards.chrom}.1000g.Phase3.v5.With.Parameter.Estimates |& tee -a {log}
             rm {REF_DIR}/1000genome/chr{wildcards.chrom}.ac251.vcf.gz |& tee -a {log}
         """
