@@ -2,6 +2,6 @@
     "reference": {
         "class": "Directory",
         "basename": "media",
-        "path": "/home/sashaaero/dev/genx/media"
+        "path": "path-to-reference-folder"
     }
 }
