@@ -3,9 +3,6 @@
 
 from os.path import join
 
-
-configfile: "config.yaml"
-
 flow               = config["flow"]
 is_client          = config["mode"] == "client"
 use_simulated_ibd  = config["use_simulated_ibd"] if "use_simulated_ibd" in config else False
@@ -50,8 +47,8 @@ rule all:
 
 
 if flow == 'ibis':
-    include: "rules/relatives_ibis.smk"
+    include: "../../rules/relatives_ibis.smk"
 elif flow == 'germline':
-    include: "rules/relatives.smk"
+    include: "../../rules/relatives.smk"
 elif flow == 'ibis_king':
-    include: "rules/relatives_ibis_king.smk"
+    include: "../../rules/relatives_ibis_king.smk"

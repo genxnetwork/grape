@@ -1,0 +1,12 @@
+{
+  "reference": {
+    "class": "Directory",
+    "basename": "media",
+    "path": "/media"
+  },
+  "workdir": {
+    "class": "Directory",
+    "basename": "workdir",
+    "path": "path-to-preprocessed-folder"
+  }
+}
