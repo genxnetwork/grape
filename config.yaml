@@ -15,7 +15,7 @@ azure_public_key: "?sv=2020-08-04&ss=f&srt=sco&sp=r&se=2022-08-08T14:35:53Z&st=2
 1000g_public_key: "?sv=2019-10-10&si=prod&sr=c&sig=9nzcxaQn0NprMPlSh4RhFQHcXedLQIcFgbERiooHEqM%3D"
 reference:
   GRCh37_fasta:
-    file: human_g1k_v37.fasta.gz
+    file: human_g1k_v37.fasta
     url: https://dataset1000genomes.blob.core.windows.net/dataset/technical/reference/human_g1k_v37.fasta.gz
     filesize: 892331003
     md5: 45f81df94f0408d082363e34a081ed81

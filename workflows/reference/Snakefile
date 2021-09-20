@@ -22,6 +22,7 @@ PEDSIM_MAP         = join(REF_DIR, config["reference"]["pedsim_map"]["file"])
 
 GRCH37_FASTA_url            = config["reference"]["GRCh37_fasta"]["url"]
 GRCH37_FASTA_md5            = config["reference"]["GRCh37_fasta"]["md5"]
+GRCH37_FASTA_basename       = basename(GRCH37_FASTA_url)
 
 GRCH37_FASTA_FAI_url       = config["reference"]["GRCh37_fasta_fai"]["url"]
 GRCH37_FASTA_FAI_md5       = config["reference"]["GRCh37_fasta_fai"]["md5"]
@@ -96,14 +97,14 @@ rule download_GRCh37_fasta:
             set +e
             set -x
 
-            wget "{GRCH37_FASTA_url}{DATASET_KEY}" -O {GRCH37_FASTA} --tries 50 |& tee -a {log}           
-            sum=$(md5sum {GRCH37_FASTA} | cut -d " " -f1)
+            wget "{GRCH37_FASTA_url}{DATASET_KEY}" -O {REF_DIR}/{GRCH37_FASTA_basename} --tries 50 |& tee -a {log}           
+            sum=$(md5sum {REF_DIR}/{GRCH37_FASTA_basename} | cut -d " " -f1)
             if [ $sum != {GRCH37_FASTA_md5} ]; then
                 echo "md5 sum of GRCH37_FASTA is invalid" |& tee -a {log}
                 exit 1
             fi
             # gzip exit with "decompression OK, trailing garbage ignored". need to silence
-            gzip -d {REF_DIR}/human_g1k_v37.fasta.gz |& tee -a {log}
+            gzip -d {REF_DIR}/{GRCH37_FASTA_basename} |& tee -a {log}
             
             wget "{GRCH37_FASTA_FAI_url}{DATASET_KEY}" -O {GRCH37_FASTA_FAI} --tries 50 |& tee -a {log}
             sum2=$(md5sum {GRCH37_FASTA_FAI} | cut -d " " -f1)
@@ -173,53 +174,53 @@ rule download_genetic_map_GRCh37:
 
 rule download_vcfRef:
     output:
-        vcfRef      =  expand(REF_VCF, chrom=CHROMOSOMES),
-        vcfRef_idx  =  expand(REF_VCF + '.csi', chrom=CHROMOSOMES)
+        #vcfRef      =  expand(REF_VCF, chrom=CHROMOSOMES),
+        #vcfRef_idx  =  expand(REF_VCF + '.csi', chrom=CHROMOSOMES)
+        vcfRef=REF_VCF,
+        vcfRef_idx=REF_VCF + '.csi'
+    wildcard_constraints:
+        chrom="((2[0-2])|(1[0-9])|([1-9]))" # all numbers from 1 to 22
     conda:
         "../../envs/download.yaml"
     log:
-        "logs/ref/download_vcfRef.log"
+        "logs/ref/download_vcfRef{chrom}.log"
     shell:
         """
             set -e
             set -x
             md5array=({REF_VCF_md5})
             mkdir -p {REF_DIR}/1000genome/bcf/
-            for chrom in {{1..22}}; do
-                wget "{REF_VCF_url}{DATASET_KEY}" -O {REF_DIR}/1000genome/bcf/1000genome_chr$chrom.tmp.bcf --tries 50 -c  |& tee -a {log}
-                sum=$(md5sum {REF_DIR}/1000genome/bcf/1000genome_chr$chrom.tmp.bcf | cut -d " " -f1)
-                if [ $sum != ${{md5array[$chrom-1]}} ]; then
-                    echo "md5 sum of vcfRef is invalid" |& tee -a {log}
-                    exit 1
-                fi
-                bcftools annotate --set-id '%CHROM:%POS:%REF:%FIRST_ALT' {REF_DIR}/1000genome/bcf/1000genome_chr$chrom.tmp.bcf -O z -o -Ob -o {REF_DIR}/1000genome/bcf/1000genome_chr$chrom.bcf |& tee -a {log}
-                bcftools index {REF_DIR}/1000genome/bcf/1000genome_chr$chrom.bcf |& tee -a {log}
-                rm {REF_DIR}/1000genome/bcf/1000genome_chr$chrom.tmp.bcf
-            done
+            wget "{REF_VCF_url}{DATASET_KEY}" -O {REF_DIR}/1000genome/bcf/1000genome_chr{wildcards.chrom}.tmp.bcf --tries 50 -c  |& tee -a {log}
+            sum=$(md5sum {REF_DIR}/1000genome/bcf/1000genome_chr{wildcards.chrom}.tmp.bcf | cut -d " " -f1)
+            if [ $sum != ${{md5array[{wildcards.chrom}-1]}} ]; then
+                echo "md5 sum of vcfRef is invalid" |& tee -a {log}
+                exit 1
+            fi
+            bcftools annotate --set-id '%CHROM:%POS:%REF:%FIRST_ALT' {REF_DIR}/1000genome/bcf/1000genome_chr{wildcards.chrom}.tmp.bcf -O z -o -Ob -o {REF_DIR}/1000genome/bcf/1000genome_chr{wildcards.chrom}.bcf |& tee -a {log}
+            bcftools index {REF_DIR}/1000genome/bcf/1000genome_chr{wildcards.chrom}.bcf |& tee -a {log}
+            rm {REF_DIR}/1000genome/bcf/1000genome_chr{wildcards.chrom}.tmp.bcf
         """
 
 rule make_refHaps:
     input:
-        rules.download_vcfRef.output['vcfRef']
+        vcfRef=REF_VCF
     output:
-        refHaps = expand(REF_HAPS, chrom=CHROMOSOMES)
+        refHaps=REF_HAPS
+    wildcard_constraints:
+        chrom="((2[0-2])|(1[0-9])|([1-9]))" # all numbers from 1 to 22
     #singularity:
     #    "docker://genxnetwork/minimac3:stable"
     log:
-        "logs/ref/make_refHaps.log"
+        "logs/ref/make_refHaps{chrom}.log"
     threads:
         workflow.cores
     shell:
         """
             set -e
             set -x
-            chrom=0
-            for ref in {input}; do
-                ((chrom=chrom+1))
-                bcftools view --min-ac 251 -i 'strlen(REF)=1 & strlen(ALT)=1' $ref -O z -o {REF_DIR}/1000genome/chr$chrom.ac251.vcf.gz |& tee -a {log}
-                Minimac3-omp --cpus {threads} --refHaps {REF_DIR}/1000genome/chr$chrom.ac251.vcf.gz --processReference --prefix {REF_DIR}/Minimac/$chrom.1000g.Phase3.v5.With.Parameter.Estimates |& tee -a {log}
-                rm {REF_DIR}/1000genome/chr$chrom.ac251.vcf.gz |& tee -a {log}
-            done
+            bcftools view --min-ac 251 -i 'strlen(REF)=1 & strlen(ALT)=1' {REF_DIR}/1000genome/chr{wildcards.chrom}.bcf -O z -o {REF_DIR}/1000genome/chr{wildcards.chrom}.ac251.vcf.gz |& tee -a {log}
+            Minimac3-omp --cpus {threads} --refHaps {REF_DIR}/1000genome/chr{wildcards.chrom}.ac251.vcf.gz --processReference --prefix {REF_DIR}/Minimac/{wildcards.chrom}.1000g.Phase3.v5.With.Parameter.Estimates |& tee -a {log}
+            rm {REF_DIR}/1000genome/chr{wildcards.chrom}.ac251.vcf.gz |& tee -a {log}
         """
 
 
@@ -347,11 +348,11 @@ rule download_pedsim_map:
                 exit 1
             fi
             tar xvzf {REF_DIR}/{PEDSIM_MAP_basename} -C {REF_DIR} |& tee -a {log}
-            printf "#chr\tpos\tmale_cM\tfemale_cM\n" > {REF_DIR}/refined_mf.simmap
+            printf "#chr\tpos\tmale_cM\tfemale_cM\n" > {PEDSIM_MAP}
             for chr in {{1..22}}; do
             paste {REF_DIR}/Refined_genetic_map_b37/male_chr$chr.txt {REF_DIR}/Refined_genetic_map_b37/female_chr$chr.txt \
                 | awk -v OFS="\t" 'NR > 1 && $2 == $6 {{print $1,$2,$4,$8}}' \
-                | sed 's/^chr//' >> {REF_DIR}/refined_mf.simmap;
+                | sed 's/^chr//' >> {PEDSIM_MAP};
             done
             rm -f {REF_DIR}/{PEDSIM_MAP_basename} |& tee -a {log}
         """
