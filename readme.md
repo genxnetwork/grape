@@ -17,6 +17,7 @@ Main features:
 ### Stack
 
 The pipeline is implemented with the Snakemake framework. All used components are wrapped in Singularity containers or isolated in a Conda environment.
+Pipeline can also be executed with dockstore (https://dockstore.org).
 
 The visualisation of execution graph: [svg](https://raw.githubusercontent.com/genxnetwork/grape/master/dag.svg).
 
@@ -270,6 +271,60 @@ Please mind `-n` flag for dry-run
 7. Useful commands
 
 Please see useful_commands.md.
+
+
+### Launch with Dockstore
+
+1. First you want to [install dockstore](https://dockstore.org/quick-start).
+
+
+2. Next clone this repository.
+
+
+3. Note about configuration and runtime. 
+    Each step requires `config.json`. Each config has predefined directories and paths, but you can override these paths by changing them in these files.
+   
+    Also notice that dockstore saves its runtime in `datastore` directory. This directory will grow up with each run. You may desire to clean it up.
+
+
+4. To download references there are two options:
+    
+    4.1 Through open source links with our pipeline. 
+    
+    For full reference download (required by `--phase` and `--impute` options)
+    ```
+    dockstore tool launch --local-entry workflows/reference/cwl/ref.cwl --json workflows/reference/cwl/config.json --script
+    ```
+    or mininal reference downloading
+    ```
+    dockstore tool launch --local-entry workflows/reference/cwl/ref_min.cwl --json workflows/reference/cwl/config.json --script
+    ```
+
+    4.2 Using our bundle (tar archive of the same files)
+    ```
+    dockstore tool launch --local-entry workflows/bundle/cwl/bundle.cwl --json workflows/reference/bundle/config.json --script
+    ```
+    For minimal bundle
+    ```
+    dockstore tool launch --local-entry workflows/bundle/cwl/bundle_min.cwl --json workflows/reference/bundle/config.json --script
+    ```
+    
+    As mentioned before - dockstore saves its runtime. In this case it means that all downloaded files will be also saved in `datastore` directory.
+    So, in this case you'll need 60Gb of free space. Removing `datastore` folder after running this step is highly recommended.
+
+
+5. Preprocessing
+
+    ```
+    dockstore tool launch --local-entry workflows/preprocess2/cwl/preprocess.cwl --json workflows/preprocess2/cwl/config.json --script
+    ```
+   
+
+6. Find
+
+   ```
+   dockstore tool launch --local-entry workflows/find/cwl/find.cwl --json workflows/find/cwl/config.json --script
+   ```
 
 ### Known limitations
 
