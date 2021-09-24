@@ -315,7 +315,7 @@ if __name__ == '__main__':
 
     snakefiles = {
         'preprocess': 'workflows/preprocess2/Snakefile',
-        'find': 'Snakefile',
+        'find': 'workflows/find/Snakefile',
         'simulate': 'workflows/pedsim/Snakefile',
         'hapmap': 'workflows/hapmap/Snakefile',
         'reference': 'workflows/reference/Snakefile',
@@ -352,7 +352,7 @@ if __name__ == '__main__':
     if args.flow not in ['germline', 'ibis', 'ibis_king']:
         raise ValueError(f'--flow can be one of the ["germline", "ibis", "ibis_king"] and not {args.flow}')
     config_dict['flow'] = args.flow
-    if args.command in ['preprocess', 'simulate', 'hapmap', 'reference']:
+    if args.command in ['preprocess', 'simulate', 'hapmap', 'reference', 'bundle']:
         config_dict['remove_imputation'] = args.remove_imputation
         config_dict['impute'] = args.impute
         config_dict['phase'] = args.phase

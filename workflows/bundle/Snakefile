@@ -16,9 +16,11 @@ HAPMAP_FAM         = join(REF_DIR, config["reference"]["hapmap_fam"]["file"])
 AFFYMETRIX_CHIP    = join(REF_DIR, config["reference"]["affymetrix_chip"]["file"])
 PEDSIM_MAP         = join(REF_DIR, config["reference"]["pedsim_map"]["file"])
 
-BUNDLE_url         = config["reference"]["bundle"]["url"]
+full = config['phase'] or config['impute']
+
+BUNDLE_url         = config["reference"]["bundle" if full else "bundle_min"]["url"]
 BUNDLE_basename    = basename(BUNDLE_url)
-BUNDLE_md5         = config["reference"]["bundle"]["md5"]
+BUNDLE_md5         = config["reference"]["bundle" if full else "bundle_min"]["md5"]
 
 CHROMOSOMES = [str(i) for i in range(1, 23)]
 
@@ -33,8 +35,8 @@ rule all:
         SITE_1000GENOME = SITE_1000GENOME,
         pedsim_map = PEDSIM_MAP,
         affymetrix_chip = AFFYMETRIX_CHIP,
-        vcfRef = expand(REF_VCF, chrom=CHROMOSOMES),
-        refHaps = expand(REF_HAPS, chrom=CHROMOSOMES)
+        vcfRef = expand(REF_VCF, chrom=CHROMOSOMES if need_phase or need_imputation else []),
+        refHaps = expand(REF_HAPS, chrom=CHROMOSOMES if need_phase or need_imputation else [])
     conda:
         "../../envs/download.yaml"
     log:

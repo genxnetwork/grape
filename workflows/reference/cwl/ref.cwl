@@ -2,7 +2,7 @@
 
 class: CommandLineTool
 id: "GRAPE"
-label: "GRAPE bundle downloading"
+label: "GRAPE reference downloading"
 cwlVersion: v1.1
 doc: |
     A Docker container for the GRAPE reference downloading. See the [GRAPE](https://github.com/genxnetwork/grape) GitHub repo for more information.
@@ -29,7 +29,6 @@ baseCommand:
         "--conda-prefix", "/tmp",
         "--configfile", "/src/repo/config.yaml",
         "--ref-directory", "ref",
-        "--singularity-args", "-W tmp",
-        "--real-run",
-        "--phase"
+        "--phase",
+        "--real-run"
     ]

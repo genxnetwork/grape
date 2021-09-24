@@ -21,8 +21,6 @@ requirements:
 inputs:
     []
 outputs:
-  dry_run:
-    type: stdout
   data_bed:
     type: File
     outputBinding:
@@ -30,11 +28,11 @@ outputs:
   data_bim:
     type: File
     outputBinding:
-        glob: "preprocessed/data.bim"
+        glob: "preprocessed/data_mapped.bim"
   data_fam:
     type: File
     outputBinding:
-        glob: "preprocessed/data.fam"
+      glob: "preprocessed/data.fam"
 baseCommand:
     [
         "/src/repo/launcher.py",
@@ -42,7 +40,7 @@ baseCommand:
         "--assembly", "hg37",
         "--conda-prefix", "/tmp",
         "--configfile", "/src/repo/config.yaml",
-        "--ref-directory", "media",
+        "--ref-directory", "ref",
         "--vcf-file", "vcf_file",
         "--singularity-args", "-W tmp",
         "--real-run"

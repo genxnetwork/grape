@@ -1,7 +1,7 @@
 {
   "reference": {
-    "type": "Directory",
+    "class": "Directory",
     "basename": "ref",
-    "path": "reference-folder"
+    "path": "/media/ref"
   }
 }

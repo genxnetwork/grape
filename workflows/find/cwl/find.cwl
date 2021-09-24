@@ -17,13 +17,15 @@ requirements:
   InitialWorkDirRequirement:
     listing:
       - $(inputs.reference)
-      - $(inputs.workdir)
+      - $(inputs.data_bed)
+      - $(inputs.data_bim)
+      - $(inputs.data_fam)
 inputs:
     []
 outputs:
   dry_run:
     type: stdout
-  results:
+  result:
     type: File
     outputBinding:
         glob: "results/relatives.tsv"
@@ -35,8 +37,6 @@ baseCommand:
         "--conda-prefix", "/tmp",
         "--configfile", "/src/repo/config.yaml",
         "--ref-directory", "media",
-        "--directory", "workdir",
-        "--singularity-args", "-W tmp",
         "--real-run",
         "--flow", "ibis"
     ]

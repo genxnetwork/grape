@@ -1,12 +1,27 @@
 {
   "reference": {
     "class": "Directory",
-    "basename": "media",
-    "path": "reference-folder"
+    "basename": "ref",
+    "path": "/media/ref"
   },
-  "workdir": {
-    "class": "Directory",
-    "basename": "workdir",
-    "path": "preprocessed-folder"
+  "data_bed": {
+    "class": "File",
+    "basename": "preprocessed/data.bed",
+    "path": "/media/real-data/preprocessed/data.bed"
+  },
+  "data_bim": {
+    "class": "File",
+    "basename": "preprocessed/data_mapped.bim",
+    "path": "/media/real-data/preprocessed/data_mapped.bim"
+  },
+  "data_fam": {
+    "class": "File",
+    "basename": "preprocessed/data.fam",
+    "path": "/media/real-data/preprocessed/preprocessed/data.fam"
+  },
+  "result": {
+    "class": "File",
+    "basename": "result",
+    "path": "/media/results/relatives.tsv"
   }
 }

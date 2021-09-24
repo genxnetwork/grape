@@ -2,10 +2,10 @@
 
 class: CommandLineTool
 id: "GRAPE"
-label: "GRAPE simulation"
+label: "GRAPE bundle minimal downloading"
 cwlVersion: v1.1
 doc: |
-    A Docker container for the GRAPE simulation workflow. See the [GRAPE](https://github.com/genxnetwork/grape) GitHub repo for more information.
+    A Docker container for the GRAPE reference downloading. See the [GRAPE](https://github.com/genxnetwork/grape) GitHub repo for more information.
 requirements:
   DockerRequirement:
     dockerPull: grape:cwl
@@ -14,24 +14,20 @@ requirements:
   EnvVarRequirement:
     envDef:
       SINGULARITY_TMPDIR: /tmp
-  InitialWorkDirRequirement:
-    listing:
-      - $(inputs.reference)
 inputs:
     []
 outputs:
-  simulation_result:
+  reference:
     type: Directory
       outputBinding:
-        glob: "results"
+        glob: "ref"
 baseCommand:
     [
         "/src/repo/launcher.py",
-        "simulate",
-        "--flow", "ibis",
+        "bundle",
+        "--assembly", "hg37",
         "--conda-prefix", "/tmp",
         "--configfile", "/src/repo/config.yaml",
-        "--assembly", "hg37",
         "--ref-directory", "ref",
         "--real-run"
     ]
