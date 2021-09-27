@@ -3,8 +3,8 @@ rule ibis:
         bed="preprocessed/data.bed",
         fam="preprocessed/data.fam",
         bim="preprocessed/data_mapped.bim"
-    singularity:
-        "docker://genxnetwork/ibis:stable"
+    conda:
+        "../envs/ibis.yaml"
     output:
         ibd     = "ibis/merged_ibis.seg"
     log:
@@ -45,8 +45,8 @@ rule ersa:
         ibd=aggregate_input
     output:
         "ersa/relatives.tsv"
-    singularity:
-        "docker://genxnetwork/ersa:stable"
+    conda:
+        "../envs/ersa.yaml"
     log:
         "logs/ersa/ersa.log"
     benchmark:

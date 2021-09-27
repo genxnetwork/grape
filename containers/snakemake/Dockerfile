@@ -39,13 +39,19 @@ ENV SHELL /bin/bash
 
 #ENV CONDA_PKGS_DIR /tmp/conda/pgks
 
-RUN apt-get install -y wget bzip2 gnupg2 git && \
+RUN apt-get install -y wget bzip2 gnupg2 git openjdk-11-jre openjdk-11-jdk libgomp1 && \
     wget -nv https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
     bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda && \
     rm Miniconda3-latest-Linux-x86_64.sh && \
     conda install -c conda-forge mamba && \
     mamba env create -f envs/snakemake.yaml && \
     conda clean --all -y
+
+RUN wget ftp://share.sph.umich.edu/minimac3/Minimac3Executable.tar.gz -O Minimac3Executable.tar.gz
+
+RUN tar -xzvf Minimac3Executable.tar.gz
+
+ENV PATH "$PATH:/Minimac3Executable/bin"
 
 # Workaround of NonWritableError when conda tries to create environments for the first time
 # funnel launches docker containers with --read-only and snakemake cannot create conda envs

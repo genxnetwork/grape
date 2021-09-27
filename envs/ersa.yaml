@@ -1,0 +1,5 @@
+name: ersa
+channels:
+    - b3bg
+dependencies:
+    - ersa
