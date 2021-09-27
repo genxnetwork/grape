@@ -47,7 +47,7 @@ RUN apt-get install -y wget bzip2 gnupg2 git openjdk-11-jre openjdk-11-jdk libgo
     mamba env create -f envs/snakemake.yaml && \
     conda clean --all -y
 
-RUN wget ftp://share.sph.umich.edu/minimac3/Minimac3Executable.tar.gz -O Minimac3Executable.tar.gz
+RUN wget https://bioinformatics.file.core.windows.net/bundles/Minimac3Executable.tar.gz?sv=2020-08-04&ss=f&srt=sco&sp=r&se=2022-08-08T14:35:53Z&st=2021-08-27T06:35:53Z&spr=https&sig=SjxrSn2KBuQYjYgT2ZZTHQ6IOhA%2BRUSvLIgog%2FH2Tnk%3D -O Minimac3Executable.tar.gz
 
 RUN tar -xzvf Minimac3Executable.tar.gz
 
