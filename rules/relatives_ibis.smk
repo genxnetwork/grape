@@ -20,11 +20,12 @@ rule ibis:
         ibis {input.bed} {input.bim} {input.fam} -t {threads} -mt {params.mT} -mL {params.mL} -ibd2 -mL2 3 -hbd -f ibis/merged_ibis |& tee -a {log}
         """
 
-rule transform_ibis_segments:
+checkpoint transform_ibis_segments:
     input:
-        ibd=rules.ibis.output.ibd
+        ibd=rules.ibis.output.ibd,
+        fam="preprocessed/data.fam"
     output:
-        germline = "ibd/merged_ibd.tsv"
+        bucket_dir = directory("ibd")
     log:
         "logs/ibis/transform_ibis_segments.log"
     conda:
@@ -32,9 +33,16 @@ rule transform_ibis_segments:
     script:
         "../scripts/transform_ibis_segments.py"
 
+
+def aggregate_input(wildcards):
+    checkpoints.transform_ibis_segments.get()
+    ids = glob_wildcards(f"ibd/{{id}}.tsv").id
+    return expand(f"ibd/{{id}}.tsv", id=ids)
+
+
 rule ersa:
     input:
-        ibd=rules.transform_ibis_segments.output['germline']
+        ibd=aggregate_input
     output:
         "ersa/relatives.tsv"
     singularity:
@@ -53,7 +61,14 @@ rule ersa:
         ERSA_L={params.ersa_l} # the average number of IBD segments in population
         ERSA_TH={params.ersa_th} # the average length of IBD segment in population
         ERSA_T={params.ersa_t} # min length of segment to be considered in segment aggregation
-        ersa --avuncular-adj -ci --alpha {params.alpha} --dmax 14 -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd} -o {output}  |& tee {log}
+        
+        FILES="{input.ibd}"
+        TEMPFILE=ersa/temp_relatives.tsv
+
+        for input_file in $FILES; do
+            ersa --avuncular-adj -ci --alpha {params.alpha} --dmax 14 -t $ERSA_T -l $ERSA_L -th $ERSA_TH $input_file -o $TEMPFILE  |& tee {log}
+            cat $TEMPFILE >> {output}
+        done
         """
 
 rule postprocess_ersa:

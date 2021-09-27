@@ -94,9 +94,7 @@ else:
             cmmap = expand(CMMAP, chrom=CHROMOSOMES),
             lift_chain = LIFT_CHAIN,
             SITE_1000GENOME = SITE_1000GENOME,
-            pedsim_map = PEDSIM_MAP,
-            hd_genotype_chip = HD_GENOTYPE_CHIP,
-            affymetrix_chip = AFFYMETRIX_CHIP
+            pedsim_map = PEDSIM_MAP
 
 rule download_GRCh37_fasta:
     output:

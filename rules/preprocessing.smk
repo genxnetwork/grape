@@ -10,7 +10,7 @@ rule recode_vcf:
             echo "chr$i $i" >> chr_name_conv.txt
         done
         
-        bcftools annotate --rename-chrs chr_name_conv.txt {input.vcf} | bcftools view -m2 -M2 -v snps -t "^X,Y,XY,MT" -O v -o {output.vcf} 
+        bcftools annotate --rename-chrs chr_name_conv.txt {input.vcf} | bcftools view -m2 -M2 -v snps -t "^X,Y,XY,MT" -O z -o {output.vcf} 
         """
 
 if need_remove_imputation:
