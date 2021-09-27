@@ -174,7 +174,7 @@ rule split_map_for_ibd:
 rule evaluate_ibd:
     input:
         pedsim=rules.simulate.output['seg'],
-        ibd="ibd/merged_ibd.tsv",
+        ibd=aggregate_input, # only segments of first up to 2K samples
         cm=expand("cm2/chr{chrom}.cm.map", chrom=CHROMOSOMES)
     params:
         cm_dir='cm2',

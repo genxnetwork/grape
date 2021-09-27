@@ -107,7 +107,7 @@ reference:
     file: ref.tar.gz
     url: https://bioinformatics.file.core.windows.net/bundles/ref.tar.gz
     filesize: 18582485368
-    md5: 1863f8d20c3cf281b2d87c7fe817bae6
+    md5: 67278f83139f375e22bd56544d523fa3
   bundle_min:
     file: ref_min.tar.gz
     url: https://bioinformatics.file.core.windows.net/bundles/ref_min.tar.gz

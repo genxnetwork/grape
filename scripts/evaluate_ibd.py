@@ -81,7 +81,7 @@ def plot_ibd_len_accuracy(true_segments, found_segments, plot_name):
 
 if __name__ == '__main__':
     pedsim_path = snakemake.input['pedsim']
-    ibd_path = snakemake.input['ibd']
+    ibd_path = snakemake.input['ibd'][0]
     map_dir = snakemake.params['cm_dir']
     is_rapid_ibd = bool(snakemake.params['is_rapid_ibd'])
 
