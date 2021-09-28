@@ -1,0 +1,27 @@
+{
+  "reference": {
+    "class": "Directory",
+    "basename": "ref",
+    "path": "/media/ref"
+  },
+  "vcf": {
+    "class": "File",
+    "basename": "vcf_file",
+    "path": "/media/inputs/data.vcf"
+  },
+  "data_bed": {
+    "class": "File",
+    "basename": "data_bed",
+    "path": "/media/real-data/preprocessed/data.bed"
+  },
+  "data_bim": {
+    "class": "File",
+    "basename": "data_bim",
+    "path": "/media/real-data/preprocessed/data_mapped.bim"
+  },
+  "data_fam": {
+    "class": "File",
+    "basename": "data_fam",
+    "path": "/media/real-data/preprocessed/data.fam"
+  }
+}

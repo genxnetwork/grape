@@ -1,0 +1,54 @@
+from os.path import join, basename
+
+REF_DIR            = config["ref_dir"]
+AZURE_KEY          = config["azure_public_key"]
+GRCH37_FASTA       = join(REF_DIR, config["reference"]["GRCh37_fasta"]["file"])
+GENETIC_MAP        = join(REF_DIR, config["reference"]["GENETIC_MAP"]["file"])
+GENETIC_MAP_GRCH37 = join(REF_DIR, config["reference"]["genetic_map_GRCh37"]["file"])
+REF_VCF            = join(REF_DIR, config["reference"]["vcfRef"]["file"])
+REF_HAPS           = join(REF_DIR, config["reference"]["refHaps"]["file"])
+LIFT_CHAIN         = join(REF_DIR, config["reference"]["lift_chain"]["file"])
+CMMAP              = join(REF_DIR, config["reference"]["cmmap"]["file"])
+SITE_1000GENOME    = join(REF_DIR, config["reference"]["SITE_1000GENOME"]["file"])
+HAPMAP_PED         = join(REF_DIR, config["reference"]["hapmap_ped"]["file"])
+HAPMAP_MP          = join(REF_DIR, config["reference"]["hapmap_mp"]["file"])
+HAPMAP_FAM         = join(REF_DIR, config["reference"]["hapmap_fam"]["file"])
+AFFYMETRIX_CHIP    = join(REF_DIR, config["reference"]["affymetrix_chip"]["file"])
+PEDSIM_MAP         = join(REF_DIR, config["reference"]["pedsim_map"]["file"])
+
+full = config['phase'] or config['impute']
+
+BUNDLE_url         = config["reference"]["bundle" if full else "bundle_min"]["url"]
+BUNDLE_basename    = basename(BUNDLE_url)
+BUNDLE_md5         = config["reference"]["bundle" if full else "bundle_min"]["md5"]
+
+CHROMOSOMES = [str(i) for i in range(1, 23)]
+
+rule all:
+    output:
+        GRCh37_fasta = GRCH37_FASTA,
+        GRCh37_fasta_dict = expand("{ref}.dict",ref=GRCH37_FASTA),
+        GENETIC_MAP = GENETIC_MAP,
+        genetic_map_GRCh37 = expand(GENETIC_MAP_GRCH37, chrom=CHROMOSOMES),
+        cmmap = expand(CMMAP, chrom=CHROMOSOMES),
+        lift_chain = LIFT_CHAIN,
+        SITE_1000GENOME = SITE_1000GENOME,
+        pedsim_map = PEDSIM_MAP,
+        affymetrix_chip = AFFYMETRIX_CHIP,
+        vcfRef = expand(REF_VCF, chrom=CHROMOSOMES if full else []),
+        refHaps = expand(REF_HAPS, chrom=CHROMOSOMES if full else [])
+    conda:
+        "../../envs/download.yaml"
+    log:
+        "logs/ref/download_bundle.log"
+    shell:
+        """
+            # wget "{BUNDLE_url}{AZURE_KEY}" -O {REF_DIR}/{BUNDLE_basename} --tries 50 |& tee -a {log}
+            sum=$(md5sum {REF_DIR}/{BUNDLE_basename} | cut -d " " -f1)
+            if [ $sum != {BUNDLE_md5} ]; then
+                echo "md5 sum of BUDNLE is invalid" |& tee -a {log}
+                exit 1
+            fi  
+            tar -xzvf {REF_DIR}/{BUNDLE_basename} -C {REF_DIR} |& tee -a {log}
+            rm -f {REF_DIR}/{BUNDLE_basename} |& tee -a {log}
+        """

@@ -4,6 +4,7 @@ import psutil
 import argparse
 import shutil
 import os
+from inspect import getsourcefile
 
 # Returns an integer value for total available memory, in GB.
 def total_memory_gb():
@@ -203,6 +204,11 @@ def get_parser_args():
         default="ceph_unrelated_all.tsv",
         help="List of samples from 1000genomes for pedsim to use as founders. You can choose only from 'ceph_unrelated_all.tsv', 'all.tsv'")
 
+    parser.add_argument(
+        "--use-singularity",
+        help="If this argument is present, Snakemake will use Singularity for the containerization environment",
+        action="store_true")
+
     # --singularity-prefix /tmp --singularity-args='-B /media:/media -B /tmp:/tmp -W /tmp' --conda-prefix /tmp
     parser.add_argument(
         '--singularity-prefix',
@@ -220,14 +226,24 @@ def get_parser_args():
         help='Conda prefix for environments'
     )
 
+    parser.add_argument(
+        '--use-bundle',
+        default=False,
+        help='Download all references as single file'
+    )
+
     args = parser.parse_args()
 
-    valid_commands = ['preprocess', 'find', 'simulate', 'hapmap', 'reference']
+    valid_commands = ['preprocess', 'find', 'simulate', 'hapmap', 'reference', 'bundle']
     if args.command not in valid_commands:
         raise RuntimeError(f'command {args.command} not in list of valid commands: {valid_commands}')
 
     if args.impute and not args.phase:
         raise ValueError('If --impute is present, then --phase must also be present')
+
+    if args.command != 'reference' and args.use_bundle:
+        raise ValueError('--bundle option only available for reference downloading')
+
     return args
 
 
@@ -262,36 +278,48 @@ if __name__ == '__main__':
 
     start_time = datetime.datetime.now()
 
+    # in case when launcher.py is executed outside the Snakemake dir
+    current_path = os.path.dirname(getsourcefile(lambda: 0))
+
     if not os.path.exists(args.directory):
         os.makedirs(args.directory)
 
     if args.command == 'simulate':
-        copy_input('workflows/pedsim/params', args.directory, os.path.join('workflows/pedsim/', args.sim_samples_file))
+        copy_input(
+            os.path.join(current_path, 'workflows/pedsim/params'),
+            args.directory, os.path.join(current_path, 'workflows/pedsim/', args.sim_samples_file)
+        )
         # for some reason launching with docker from command line
-        # sets root directory for 'configfile' directive in Snakefile as snakemake.workdir
+        # sets root directory for 'configfile' directive in bundle.Snakefile as snakemake.workdir
         # therefore config.yaml must be in snakemake.workdir
-        shutil.copy('workflows/pedsim/config.yaml', os.path.join(args.directory, 'config.yaml'))
+        shutil.copy(
+            os.path.join(current_path, 'workflows/pedsim/config.yaml'),
+            os.path.join(args.directory, 'config.yaml')
+        )
 
     if args.command == 'hapmap':
         # for some reason launching with docker from command line
         # sets root directory for 'configfile' directive in Snakefile as snakemake.workdir
         # therefore config.yaml must be in snakemake.workdir
-        shutil.copy('workflows/hapmap/config.yaml', os.path.join(args.directory, 'config.yaml'))
-
+        shutil.copy(
+            os.path.join(current_path, 'workflows/hapmap/config.yaml'),
+            os.path.join(args.directory, 'config.yaml')
+        )
 
     if args.command == 'preprocess':
         shutil.copy(args.vcf_file, os.path.join(args.directory, 'input.vcf.gz'))
 
-    if args.command in ['preprocess', 'find', 'reference']:
+    if args.command in ['preprocess', 'find', 'reference', 'bundle']:
         if args.directory != '.':
-            shutil.copy('config.yaml', os.path.join(args.directory, 'config.yaml'))
+            shutil.copy(os.path.join(current_path, 'config.yaml'), os.path.join(args.directory, 'config.yaml'))
 
     snakefiles = {
         'preprocess': 'workflows/preprocess2/Snakefile',
-        'find': 'Snakefile',
+        'find': 'workflows/find/Snakefile',
         'simulate': 'workflows/pedsim/Snakefile',
         'hapmap': 'workflows/hapmap/Snakefile',
-        'reference': 'workflows/reference/Snakefile'
+        'reference': 'workflows/reference/Snakefile',
+        'bundle': 'workflows/bundle/Snakefile'
     }
 
     if args.client:
@@ -300,7 +328,10 @@ if __name__ == '__main__':
             raise RuntimeError(f'Background data is missing for the client mode')
 
     if not args.snakefile:
-        snakefile = snakefiles[args.command]
+        if args.command == 'reference' and args.use_bundle:
+            snakefile = os.path.join(current_path, snakefiles['bundle'])
+        else:
+            snakefile = os.path.join(current_path, snakefiles[args.command])
     else:
         snakefile = args.snakefile
 
@@ -321,7 +352,7 @@ if __name__ == '__main__':
     if args.flow not in ['germline', 'ibis', 'ibis_king']:
         raise ValueError(f'--flow can be one of the ["germline", "ibis", "ibis_king"] and not {args.flow}')
     config_dict['flow'] = args.flow
-    if args.command in ['preprocess', 'simulate', 'hapmap', 'reference']:
+    if args.command in ['preprocess', 'simulate', 'hapmap', 'reference', 'bundle']:
         config_dict['remove_imputation'] = args.remove_imputation
         config_dict['impute'] = args.impute
         config_dict['phase'] = args.phase
@@ -334,7 +365,7 @@ if __name__ == '__main__':
 
     if not snakemake.snakemake(
             snakefile=snakefile,
-            #configfiles=[args.configfile],
+            configfiles=[args.configfile or 'config.yaml'],
             config=config_dict,
             workdir=args.directory,
             cores=args.cores,
@@ -347,7 +378,7 @@ if __name__ == '__main__':
             until=[args.until] if args.until is not None else [],
             use_conda=True,
             conda_prefix=args.conda_prefix,
-            use_singularity=True,
+            use_singularity=args.use_singularity,
             singularity_prefix=args.singularity_prefix,
             singularity_args=args.singularity_args,
             envvars=['CONDA_ENVS_PATH', 'CONDA_PKGS_DIRS']
