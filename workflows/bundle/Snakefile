@@ -5,7 +5,7 @@ AZURE_KEY          = config["azure_public_key"]
 GRCH37_FASTA       = join(REF_DIR, config["reference"]["GRCh37_fasta"]["file"])
 GENETIC_MAP        = join(REF_DIR, config["reference"]["GENETIC_MAP"]["file"])
 GENETIC_MAP_GRCH37 = join(REF_DIR, config["reference"]["genetic_map_GRCh37"]["file"])
-REF_VCF            = join(REF_DIR, config["reference"]["phased_vcf"]["file"])
+REF_VCF            = join(REF_DIR, config["reference"]["vcfRef"]["file"])
 REF_HAPS           = join(REF_DIR, config["reference"]["refHaps"]["file"])
 LIFT_CHAIN         = join(REF_DIR, config["reference"]["lift_chain"]["file"])
 CMMAP              = join(REF_DIR, config["reference"]["cmmap"]["file"])
@@ -35,15 +35,15 @@ rule all:
         SITE_1000GENOME = SITE_1000GENOME,
         pedsim_map = PEDSIM_MAP,
         affymetrix_chip = AFFYMETRIX_CHIP,
-        vcfRef = expand(REF_VCF, chrom=CHROMOSOMES if need_phase or need_imputation else []),
-        refHaps = expand(REF_HAPS, chrom=CHROMOSOMES if need_phase or need_imputation else [])
+        vcfRef = expand(REF_VCF, chrom=CHROMOSOMES if full else []),
+        refHaps = expand(REF_HAPS, chrom=CHROMOSOMES if full else [])
     conda:
         "../../envs/download.yaml"
     log:
         "logs/ref/download_bundle.log"
     shell:
         """
-            wget "{BUNDLE_url}{AZURE_KEY}" -O {REF_DIR}/{BUNDLE_basename} --tries 50 |& tee -a {log}
+            # wget "{BUNDLE_url}{AZURE_KEY}" -O {REF_DIR}/{BUNDLE_basename} --tries 50 |& tee -a {log}
             sum=$(md5sum {REF_DIR}/{BUNDLE_basename} | cut -d " " -f1)
             if [ $sum != {BUNDLE_md5} ]; then
                 echo "md5 sum of BUDNLE is invalid" |& tee -a {log}

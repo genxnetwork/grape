@@ -1,4 +1,5 @@
 import logging
+import re
 
 
 ATGC = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C'}
@@ -56,6 +57,7 @@ def get_id(a1_a2, id_element, chr_, pos_, ref_, alt_):
 
 def pre_imputation_check(params, reference, fn='./data/hapmap20'):
     """Given a plink bim file
+    0. Remove SNPS with worldwide MAF < 0.02
     1. Remove SNPs can not be matched
     2. Flip SNPs that match after flip
     3. Swap SNPs that match after swap or flip&swap
@@ -72,12 +74,14 @@ def pre_imputation_check(params, reference, fn='./data/hapmap20'):
         a1_a2[items[1]] = (items[-2], items[-1])
 
     # files to update bim
-    chr_file = prefix + '.chr'
-    pos_file = prefix + '.pos'
-    force_allele_file = prefix + '.force_allele'
-    flip_file = prefix + '.flip'
-    with open(chr_file, 'w') as w1, open(pos_file, 'w') as w2, open(force_allele_file, 'w') as w3, open(flip_file, 'w') as w4:
+    chr_path = prefix + '.chr'
+    pos_path = prefix + '.pos'
+    force_allele_path = prefix + '.force_allele'
+    flip_path = prefix + '.flip'
+    freq_path = prefix + '.freq'
+    with open(chr_path, 'w') as chr_file, open(pos_path, 'w') as pos_file, open(force_allele_path, 'w') as force_allele_file, open(flip_path, 'w') as flip_file, open(freq_path, 'w') as freq_file:
 
+        af_regex = re.compile(';AF=(0.\d+)')
         # write the files to be used
         in_ref = 0
         exclude = 0
@@ -87,8 +91,10 @@ def pre_imputation_check(params, reference, fn='./data/hapmap20'):
         unique_ids = set()
         for i in open(reference):
             items = i.split()
+            str_maf = af_regex.findall(items[7])
+            maf = float(str_maf[0]) if len(str_maf) > 0 else 0.0
             chr_, pos_, ref_, alt_ = items[0], items[1], items[3], items[4]
-            # first, try to use rs
+            # first, try to use rss
             id_ = get_id(a1_a2, items[2], chr_, pos_, ref_, alt_)
 
             if id_ is not None:
@@ -100,18 +106,20 @@ def pre_imputation_check(params, reference, fn='./data/hapmap20'):
                 else:
                     if id_ in unique_ids:
                         continue
-                    w1.write("{}\t{}\n".format(id_, chr_))
-                    w2.write("{}\t{}\n".format(id_, pos_))
+                    if maf > 0.02:
+                        freq_file.write(id_ + "\n")
+                    chr_file.write("{}\t{}\n".format(id_, chr_))
+                    pos_file.write("{}\t{}\n".format(id_, pos_))
                     # set alt as A1, because recode vcf will code A1 as alt later
-                    w3.write("{}\t{}\n".format(id_, alt_))
+                    force_allele_file.write("{}\t{}\n".format(id_, alt_))
                     unique_ids.add(id_)
                     if matching == 2:
-                        w4.write(id_ + "\n")
+                        flip_file.write(id_ + "\n")
                         strand_flip += 1
                     elif matching == 1:
                         swap += 1
                     elif matching == 3:
-                        w4.write(id_ + "\n")
+                        flip_file.write(id_ + "\n")
                         flip_swap += 1
 
     logging.info("{} ids in {}.bim, {} can be found in reference.".format(len(a1_a2), fn, in_ref))
@@ -119,7 +127,7 @@ def pre_imputation_check(params, reference, fn='./data/hapmap20'):
     logging.info("Total flip: {}.".format(strand_flip))
     logging.info("Total swap: {}.".format(swap))
     logging.info("Total flip&swap: {}.".format(flip_swap))
-    return flip_file, force_allele_file, chr_file, pos_file
+    return flip_path, force_allele_path, chr_path, pos_path
 
 
 if __name__ == "__main__":

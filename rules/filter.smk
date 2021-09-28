@@ -35,7 +35,7 @@ rule plink_filter:
     input:
         vcf="vcf/merged_lifted_id.vcf.gz",
         bad_samples=rules.select_bad_samples.output.bad_samples
-    output: temp(expand("plink/merged_filter.{ext}", ext=PLINK_FORMATS))
+    output: expand("plink/merged_filter.{ext}", ext=PLINK_FORMATS)
     conda:
         "../envs/plink.yaml"
     params:
@@ -48,7 +48,7 @@ rule plink_filter:
     shell:
         """
         plink --vcf {input.vcf} --freqx --out plink/{params.out}
-        plink --vcf {input.vcf} --remove {input.bad_samples} --geno 0.5 --maf 0.02 --hwe 0 --make-bed --keep-allele-order --out plink/{params.out} |& tee {log}
+        plink --vcf {input.vcf} --remove {input.bad_samples} --geno 0.5 --hwe 0 --make-bed --keep-allele-order --out plink/{params.out} |& tee {log}
         """
 
 rule pre_imputation_check:
@@ -91,11 +91,13 @@ rule plink_clean_up:
         # remove dublicates
         cut -f 2 {params.input}.bim | sort | uniq -d > plink/snp.dups
         plink --bfile {params.input}          --exclude       plink/snp.dups                  --make-bed --out plink/merged_filter_dub   |& tee -a {log}
-        plink --bfile plink/merged_filter_dub --extract       plink/merged_filter.bim.chr     --make-bed --out plink/merged_extracted    |& tee -a {log}
+        plink --bfile {params.input}          --extract       plink/merged_filter.bim.freq    --make-bed --out plink/merged_freq         |& tee -a {log}
+        plink --bfile plink/merged_freq       --extract       plink/merged_filter.bim.chr     --make-bed --out plink/merged_extracted    |& tee -a {log}
         plink --bfile plink/merged_extracted  --flip          plink/merged_filter.bim.flip    --make-bed --out plink/merged_flipped      |& tee -a {log}
         plink --bfile plink/merged_flipped    --update-chr    plink/merged_filter.bim.chr     --make-bed --out plink/merged_chroped      |& tee -a {log}
         plink --bfile plink/merged_chroped    --update-map    plink/merged_filter.bim.pos     --make-bed --out {params.out}              |& tee -a {log}
         rm plink/merged_filter_dub.*
+        rm plink/merged_freq.*
         rm plink/merged_extracted.*
         rm plink/merged_flipped.*
         rm plink/merged_chroped.*
