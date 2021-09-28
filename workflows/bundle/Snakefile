@@ -50,5 +50,5 @@ rule all:
                 exit 1
             fi  
             tar -xzvf {REF_DIR}/{BUNDLE_basename} -C {REF_DIR} |& tee -a {log}
-            # rm -f {REF_DIR}/{BUNDLE_basename} |& tee -a {log}
+            rm -f {REF_DIR}/{BUNDLE_basename} |& tee -a {log}
         """
