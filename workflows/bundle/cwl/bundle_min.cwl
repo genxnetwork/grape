@@ -8,7 +8,7 @@ doc: |
     A Docker container for the GRAPE reference downloading. See the [GRAPE](https://github.com/genxnetwork/grape) GitHub repo for more information.
 requirements:
   DockerRequirement:
-    dockerPull: grape:cwl
+    dockerPull: genxnetwork/grape:v1.4
   NetworkAccess:
     networkAccess: true
   EnvVarRequirement:
