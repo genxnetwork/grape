@@ -62,7 +62,7 @@ def main(yaml_url):
 
     errors = {}
     for k, v in content['reference'].items():
-        if 'url' not in v:
+        if 'url' not in v or 'filesize' not in v:
             continue
         filesize = get_filesize(v)
         if str(filesize) != str(v['filesize']):
