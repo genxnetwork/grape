@@ -35,7 +35,7 @@ rule plink_filter:
     input:
         vcf="vcf/merged_lifted_id.vcf.gz",
         bad_samples=rules.select_bad_samples.output.bad_samples
-    output: expand("plink/merged_filter.{ext}", ext=PLINK_FORMATS)
+    output: temp(expand("plink/merged_filter.{ext}", ext=PLINK_FORMATS))
     conda:
         "../envs/plink.yaml"
     params:
@@ -76,7 +76,7 @@ rule plink_clean_up:
         "plink/merged_filter.bim.flip",
         plink=expand("plink/merged_filter.{ext}", ext=PLINK_FORMATS)
     output:
-        expand("{i}.{ext}", i="plink/merged_mapped", ext=PLINK_FORMATS)
+        temp(expand("{i}.{ext}", i="plink/merged_mapped", ext=PLINK_FORMATS))
     params:
         input = "plink/merged_filter",
         out = "plink/merged_mapped"
@@ -104,7 +104,7 @@ rule plink_clean_up:
         """
 
 rule prepare_vcf:
-    input: "plink/merged_mapped.bim"
+    input: expand("plink/merged_mapped.{ext}", ext=PLINK_FORMATS)
     output:
         vcf="vcf/merged_mapped_sorted.vcf.gz",
         temp_vcf=temp("vcf/merged_mapped_regions.vcf.gz"),

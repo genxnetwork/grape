@@ -11,8 +11,8 @@ rule run_king:
         out="king/data",
         kin="king/data"
     threads: workflow.cores
-    singularity:
-        "docker://lifebitai/king:latest"
+    conda:
+        "../envs/king.yaml"
     log:
         "logs/king/run_king.log"
     benchmark:
@@ -44,8 +44,8 @@ rule ibis:
         bed="preprocessed/data.bed",
         fam="preprocessed/data.fam",
         bim="preprocessed/data_mapped.bim"
-    singularity:
-        "docker://genxnetwork/ibis:stable"
+    conda:
+        "../envs/ibis.yaml"
     output:
         ibd     = "ibis/merged_ibis.seg"
     log:
@@ -85,8 +85,8 @@ rule ersa:
         ibd=aggregate_input
     output:
         "ersa/relatives.tsv"
-    singularity:
-        "docker://genxnetwork/ersa:stable"
+    conda:
+        "../envs/ersa.yaml"
     log:
         "logs/ersa/ersa.log"
     benchmark:
@@ -126,7 +126,7 @@ rule merge_king_ersa:
     input:
         king=rules.run_king.output['king'],
         king_segments=rules.run_king.output['segments'],
-        ibd=rules.transform_ibis_segments.output['germline'],
+        bucket_dir=directory('ibd'),
         ersa=rules.ersa.output[0],
         kinship=rules.run_king.output['kinship'],
         kinship0=rules.run_king.output['kinship0'],
