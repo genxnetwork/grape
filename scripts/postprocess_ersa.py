@@ -93,27 +93,29 @@ if __name__ == '__main__':
     logging.info(f'ibd shape: {ibd.shape[0]}, ersa shape: {ersa.shape[0]}')
 
     relatives = ibd.merge(ersa, how='outer', left_index=True, right_index=True)
-    fs_mask = (relatives.total_seg_len > 2100) & (relatives.total_seg_len_ibd2 > 450)
-    po_mask = (relatives.total_seg_len / 3540 > 0.8) & (~fs_mask)
-    print(f'fs_mask len: {sum(fs_mask)}, po_mask len is {sum(po_mask)}')
+
+    # It is impossible to have more than 50% of ibd2 segments unless you are monozygotic twins or duplicates.
+    dup_mask = relatives.total_seg_len_ibd2 > 1800
+    fs_mask = (relatives.total_seg_len > 2100) & (relatives.total_seg_len_ibd2 > 450) & (~dup_mask)
+    po_mask = (relatives.total_seg_len / 3540 > 0.8) & (~fs_mask) & (~dup_mask)
+    print(f'We have {sum(dup_mask)} duplicates, {sum(fs_mask)} full siblings and {sum(po_mask)} parent-offspring relationships')
 
     relatives.loc[:, 'final_degree'] = relatives.ersa_degree
+    relatives.loc[dup_mask, 'final_degree'] = 0
     relatives.loc[po_mask, 'final_degree'] = 1
-    print(relatives.loc[po_mask, :])
-    print()
-    print(relatives.loc[fs_mask, :].iloc[:10])
-    print()
-    relatives.loc[(~po_mask) & (relatives.final_degree == 1)] = 2 # to eliminate some ersa false positives
+
+    relatives.loc[(~po_mask) & (relatives.final_degree == 1)] = 2  # to eliminate some ersa false positives
     relatives.loc[fs_mask, 'final_degree'] = 2
     relatives.loc[:, 'relation'] = relatives.ersa_degree.astype(str)
     relatives.loc[po_mask, 'relation'] = 'PO'
     relatives.loc[fs_mask, 'relation'] = 'FS'
+    relatives.loc[dup_mask, 'relation'] = 'MZ/Dup'
     # if king is unsure or king degree > 3 then we use ersa distant relatives estimation
 
     # approximate calculations, IBD share is really small in this case
     relatives.loc[pandas.isna(relatives.total_seg_len_ibd2), 'total_seg_len_ibd2'] = 0
     relatives.loc[pandas.isna(relatives.seg_count_ibd2), 'seg_count_ibd2'] = 0
     relatives.loc[:, 'shared_genome_proportion'] = 0.5*relatives.total_seg_len / 3540 + relatives.total_seg_len_ibd2 / 3540
-
+    relatives.loc[relatives.shared_genome_proportion > 1.0, 'shared_genome_proportion'] = 1.0
     logging.info(f'final degree not null: {pandas.notna(relatives.final_degree).sum()}')
     relatives.loc[pandas.notna(relatives.final_degree), :].to_csv(output_path, sep='\t')
