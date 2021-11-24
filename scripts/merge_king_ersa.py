@@ -3,7 +3,7 @@ import numpy
 import os
 import logging
 from collections import Counter, namedtuple
-from utils.ibd import read_king_segments as rks, interpolate_all
+from utils.ibd import read_king_segments as rks, interpolate_all, Segment
 
 
 def is_non_zero_file(fpath):
@@ -14,6 +14,22 @@ def _sort_ids(data):
     unsorted_mask = data.id2 < data.id1
     data.loc[unsorted_mask, 'id1'], data.loc[unsorted_mask, 'id2'] = data.loc[unsorted_mask, 'id2'], data.loc[
         unsorted_mask, 'id1']
+
+
+def read_bucket_dir(bucket_dir):
+
+    total = None
+    for file in os.listdir(bucket_dir):
+        if not file.endswith('tsv'):
+            continue
+        path = os.path.join(bucket_dir, file)
+        bucket = read_germline(path)
+        if total is None:
+            total = bucket
+        else:
+            total = total.append(bucket)
+    return total
+
 
 def read_germline(ibd_path):
     germline_names = [
@@ -91,6 +107,47 @@ def read_king(king_path):
                                          'king_degree',
                                          'king_relation',
                                          'shared_genome_proportion']).set_index(['id1', 'id2'])
+
+
+def read_king_segments_chunked(king_segments_path, map_dir):
+    total = None
+    try:
+        for i, chunk in enumerate(pandas.read_table(
+                                                    king_segments_path, 
+                                                    compression='gzip', 
+                                                    dtype={'FID1': str, 'ID1': str, 'FID2': str, 'ID2': str}, 
+                                                    chunksize=1e+6)):
+
+            segments = {}
+            for i, row in chunk.iterrows():
+                id1 = row['FID1'] + '_' + row['ID1']
+                id2 = row['FID2'] + '_' + row['ID2']
+                seg = Segment(id1, id2, row['Chr'],
+                            bp_start=row['StartMB']*1e+6, bp_end=row['StopMB']*1e+6)
+                key = tuple(sorted((seg.id1, seg.id2)))
+                if key not in segments:
+                    segments[key] = [seg]
+                else:
+                    segments[key].append(seg)
+
+            segments = interpolate_all(segments, map_dir)
+            data = pandas.DataFrame(columns=['id1', 'id2', 'total_seg_len_king', 'seg_count_king'])
+            logging.info(f'loaded and interpolated segments from chunk {i} for {len(segments)} pairs')
+            for key, segs in segments.items():
+                row = {'id1': key[0],
+                    'id2': key[1],
+                    'total_seg_len_king': sum([s.cm_len for s in segs]),
+                    'seg_count_king': len(segs)}
+                data = data.append(row, ignore_index=True)
+
+            _sort_ids(data)
+            data = data.set_index(['id1', 'id2'])
+            total = total.append(data) if total is not None else data
+
+        return total
+
+    except pandas.errors.EmptyDataError:
+        return pandas.DataFrame(columns=['id1', 'id2', 'total_seg_len_king', 'seg_count_king']).set_index(['id1', 'id2'])
 
 
 def read_king_segments(king_segments_path, map_dir):
@@ -237,7 +294,7 @@ if __name__ == '__main__':
         test_dir = '/media_ssd/pipeline_data/TF-CEU-TRIBES-ibis-king-2'
         Snakemake = namedtuple('Snakemake', ['input', 'output', 'params', 'log'])
         snakemake = Snakemake(
-            input={'ibd': f'{test_dir}/ibd/merged_ibd.tsv',
+            input={'bucket_dir': f'{test_dir}/ibd',
                    'king': f'{test_dir}/king/data.seg',
                    'king_segments': f'{test_dir}/king/data.segments.gz',
                    'kinship': f'{test_dir}/king/data.kin',
@@ -251,7 +308,7 @@ if __name__ == '__main__':
 
     logging.basicConfig(filename=snakemake.log[0], level=logging.DEBUG, format='%(levelname)s:%(asctime)s %(message)s')
 
-    ibd_path = snakemake.input['ibd']
+    ibd_path = snakemake.input['bucket_dir']
     king_path = snakemake.input['king']
     king_segments_path = snakemake.input['king_segments']
     # within families
@@ -262,10 +319,10 @@ if __name__ == '__main__':
     map_dir = snakemake.params['cm_dir']
     output_path = snakemake.output[0]
 
-    ibd = read_germline(ibd_path)
+    ibd = read_bucket_dir(ibd_path)
     king = read_king(king_path)
     kinship = read_kinship(kinship_path, kinship0_path)
-    king_segments = read_king_segments(king_segments_path, map_dir)
+    king_segments = read_king_segments_chunked(king_segments_path, map_dir)
     ersa = read_ersa(ersa_path)
 
     logging.info(f'ibd shape: {ibd.shape[0]}, ersa shape: {ersa.shape[0]}')

@@ -39,7 +39,7 @@ ENV SHELL /bin/bash
 
 #ENV CONDA_PKGS_DIR /tmp/conda/pgks
 
-RUN apt-get install -y wget bzip2 gnupg2 git openjdk-11-jre openjdk-11-jdk libgomp1 && \
+RUN apt-get install -y wget bzip2 gnupg2 git libgomp1 && \
     wget -nv https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
     bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda && \
     rm Miniconda3-latest-Linux-x86_64.sh && \
