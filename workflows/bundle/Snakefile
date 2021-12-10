@@ -43,7 +43,7 @@ rule all:
         "logs/ref/download_bundle.log"
     shell:
         """
-            # wget "{BUNDLE_url}{AZURE_KEY}" -O {REF_DIR}/{BUNDLE_basename} --tries 50 |& tee -a {log}
+            wget "{BUNDLE_url}{AZURE_KEY}" -O {REF_DIR}/{BUNDLE_basename} --tries 50 |& tee -a {log}
             sum=$(md5sum {REF_DIR}/{BUNDLE_basename} | cut -d " " -f1)
             if [ $sum != {BUNDLE_md5} ]; then
                 echo "md5 sum of BUDNLE is invalid" |& tee -a {log}
