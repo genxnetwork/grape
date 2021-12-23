@@ -64,7 +64,7 @@ rule ersa:
         
         FILES="{input.ibd}"
         TEMPFILE=ersa/temp_relatives.tsv
-
+        rm $TEMPFILE
         for input_file in $FILES; do
             ersa --avuncular-adj -ci --alpha {params.alpha} --dmax 14 -t $ERSA_T -l $ERSA_L -th $ERSA_TH $input_file -o $TEMPFILE  |& tee {log}
             cat $TEMPFILE >> {output}

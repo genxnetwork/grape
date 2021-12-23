@@ -126,7 +126,6 @@ rule merge_king_ersa:
     input:
         king=rules.run_king.output['king'],
         king_segments=rules.run_king.output['segments'],
-        bucket_dir=directory('ibd'),
         ersa=rules.ersa.output[0],
         kinship=rules.run_king.output['kinship'],
         kinship0=rules.run_king.output['kinship0'],
