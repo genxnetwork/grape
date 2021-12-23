@@ -1,4 +1,4 @@
-import Snakefile
+import snakemake
 import datetime
 import psutil
 import argparse
