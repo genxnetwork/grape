@@ -1,0 +1,175 @@
+import os
+from os.path import join
+import random
+import string
+import json
+
+REF_DIR            = config["ref_dir"]
+CHIP               = config["chip"]
+REF_VCF            = join(REF_DIR, config["reference"]["vcfRef"]["file"])
+PEDSIM_MAP         = join(REF_DIR, config["reference"]["pedsim_map"]["file"])
+CHROMOSOMES        = [str(i) for i in range(1, 23)]
+DEF_FILE           = config['sim_params_file']
+
+names = []
+def generate_code():
+    length = 6
+    while True:
+        code = ''.join(random.choices(string.ascii_uppercase, k=length))
+        if not(code in names):
+            break
+    names.append(code)
+    return code
+
+def get_num_runs(def_file):
+    with open("list.samples", "r") as f:
+        lines = f.readlines()
+        samples = [line.rstrip() for line in lines]
+        total_founders = len(samples)
+
+    with open(f"{def_file}", "r") as f:
+        lines = f.readlines()
+        runs = int(lines[0].split(" ")[2])
+        founders = 0
+        for line in lines[1:-1]:
+            ppl = int(line.split(" ")[2])
+            if ppl == 0:
+                ppl = 1
+            founders += ppl
+        founders += 1
+        founders *= runs
+        num_chips = int(total_founders / founders)
+    print(f"Number of runs: {num_chips}")
+    return num_chips, founders
+
+def prepare_folders(num_runs, def_file):
+    if not os.path.exists("background"):
+        os.makedirs("background")
+    for i in range(num_runs):
+        if not os.path.exists(f"gen{i}"):
+            os.makedirs(f"gen{i}")
+        os.system(f"cp -R params gen{i}/params")
+        with open(f"{def_file}", "r") as f:
+            lines = f.readlines()
+            first = lines[0].split(" ")
+            name = generate_code()
+            first[1] = name
+            lines[0] = " ".join(first)
+        with open(f"gen{i}/params/relatives_big.def", "w") as f:
+            f.write("\n".join(lines))
+
+NUM_RUNS, NUM_FOUNDERS = get_num_runs(DEF_FILE)
+prepare_folders(NUM_RUNS, DEF_FILE)
+
+rule all:
+    input:
+        "generated.vcf.gz",
+        "generated.vcf.gz.csi"
+
+rule intersect:
+    input:
+        hd_genotype_chip=CHIP,
+        vcfRef=REF_VCF
+    output:
+        temp("pedsim/phased/chr{chrom}.phased.vcf.gz")
+    conda:
+        "../../envs/bcftools.yaml"
+    shell:
+        """
+            bcftools isec -n=2 -w1 -r {wildcards.chrom} -O z -o {output} {input.vcfRef} {input.hd_genotype_chip}
+        """
+
+
+rule merge_background:
+    input:
+        data=expand("pedsim/phased/chr{chrom}.phased.vcf.gz", chrom=CHROMOSOMES)
+    output:
+        temp("pedsim/phased/background.vcf.gz")
+    params:
+        list="pedsim/phased/phased.merge.list"
+    conda:
+        "../../envs/bcftools.yaml"
+    shell:
+        """
+            # for now just skip empty files
+            true > {params.list} && \
+            for i in {input.data}; do
+                if [ -s $i ]
+                then
+                    echo $i >> {params.list}
+                else
+                    continue
+                fi
+            done
+            bcftools concat -f {params.list} -O z -o {output}
+        """
+
+
+rule split_chip:
+    input:
+        back = "pedsim/phased/background.vcf.gz",
+        list = "list.samples",
+        def_file = expand("gen{runs}/params/relatives_big.def", runs = list(range(NUM_RUNS)))
+        num_runs = NUM_RUNS,
+        num_founders = NUM_FOUNDERS
+
+    output:
+        expand("background/segment{runs}.vcf.gz", runs = list(range(NUM_RUNS)))
+    conda:
+        "../../envs/bcftools.yaml"
+    script:
+        "../../scripts/split_chip.py"
+
+rule simulate:
+    input:
+        _map=PEDSIM_MAP,
+        intf='params/nu_p_campbell.tsv',
+        seg = "background/segment{runs}.vcf.gz"
+    output:
+        temp('gen{runs}/data{runs}.vcf.gz'),
+        temp('gen{runs}/data{runs}.seg')
+    conda:
+        "../../envs/ped-sim.yaml"
+    shell:
+        """
+            pedsim -d gen{wildcards.runs}/params/relatives_big.def -m {input._map} -i segment{wildcards.runs}.vcf.gz -o gen{wildcards.runs}/data{wildcards.runs} --intf {input.intf} --fam
+        """
+
+rule convert:
+    input:
+        "gen{runs}/data{runs}.vcf.gz"
+    output:
+        temp("gen{runs}/data4merge{runs}.vcf.gz")
+    conda:
+        "../../envs/bcftools.yaml"
+    shell:
+        """
+            bcftools convert gen{wildcards.runs}/data{wildcards.runs}.vcf.gz -O z -o  gen{wildcards.runs}/data4merge{wildcards.runs}.vcf.gz
+        """
+
+rule index:
+    input:
+        "gen{runs}/data4merge{runs}.vcf.gz"
+    output:
+        temp("gen{runs}/data4merge{runs}.vcf.gz.csi")
+    conda:
+        "../../envs/bcftools.yaml"
+    shell:
+        """
+            bcftools index -f gen{wildcards.runs}/data4merge{wildcards.runs}.vcf.gz
+        """
+
+rule merge:
+    input:
+        index = expand("gen{num_runs}/data4merge{num_runs}.vcf.gz.csi", num_runs=list(range(NUM_RUNS))),
+        samples = expand("gen{num_runs}/data4merge{num_runs}.vcf.gz", num_runs=list(range(NUM_RUNS)))
+    output:
+        "generated.vcf.gz",
+        "generated.vcf.gz.csi"
+    conda:
+        "../../envs/bcftools.yaml"
+    shell:
+        """  
+            bcftools merge --merge id {input.samples} -O z -o generated.vcf.gz
+            bcftools index -f generated.vcf.gz
+        """
