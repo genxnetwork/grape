@@ -387,7 +387,7 @@ if __name__ == '__main__':
     config_dict['ibis_seg_len'] = args.ibis_seg_len
     config_dict['ibis_min_snp'] = args.ibis_min_snp
 
-    if not Snakefile.snakemake(
+    if not snakemake.snakemake(
             snakefile=snakefile,
             configfiles=[args.configfile or 'config.yaml'],
             config=config_dict,
