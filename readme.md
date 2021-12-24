@@ -175,7 +175,7 @@ g1-b1-i1 g3-b1-i1     2           2                 0.2369          0.1163      
  * `shared_ancestors` is the most likeliest number of shared ancestors, if it is 0, then one relative is a direct descendant of the other, 
  if 1 then they probably have one common ancestor, i.e. half siblings, if 2 then they have common mother and father, for example.  
  * `final_degree` is simply `king_degree` for close relatives up to 3rd degree and `ersa_degree` for distant relatives.
- * `total_seg_len` is the total length of all IBD segments, for the first 3 degrees it is calculated using KING IBD data, 
+ * `total_seg_len` is the total length of all IBD1 segments, for the first 3 degrees it is calculated using KING IBD data, 
    for the 4th+ degrees it is calculated using IBID or Germline IBD data.
  * `seg_count` is the total number of all IBD segments found by KING for the first 3 degrees and found by IBIS\Germline for the 4th+ degrees.
 

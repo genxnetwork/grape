@@ -104,10 +104,18 @@ rule ersa:
         
         FILES="{input.ibd}"
         TEMPFILE=ersa/temp_relatives.tsv
-
+        rm -f $TEMPFILE
+        rm -f {output}
+        
         for input_file in $FILES; do
+
             ersa --avuncular-adj -ci --alpha {params.alpha} --dmax 14 -t $ERSA_T -l $ERSA_L -th $ERSA_TH $input_file -o $TEMPFILE  |& tee {log}
-            cat $TEMPFILE >> {output}
+
+            if [[ "$input_file" == "${{FILES[0]}}" ]]; then
+                cat $TEMPFILE >> {output}
+            else
+                sed 1d $TEMPFILE >> {output}
+            fi
         done
         """
 
@@ -126,7 +134,6 @@ rule merge_king_ersa:
     input:
         king=rules.run_king.output['king'],
         king_segments=rules.run_king.output['segments'],
-        bucket_dir=directory('ibd'),
         ersa=rules.ersa.output[0],
         kinship=rules.run_king.output['kinship'],
         kinship0=rules.run_king.output['kinship0'],
