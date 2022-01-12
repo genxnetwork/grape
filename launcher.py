@@ -6,10 +6,12 @@ import shutil
 import os
 from inspect import getsourcefile
 
+
 # Returns an integer value for total available memory, in GB.
 def total_memory_gb():
     n_bytes = psutil.virtual_memory().total
     return int(n_bytes / (1024 * 1024 * 1024))
+
 
 def get_parser_args():
     parser = argparse.ArgumentParser()
@@ -232,9 +234,15 @@ def get_parser_args():
         help='Download all references as single file'
     )
 
+    parser.add_argument(
+        '--chip',
+        default="background.vcf.gz",
+        help='Path to chip file'
+    )
+
     args = parser.parse_args()
 
-    valid_commands = ['preprocess', 'find', 'simulate', 'hapmap', 'reference', 'bundle']
+    valid_commands = ['preprocess', 'find', 'simulate', 'hapmap', 'reference', 'bundle', 'simbig', 'remove_relatives']
     if args.command not in valid_commands:
         raise RuntimeError(f'command {args.command} not in list of valid commands: {valid_commands}')
 
@@ -248,7 +256,6 @@ def get_parser_args():
 
 
 def copy_file(working_dir, file_path):
-
     samples_name = os.path.split(file_path)[-1]
     samples_path = os.path.join(working_dir, samples_name)
     if not os.path.exists(samples_path):
@@ -256,7 +263,6 @@ def copy_file(working_dir, file_path):
 
 
 def copy_input(input_dir, working_dir, samples_file):
-
     input_name = os.path.split(input_dir)[-1]
     dest_path = os.path.join(working_dir, input_name)
     if not os.path.exists(dest_path):
@@ -297,6 +303,19 @@ if __name__ == '__main__':
             os.path.join(args.directory, 'config.yaml')
         )
 
+    if args.command == 'simbig':
+        copy_input(
+            os.path.join(current_path, 'workflows/simbig/params'),
+            args.directory, os.path.join(current_path, 'workflows/simbig/', args.sim_samples_file)
+        )
+        # for some reason launching with docker from command line
+        # sets root directory for 'configfile' directive in bundle.Snakefile as snakemake.workdir
+        # therefore config.yaml must be in snakemake.workdir
+        shutil.copy(
+            os.path.join(current_path, 'workflows/simbig/config.yaml'),
+            os.path.join(args.directory, 'config.yaml')
+        )
+
     if args.command == 'hapmap':
         # for some reason launching with docker from command line
         # sets root directory for 'configfile' directive in Snakefile as snakemake.workdir
@@ -309,7 +328,7 @@ if __name__ == '__main__':
     if args.command == 'preprocess':
         shutil.copy(args.vcf_file, os.path.join(args.directory, 'input.vcf.gz'))
 
-    if args.command in ['preprocess', 'find', 'reference', 'bundle']:
+    if args.command in ['preprocess', 'find', 'reference', 'bundle', 'remove_relatives']:
         if args.directory != '.':
             shutil.copy(os.path.join(current_path, 'config.yaml'), os.path.join(args.directory, 'config.yaml'))
 
@@ -319,7 +338,9 @@ if __name__ == '__main__':
         'simulate': 'workflows/pedsim/Snakefile',
         'hapmap': 'workflows/hapmap/Snakefile',
         'reference': 'workflows/reference/Snakefile',
-        'bundle': 'workflows/bundle/Snakefile'
+        'bundle': 'workflows/bundle/Snakefile',
+        'simbig': 'workflows/simbig/Snakefile',
+        'remove_relatives': 'workflows/remove_relatives/Snakefile'
     }
 
     if args.client:
@@ -349,10 +370,13 @@ if __name__ == '__main__':
     config_dict['mem_gb'] = args.memory
     if args.ref_directory != '':
         config_dict['ref_dir'] = args.ref_directory
+    if args.chip != '':
+        config_dict['chip'] = args.chip
+
     if args.flow not in ['germline', 'ibis', 'ibis_king']:
         raise ValueError(f'--flow can be one of the ["germline", "ibis", "ibis_king"] and not {args.flow}')
     config_dict['flow'] = args.flow
-    if args.command in ['preprocess', 'simulate', 'hapmap', 'reference', 'bundle']:
+    if args.command in ['preprocess', 'simulate', 'hapmap', 'reference', 'bundle', 'simbig', 'remove_relatives']:
         config_dict['remove_imputation'] = args.remove_imputation
         config_dict['impute'] = args.impute
         config_dict['phase'] = args.phase
