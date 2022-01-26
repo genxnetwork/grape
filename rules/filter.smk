@@ -1,12 +1,11 @@
-
 rule vcf_stats:
     input:
-        vcf="vcf/merged_lifted_id.vcf.gz"
+        vcf="vcf/segment{segment}.vcf.gz"
     output:
-        stats="stats/lifted_vcf.txt",
-        psc="stats/lifted_vcf.psc"
+        stats="stats/segment{segment}_lifted_vcf.txt",
+        psc="stats/segment{segment}_lifted_vcf.psc"
     params:
-        samples="vcf/merged_lifted.vcf.samples"
+        samples="vcf/segment{segment}_merged_lifted.vcf.samples"
     conda:
         "../envs/bcftools.yaml"
     shell:
@@ -21,11 +20,11 @@ rule select_bad_samples:
     input:
         psc=rules.vcf_stats.output.psc
     output:
-        bad_samples="vcf/lifted_vcf.badsamples",
-        report="results/bad_samples_report.tsv"
-    log: "logs/vcf/select_bad_samples.log"
+        bad_samples="vcf/segment{segment}_lifted_vcf.badsamples",
+        report="results/segment{segment}_bad_samples_report.tsv"
+    log: "logs/vcf/segment{segment}_select_bad_samples.log"
     params:
-        samples="vcf/merged_lifted.vcf.samples"
+        samples="vcf/segment{segment}_merged_lifted.vcf.samples"
     conda:
         "../envs/evaluation.yaml"
     script:
@@ -33,59 +32,65 @@ rule select_bad_samples:
 
 rule plink_filter:
     input:
-        vcf="vcf/merged_lifted_id.vcf.gz",
+        vcf="vcf/segment{segment}_segment.vcf.gz",
         bad_samples=rules.select_bad_samples.output.bad_samples
-    output: expand("plink/merged_filter.{ext}", ext=PLINK_FORMATS)
+    output:
+        bed = "plink/segment{segment}_merged_filter.bed",
+        bim = "plink/segment{segment}_merged_filter.bim",
+        fam = "plink/segment{segment}_merged_filter.fam"
     conda:
         "../envs/plink.yaml"
     params:
-        input   = "merged",
-        out     = "merged_filter"
+        input   = "segment{segment}_merged",
+        out     = "segment{segment}_merged_filter"
     log:
-        "logs/plink/plink_filter.log"
+        "logs/plink/segment{segment}_plink_filter.log"
     benchmark:
-        "benchmarks/plink/plink_filter.txt"
+        "benchmarks/plink/segment{segment}_plink_filter.txt"
     shell:
         """
         plink --vcf {input.vcf} --freqx --out plink/{params.out}
-        plink --vcf {input.vcf} --remove {input.bad_samples} --geno 0.5 --hwe 0 --make-bed --keep-allele-order --out plink/{params.out} |& tee {log}
         """
 
 rule pre_imputation_check:
     input:
-        "plink/merged_filter.bim"
+        "plink/segment{segment}_merged_filter.bim"
     params:
         SITE_1000GENOME
     output:
-        "plink/merged_filter.bim.chr",
-        "plink/merged_filter.bim.pos",
-        "plink/merged_filter.bim.force_allele",
-        "plink/merged_filter.bim.flip"
+        "plink/segment{segment}_merged_filter.bim.chr",
+        "plink/segment{segment}_merged_filter.bim.pos",
+        "plink/segment{segment}_merged_filter.bim.force_allele",
+        "plink/segment{segment}_merged_filter.bim.flip"
     log:
-        "logs/plink/pre_imputation_check.log"
+        "logs/plink/segment{segment}_pre_imputation_check.log"
     benchmark:
-        "benchmarks/plink/pre_imputation_check.txt"
+        "benchmarks/plink/segment{segment}_pre_imputation_check.txt"
     script:
         "../scripts/pre_imputation_check.py"
 
 rule plink_clean_up:
     input:
-        "plink/merged_filter.bim.chr",
-        "plink/merged_filter.bim.pos",
-        "plink/merged_filter.bim.force_allele",
-        "plink/merged_filter.bim.flip",
-        plink=expand("plink/merged_filter.{ext}", ext=PLINK_FORMATS)
+        "plink/segment{segment}_merged_filter.bim.chr",
+        "plink/segment{segment}_merged_filter.bim.pos",
+        "plink/segment{segment}_merged_filter.bim.force_allele",
+        "plink/segment{segment}_merged_filter.bim.flip",
+        bed="segment{segment}_plink/merged_filter.bed",
+        bim="plink/segment{segment}_merged_filter.bim",
+        fam="plink/segment{segment}_merged_filter.fam"
     output:
-        expand("{i}.{ext}", i="plink/merged_mapped", ext=PLINK_FORMATS)
+        "plink/segment{segment}_merged_mapped.bim",
+        "plink/segment{segment}_merged_mapped.bed",
+        "plink/segment{segment}_merged_mapped.fam"
     params:
-        input = "plink/merged_filter",
-        out = "plink/merged_mapped"
+        input = "plink/segment{segment}_merged_filter",
+        out = "plink/segment{segment}_merged_mapped"
     conda:
         "../envs/plink.yaml"
     log:
-        "logs/plink/plink_clean_up.log"
+        "logs/plink/segment{segment}_plink_clean_up.log"
     benchmark:
-        "benchmarks/plink/plink_clean_up.txt"
+        "benchmarks/plink/segment{segment}_plink_clean_up.txt"
     shell:
         """
         # remove dublicates
@@ -104,22 +109,24 @@ rule plink_clean_up:
         """
 
 rule prepare_vcf:
-    input: "plink/merged_mapped.bim"
+    input: "plink/segment{segment}_merged_mapped.bim"
     output:
-        vcf="vcf/merged_mapped_sorted.vcf.gz",
-        temp_vcf=temp("vcf/merged_mapped_regions.vcf.gz"),
-        temp_vcf_csi=temp("vcf/merged_mapped_regions.vcf.gz.csi"),
-        alleled=temp(expand('plink/merged_mapped_alleled.{ext}', ext=PLINK_FORMATS))
+        vcf="vcf/segment{segment}_merged_mapped_sorted.vcf.gz",
+        temp_vcf=temp("vcf/segment{segment}_merged_mapped_regions.vcf.gz"),
+        temp_vcf_csi=temp("vcf/segment{segment}_merged_mapped_regions.vcf.gz.csi"),
+        bed=temp("plink/segment{segment}_merged_mapped_alleled.bed"),
+        bim=temp("plink/segment{segment}_merged_mapped_alleled.bim"),
+        fam=temp("plink/segment{segment}_merged_mapped_alleled.fam")
     params:
-        input   = "plink/merged_mapped",
-        vcf     = 'vcf/merged_mapped_sorted.vcf.gz'
+        input   = "plink/segment{segment}_merged_mapped",
+        vcf     = "vcf/segment{segment}_merged_mapped_sorted.vcf.gz"
     conda:
          "../envs/bcf_plink.yaml"
     log:
-        plink="logs/plink/prepare_vcf.log",
-        vcf="logs/vcf/prepare_vcf.log"
+        plink="logs/plink/segment{segment}_prepare_vcf.log",
+        vcf="logs/vcf/segment{segment}_prepare_vcf.log"
     benchmark:
-        "benchmarks/plink/prepare_vcf.txt"
+        "benchmarks/plink/segment{segment}_prepare_vcf.txt"
     shell:
         """
         plink --bfile {params.input} --a1-allele plink/merged_filter.bim.force_allele --make-bed --out plink/merged_mapped_alleled |& tee -a {log.plink}

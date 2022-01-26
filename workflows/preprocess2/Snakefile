@@ -5,6 +5,7 @@ PLINK_FORMATS   = ['bed', 'bim', 'fam']
 PLINK_FORMATS_EXT   = ['bed', 'bim', 'fam', 'nosex']
 
 REF_DIR            = config["ref_dir"]
+NUM_BATCHES        = config["num_batches"]
 LIFT_CHAIN         = join(REF_DIR, config["reference"]["lift_chain"]["file"])
 GRCH37_FASTA       = join(REF_DIR, config["reference"]["GRCh37_fasta"]["file"])
 IS_CLIENT          = config["mode"] == "client"
