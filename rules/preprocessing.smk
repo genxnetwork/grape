@@ -2,7 +2,7 @@ rule get_lists:
     input:
         vcf="input.vcf.gz"
     output:
-        samples=expand("vcf/segment{segment}.txt",segment=list(range(1,int(NUM_BATCHES)+1)))
+        expand("vcf/segment{segment}.txt",segment=list(range(1,int(NUM_BATCHES)+1)))
     params:
         num_batches=NUM_BATCHES
     conda:
@@ -16,17 +16,6 @@ rule get_lists:
         split -l $lines_per_file vcf/samples.txt vcf/segment --additional-suffix=.txt --numeric-suffixes=1
         for file in segment0[1-9].txt; do mv "$file" "${file/0/}"; done
         """
-
-
-
-Building DAG of jobs...
-WorkflowError:
-MissingInputException: Missing input files for rule split_into_segments:
-vcf/segment[]_segment.txt
-MissingInputException: Missing input files for rule split_into_segments:
-vcf/segment[]_merged_mapped_sorted.txt
-
-
 
 
 
@@ -185,22 +174,22 @@ rule ibis_mapping:
         (add-map-plink.pl -cm {input.bim} {params.genetic_map_GRCh37}> {output}) |& tee -a {log}
         """
 
-seg = glob_wildcards("preprocessed/segment{segment}_data.bed")
+#seg = glob_wildcards("preprocessed/segment{segment}_data.bed")
 
 
 
 
 rule merge_segments:
     input:
-        segments_bim_mapped=expand("preprocessed/segment{segment}_data_mapped.bim", segment=seg),
-        segments_bed=expand("preprocessed/segment{segment}_data.bed",segment=seg),
-        segments_fam=expand("preprocessed/segment{segment}_data.fam",segment=seg)
+        segments_bim_mapped=expand("preprocessed/segment{segment}_data_mapped.bim", segment=list(range(1,int(NUM_BATCHES)+1))),
+        segments_bed=expand("preprocessed/segment{segment}_data.bed",segment=list(range(1,int(NUM_BATCHES)+1))),
+        segments_fam=expand("preprocessed/segment{segment}_data.fam",segment=list(range(1,int(NUM_BATCHES)+1)))
     output:
         bed="preprocessed/data.bed",
         fam="preprocessed/data.fam",
         bim="preprocessed/data.bim"
     params:
-        seg = expand("preprocessed/segment{segment}_data",segment=seg)
+        seg = expand("preprocessed/segment{segment}_data",segment=list(range(1,int(NUM_BATCHES)+1)))
     conda:
         "../envs/plink.yaml"
     shell:
