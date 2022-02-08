@@ -97,7 +97,7 @@ Preprocessing features:
      If your dataset has less then 300K SNPs, imputation can improve results.
      Search of relatives requires substantially more time with increased number of SNPs.  
      Invoked by option `--remove-imputation`. Currently it removes all SNPs with `IMPUTED` in it.
-    - Optional phasing, invoked by `--phase`. It is required for searching for relatives with Germline `--flow germline`, 
+    - Optional phasing, invoked by `--phase`. It is required for searching for relatives with Germline `--flow germline-king`,
     however we do not recommend using Germline for now.
     - Optional imputation, invoked by `--impute`. One must also use `--phase` with this.
     
