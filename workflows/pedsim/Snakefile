@@ -178,7 +178,6 @@ rule evaluate_ibd:
         cm=expand("cm2/chr{chrom}.cm.map", chrom=CHROMOSOMES)
     params:
         cm_dir='cm2',
-        is_rapid_ibd=False
     conda:
         '../../envs/evaluation.yaml'
     output:
