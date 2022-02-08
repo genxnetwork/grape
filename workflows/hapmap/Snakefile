@@ -55,10 +55,10 @@ include: "../../rules/preprocessing.smk"
 
 if flow == 'ibis':
     include: "../../rules/relatives_ibis.smk"
-elif flow == 'germline':
-    include: "../../rules/relatives.smk"
-elif flow == 'ibis_king':
+elif flow == 'ibis-king':
     include: "../../rules/relatives_ibis_king.smk"
+elif flow == 'germline-king':
+    include: "../../rules/relatives.smk"
 
 rule evaluate_accuracy:
     input:

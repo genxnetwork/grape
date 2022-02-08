@@ -135,7 +135,7 @@ def get_parser_args():
     parser.add_argument(
         '--flow',
         default='ibis',
-        help='How to find ibd segments: values are germline, ibis, ibis_king, default is ibis'
+        help='How to find ibd segments: values are ibis, ibis-king, germline-king, default is ibis'
     )
 
     parser.add_argument(
@@ -349,8 +349,8 @@ if __name__ == '__main__':
     config_dict['mem_gb'] = args.memory
     if args.ref_directory != '':
         config_dict['ref_dir'] = args.ref_directory
-    if args.flow not in ['germline', 'ibis', 'ibis_king']:
-        raise ValueError(f'--flow can be one of the ["germline", "ibis", "ibis_king"] and not {args.flow}')
+    if args.flow not in ['ibis', 'ibis-king', 'germline-king']:
+        raise ValueError(f'--flow can be one of the ["ibis", "ibis-king", "germline-king"] and not {args.flow}')
     config_dict['flow'] = args.flow
     if args.command in ['preprocess', 'simulate', 'hapmap', 'reference', 'bundle']:
         config_dict['remove_imputation'] = args.remove_imputation
