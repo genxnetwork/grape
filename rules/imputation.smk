@@ -8,7 +8,7 @@ rule impute:
         rules.phase.output,
         refHaps=REF_HAPS
     output: temp("imputed/chr{chrom}.imputed.dose.vcf.gz")
-    threads: 1
+    threads: workflow.cores
     log:
         "logs/impute/minimac4-{chrom}.log"
     benchmark:

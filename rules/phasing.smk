@@ -4,7 +4,7 @@ rule phase:
             #idx="vcf/merged_mapped_sorted.vcf.gz.csi"
             vcfRef=REF_VCF
         output: temp("phase/chr{chrom}.phased.vcf.gz")
-        threads: 1
+        threads: workflow.cores
         log:
             "logs/phase/eagle-{chrom}.log"
         benchmark:
