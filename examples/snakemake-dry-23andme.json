@@ -21,7 +21,7 @@
         "--real-run"],
       "stdout": "/outputs/real-run.txt",
       "workdir": "/src/repo",
-      "env": { "SINGULARITY_TMPDIR": "/tmp", "SINGULARITY_CACHEDIR": "/tmp", "CONDA_ENVS_PATH": "/tmp/conda", "CONDA_PKGS_DIRS":  "/tmp/conda/pkgs"}
+      "env": { "CONDA_ENVS_PATH": "/tmp/conda", "CONDA_PKGS_DIRS":  "/tmp/conda/pkgs"}
     }
   ]
 }

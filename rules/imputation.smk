@@ -9,8 +9,6 @@ rule impute:
         refHaps=REF_HAPS
     output: temp("imputed/chr{chrom}.imputed.dose.vcf.gz")
     threads: 1
-    singularity:
-        "docker://genxnetwork/minimac4:stable"
     log:
         "logs/impute/minimac4-{chrom}.log"
     benchmark:

@@ -205,22 +205,6 @@ def get_parser_args():
         help="List of samples from 1000genomes for pedsim to use as founders. You can choose only from 'ceph_unrelated_all.tsv', 'all.tsv'")
 
     parser.add_argument(
-        "--use-singularity",
-        help="If this argument is present, Snakemake will use Singularity for the containerization environment",
-        action="store_true")
-
-    # --singularity-prefix /tmp --singularity-args='-B /media:/media -B /tmp:/tmp -W /tmp' --conda-prefix /tmp
-    parser.add_argument(
-        '--singularity-prefix',
-        default='/tmp',
-        help='Directory where snakemake will put singularity images'
-    )
-    parser.add_argument(
-        '--singularity-args',
-        default='-B /media:/media -B /tmp:/tmp -W /tmp',
-        help='Additional singularity arguments'
-    )
-    parser.add_argument(
         '--conda-prefix',
         default='/tmp',
         help='Conda prefix for environments'
@@ -378,9 +362,6 @@ if __name__ == '__main__':
             until=[args.until] if args.until is not None else [],
             use_conda=True,
             conda_prefix=args.conda_prefix,
-            use_singularity=args.use_singularity,
-            singularity_prefix=args.singularity_prefix,
-            singularity_args=args.singularity_args,
             envvars=['CONDA_ENVS_PATH', 'CONDA_PKGS_DIRS']
     ):
         raise ValueError("Pipeline failed see Snakemake error message for details")

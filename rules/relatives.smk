@@ -32,8 +32,8 @@ rule run_king:
         out = "king/data",
         kin = "king/data"
     threads: workflow.cores
-    singularity:
-        "docker://lifebitai/king:latest"
+    conda:
+        "../envs/king.yaml"
     log:
         "logs/king/run_king.log"
     benchmark:
@@ -122,8 +122,8 @@ rule interpolate:
 rule germline:
     input: rules.interpolate.output
     output: "germline/chr{chrom}.germline.match"
-    singularity:
-        "docker://genxnetwork/germline:stable"
+    conda:
+        "../envs/germline.yaml"
     log:
         "logs/germline/germline-{chrom}.log"
     benchmark:
@@ -164,8 +164,8 @@ rule ersa:
         ibd=rules.merge_ibd_segments.output['ibd']
     output:
         "ersa/relatives.tsv"
-    singularity:
-        "docker://genxnetwork/ersa:stable"
+    conda:
+        "../envs/ersa.yaml"
     log:
         "logs/ersa/ersa.log"
     benchmark:

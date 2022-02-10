@@ -11,9 +11,6 @@ requirements:
     dockerPull: genxnetwork/grape:v1.4
   NetworkAccess:
     networkAccess: true
-  EnvVarRequirement:
-    envDef:
-      SINGULARITY_TMPDIR: /tmp
   InitialWorkDirRequirement:
     listing:
       - $(inputs.reference)
@@ -42,6 +39,5 @@ baseCommand:
         "--configfile", "/src/repo/config.yaml",
         "--ref-directory", "ref",
         "--vcf-file", "vcf_file",
-        "--singularity-args", "-W tmp",
         "--real-run"
     ]

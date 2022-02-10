@@ -5,15 +5,13 @@ rule phase:
             vcfRef=REF_VCF
         output: temp("phase/chr{chrom}.phased.vcf.gz")
         threads: 1
-        singularity:
-            "docker://biocontainers/bio-eagle:v2.4.1-1-deb_cv1"
         log:
             "logs/phase/eagle-{chrom}.log"
         benchmark:
             "benchmarks/phase/eagle-{chrom}.txt"
         shell:
             """
-            /usr/bin/bio-eagle --vcfRef {input.vcfRef} \
+            eagle --vcfRef {input.vcfRef} \
             --numThreads {threads} \
             --vcfTarget {input.vcf}  \
             --geneticMapFile {GENETIC_MAP} \
