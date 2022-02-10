@@ -13,7 +13,6 @@ sim_params_file: params/Relatives.def
 samples_file: samples.tsv
 vcf_file: pedsim/simulated/reheaded_data.vcf.gz
 use_simulated_ibd: True
-use_rapid: False
 use_ibis: False
 ref_dir: /media/ref
 azure_public_key: "?sv=2020-08-04&ss=f&srt=sco&sp=r&se=2022-08-08T14:35:53Z&st=2021-08-27T06:35:53Z&spr=https&sig=SjxrSn2KBuQYjYgT2ZZTHQ6IOhA%2BRUSvLIgog%2FH2Tnk%3D"

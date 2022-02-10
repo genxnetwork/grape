@@ -199,34 +199,6 @@ def read_refined_ibd_segments(path):
     return segments
 
 
-def read_rapid_segments(path):
-    # first3_g5-b2-s1	1	first3_g7-b3-i1	2	20	12227899	13105474	19.45	1.788
-    refined_ibd_names = [
-        'fid_iid1',
-        'fid_iid2',
-        'chrom',
-        'bp_start',
-        'bp_end',
-        'genetic_len'
-    ]
-
-    data = pandas.read_table(path, header=None, names=refined_ibd_names)
-    segments = {}
-    for i, row in data.iterrows():
-
-        id1 = row['fid_iid1']
-        id2 = row['fid_iid2']
-
-        seg = Segment(id1, id2, row['chrom'], bp_start=row['bp_start'], bp_end=row['bp_end'])
-        key = tuple(sorted((seg.id1, seg.id2)))
-        if key not in segments:
-            segments[key] = [seg]
-        else:
-            segments[key].append(seg)
-
-    return segments
-
-
 def total_overlap(true_segments, found_segments):
 
     overlaps = {}
@@ -306,20 +278,3 @@ def line_generator(matchfiles):
         iterator = gzip.open(i, 'rt')
         for line in iterator:
             yield line
-
-
-def merge_rapid_ibd_data(matchfiles, outfile, names=None):
-    """Filter matchfile to contain shared IBD of target subjects"""
-    segments_count = 0
-    with open(outfile, 'w') as out:
-        i1, i2, c, bs, be, l = 1, 2, 0, 5, 6, 7
-
-        for line in line_generator(matchfiles):
-            items = line.split()
-            if (not names) or ((items[i1] in names) != (items[i2] in names)): # later one is a xor
-                out.write("{}\t{}\t{}\t{}\t{}\t{}\n".format(
-                    items[i1], items[i2], items[c], items[bs], items[be], items[l]
-                ))
-                segments_count += 1
-
-    return segments_count
