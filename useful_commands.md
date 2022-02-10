@@ -5,7 +5,7 @@
 ```text
 
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py find --samples /media/ref/samples.tsv --input /media/ref/input --directory /media/pipeline_data/real-data
+launcher.py find --samples /media/samples.tsv --input /media/input --directory /media/data
 
 ```
 
@@ -13,7 +13,7 @@ launcher.py find --samples /media/ref/samples.tsv --input /media/ref/input --dir
 
 ```text
 
-snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media --singularity-args="-B /media:/media" -p all
+snakemake --cores all --use-conda -p all
 
 ```
 
@@ -28,7 +28,7 @@ snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media 
 
 ```text
 
-snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media --singularity-args="-B /media:/media" -p all
+snakemake --cores all --use-conda -p all
 
 ```
 
@@ -36,7 +36,7 @@ snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media 
 
 ```text
 
-snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media --singularity-args="-B /media:/media" -R somerule --until somerule
+snakemake --cores all --use-conda -R somerule --until somerule
 
 ```
 
@@ -44,7 +44,7 @@ snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media 
 
 ```text
 
-snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media --singularity-args="-B /media:/media" -p -s workflows/pedsim/Snakefile
+snakemake --cores all --use-conda -p -s workflows/pedsim/Snakefile
 
 ```
 
@@ -61,18 +61,7 @@ docker push alexgenx/snakemake:latest
 
 ```text
 
-cp -r input /media/pipeline_data/atlas40/
-cp samples.tsv /media/pipeline_data/atlas40/
-
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro alexgenx/snakemake:latest /bin/bash
-
-```
-
-# this is inside docker container
-
-```text
-
-snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media/singularity_cache --singularity-args="-B /media:/media" -p --configfile config.yaml --directory /media/pipeline_data/atlas40 -n
+snakemake --cores all --use-conda -p --configfile config.yaml --directory /media/data -n
 
 ```
 
