@@ -75,7 +75,7 @@ docker run --rm --privileged -it -v /media/data1/relatives:/media -v /etc/localt
 
 **Description:**
 
-We need to be sure that GRAPE is working well with big datasets. We chose 10K dataset, because testing on 100K will take too long.
+We need to be sure that GRAPE is working well with big datasets. We chose 10K dataset, because testing on 100K takes too long.
 Dataset is taken from Allen Ancient DNA Resource: https://reich.hms.harvard.edu/allen-ancient-dna-resource-aadr-downloadable-genotypes-present-day-and-ancient-dna-data.
 It has 10379 unique individuals (6442 ancient, 3937 present-day) with 1,233,013 SNPs. 
 
