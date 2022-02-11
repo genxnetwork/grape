@@ -1,12 +1,3 @@
-FROM golang:1.14.0-buster as builder
-
-ENV DEBIAN_FRONTEND noninteractive
-
-WORKDIR $GOPATH/src/github.com/sylabs
-#RUN apt-get update && apt-get install -y gawk gcc git libc-dev linux-headers libressl-dev libuuid libseccomp-dev make util-linux-dev
-RUN apt-get update && apt-get install -y gawk gcc git libseccomp-dev make
-RUN apt-get clean
-
 FROM debian:buster
 
 ENV DEBIAN_FRONTEND noninteractive
@@ -40,6 +31,18 @@ RUN apt-get install -y minimac4
 # Install Eagle
 RUN wget "https://data.broadinstitute.org/alkesgroup/Eagle/downloads/dev/eagle_v2.4.1" -O /usr/bin/eagle
 RUN chmod a+x /usr/bin/eagle
+
+# Install Germline
+# conda version of germline has a problem with non-zero error code
+# https://github.com/gusevlab/germline/issues/8
+RUN apt-get install -y make g++ git && \
+    git clone https://github.com/gusevlab/germline && \
+    cd /germline && \
+    mkdir -p bin && \
+    make all && \
+    mv germline bin/germline && \
+    apt-get --purge -y remove g++ make git && \
+    apt-get -y autoremove
 
 # Workaround of NonWritableError when conda tries to create environments for the first time
 # funnel launches docker containers with --read-only and snakemake cannot create conda envs

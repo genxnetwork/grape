@@ -4,7 +4,6 @@ rule phase:
             #idx="vcf/merged_mapped_sorted.vcf.gz.csi"
             vcfRef=REF_VCF
         output: temp("phase/chr{chrom}.phased.vcf.gz")
-        threads: workflow.cores
         log:
             "logs/phase/eagle-{chrom}.log"
         benchmark:
@@ -12,7 +11,6 @@ rule phase:
         shell:
             """
             eagle --vcfRef {input.vcfRef} \
-            --numThreads {threads} \
             --vcfTarget {input.vcf}  \
             --geneticMapFile {GENETIC_MAP} \
             --chrom {wildcards.chrom} \
