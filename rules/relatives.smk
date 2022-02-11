@@ -122,8 +122,6 @@ rule interpolate:
 rule germline:
     input: rules.interpolate.output
     output: "germline/chr{chrom}.germline.match"
-    conda:
-        "../envs/germline.yaml"
     log:
         "logs/germline/germline-{chrom}.log"
     benchmark:
