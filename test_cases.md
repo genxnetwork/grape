@@ -24,7 +24,7 @@ Accuracy of almost 100\% for the first 3 degrees and better than 0\% accuracy fo
 
 **Description:**
 
-We are checking accuracy of IBIS+KING workflow with `simulate` command and option `--flow ibis_king`. 
+We are checking accuracy of IBIS+KING workflow with `simulate` command and option `--flow ibis-king`. 
 It will take roughly an hour. 
 
 **Command:**
