@@ -8,9 +8,6 @@ rule impute:
         rules.phase.output,
         refHaps=REF_HAPS
     output: temp("imputed/chr{chrom}.imputed.dose.vcf.gz")
-    threads: 1
-    singularity:
-        "docker://genxnetwork/minimac4:stable"
     log:
         "logs/impute/minimac4-{chrom}.log"
     benchmark:
@@ -22,8 +19,7 @@ rule impute:
             --haps phase/chr{wildcards.chrom}.phased.vcf.gz \
             --format GT,GP \
             --prefix imputed/chr{wildcards.chrom}.imputed \
-            --minRatio 0.01 \
-            --cpus {threads} |& tee {log}
+            --minRatio 0.01 |& tee {log}
         """
 
 rule imputation_filter:
