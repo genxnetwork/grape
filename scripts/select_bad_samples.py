@@ -47,8 +47,9 @@ if __name__ == '__main__':
                           ['sample_id', 'missing_share', 'alt_hom_share', 'het_samples_share', 'exclusion_reason']]
 
     samples_only = bad_samples.loc[:, ['sample_id']].copy()
-    samples_only.loc[:, 'fid'] = [s.split('_')[0] for s in samples_only.sample_id]
-    samples_only.loc[:, 'iid'] = [s.split('_')[1] for s in samples_only.sample_id]
+    # if input vcf file has iids in form fid_iid we split it, else we just assign fid equal to iid
+    samples_only.loc[:, 'fid'] = [s.split('_')[0] if '_' in s else s for s in samples_only.sample_id]
+    samples_only.loc[:, 'iid'] = [s.split('_')[1] if '_' in s else s for s in samples_only.sample_id]
 
     samples_only.loc[:, ['fid', 'iid']].to_csv(bad_samples_path, sep='\t', header=None, index=False)
     bad_samples.to_csv(report_path, sep='\t')
