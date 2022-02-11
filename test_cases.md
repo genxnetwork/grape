@@ -2,7 +2,6 @@
 
 ### Accuracy check via simulation: IBIS workflow
 
-
 **Description:**
 
 We are checking accuracy of IBIS workflow with `simulate` command. 
@@ -10,15 +9,13 @@ It takes roughly an hour.
 
 **Command:**
 
+```console
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py simulate --ref-directory /media/ref --cores 8 --directory /media/data --flow ibis --assembly hg37 --real-run
 ```
-docker run --rm --privileged -it -v /media/data1/relatives:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py simulate --ref-directory /media/big_ref --cores 8 --directory /media/runs/sim-ibis-small --flow ibis --assembly hg37 --real-run
-```
-
 
 **Desired result:**
 
-Accuracy of almost 100\% for the first 3 degrees and better than 0\% accuracy for 4-6.
-
+Recall of almost 100\% for the first 3 degrees, around 95\% for 4-6 degrees, and better than 0\% for 7-9 degrees.
 
 ### Accuracy check via simulation: KING workflow
 
@@ -29,14 +26,13 @@ It takes roughly an hour.
 
 **Command:**
 
+```console
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py simulate --ref-directory /media/ref --cores 8 --directory /media/data --flow ibis-king --assembly hg37 --real-run
 ```
-docker run --rm --privileged -it -v /media/data1/relatives:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py simulate --ref-directory /media/big_ref --cores 8 --directory /media/runs/sim-ibis-king-small --flow ibis-king --assembly hg37 --real-run
-```
-
 
 **Desired result:**
 
-Accuracy of almost 100\% for the first 3 degrees and better than 0\% accuracy for 4-6.
+Recall of almost 100\% for the first 3 degrees, around 95\% for 4-6 degrees, and better than 0\% for 7-9 degrees.
 
 ### Khazar Dataset
 
@@ -47,8 +43,7 @@ We perform preprocessing and search for SNPs.
 
 **Command:**
 
-```
-
+```console
 # download data
 wget https://evolbio.ut.ee/khazar/new_data_in_paper.{bed,bim,fam}
 
@@ -56,20 +51,18 @@ wget https://evolbio.ut.ee/khazar/new_data_in_paper.{bed,bim,fam}
 sed -i 's/_/-/g' new_data_in_paper.fam
 
 # convert data to vcf.gz
-plink --bfile new_data_in_paper --recode vcf-iid bgz --out khazar314 
+plink --bfile new_data_in_paper --recode vcf-iid bgz --out /media/data/khazar/khazar314 
 
 # run preprocessing
-docker run --rm --privileged -it -v /media/data1/relatives:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py preprocess --ref-directory /media/big_ref --cores 8 --directory /media/runs/khazar --vcf-file /media/datasets/khazar/khazar314.vcf.gz --assembly hg37 --real-run
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py preprocess --ref-directory /media/ref --cores 8 --directory /media/runs/khazar --vcf-file /media/data/khazar/khazar314.vcf.gz --assembly hg37 --real-run
 
 # run relationship inference
-docker run --rm --privileged -it -v /media/data1/relatives:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py find --ref-directory /media/big_ref --cores 8 --directory /media/runs/khazar --flow ibis --real-run
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py find --ref-directory /media/ref --cores 8 --directory /media/runs/khazar --flow ibis --real-run
 ```
-
 
 **Desired result:**
 
 `result.csv` file with approximately 56 relatives.
-
 
 ### Performance test on 10K AADR dataset of IBIS workflow
 
@@ -81,26 +74,34 @@ It has 10379 unique individuals (6442 ancient, 3937 present-day) with 1,233,013 
 
 **Command:**
 
-```
+```console
+cd /media/data/aadr
+
 # download dataset
 wget https://reichdata.hms.harvard.edu/pub/datasets/amh_repo/curated_releases/V50/V50.0/SHARE/public.dir/v50.0_1240K_public.tar
+
 # unpack dataset
 tar -xvf v50.0_1240K_public.tar
+
 # install converter from packed ancestry map format to plink ped
 conda install -c bioconda eigensoft
+
 # convert to plink ped format
 convertf -p par.PACKEDANCESTRYMAP.PED
+
 # convert to vcf format
 plink --ped v50.0_1240k_public.ped --map v50.0_1240k_public.pedsnp --alleleACGT --recode vcf-iid bgz --out aadr
+
 # remove underscores from sample ids
 bcftools query --list-samples aadr.vcf.gz > aadr.samples
 bcftools reheader aadr.vcf.gz -s aadr.samples | bcftools view -O z -o aadr.reheaded.vcf.gz
-# run preprocessing
-docker run --rm --privileged -it -v /media/data1/relatives:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py preprocess --ref-directory /media/big_ref --cores 8 --directory /media/runs/aadr --vcf-file /media/datasets/aadr/aadr.reheaded.vcf.gz --assembly hg37 --real-run
-# run relationship inference
-docker run --rm --privileged -it -v /media/data1/relatives:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py find --ref-directory /media/big_ref --cores 8 --directory /media/runs/aadr --flow ibis --real-run
-```
 
+# run preprocessing
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py preprocess --ref-directory /media/ref --cores 8 --directory /media/data/aadr --vcf-file /media/data/aadr/aadr.reheaded.vcf.gz --assembly hg37 --real-run
+
+# run relationship inference
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py find --ref-directory /media/ref --cores 8 --directory /media/runs/aadr --flow ibis --real-run
+```
 
 **Desired result:**
 
