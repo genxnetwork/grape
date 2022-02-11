@@ -35,14 +35,17 @@ RUN chmod a+x /usr/bin/eagle
 # Install Germline
 # conda version of germline has a problem with non-zero error code
 # https://github.com/gusevlab/germline/issues/8
+WORKDIR /opt
 RUN apt-get install -y make g++ git && \
     git clone https://github.com/gusevlab/germline && \
-    cd /germline && \
+    cd germline && \
     mkdir -p bin && \
     make all && \
     mv germline bin/germline && \
     apt-get --purge -y remove g++ make git && \
     apt-get -y autoremove
+ENV PATH "$PATH:/opt/germline/bin"
+WORKDIR /
 
 # Workaround of NonWritableError when conda tries to create environments for the first time
 # funnel launches docker containers with --read-only and snakemake cannot create conda envs
