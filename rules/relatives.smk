@@ -1,25 +1,3 @@
-rule convert_mapped_to_plink:
-    input:
-        vcf="preprocessed/data.vcf.gz",
-        index="preprocessed/data.vcf.gz.csi"
-    output:
-        plink=expand("plink/{i}.{ext}", i="data", ext=PLINK_FORMATS),
-        vcf=temp('vcf/merged_mapped_sorted_22.vcf.gz')
-    params:
-        out = "plink/data"
-    conda:
-        "../envs/bcf_plink.yaml"
-    log:
-        "logs/plink/convert_mapped_to_plink.log"
-    benchmark:
-        "benchmarks/plink/convert_mapped_to_plink.txt"
-    shell:
-        """
-        # leave only chr1..22 because we need to map it later
-        bcftools view {input.vcf} --regions 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 -O z -o {output.vcf}
-        plink --vcf {output.vcf} --make-bed --out {params.out} |& tee {log}
-        """
-
 rule run_king:
     input: rules.convert_mapped_to_plink.output
     output:
@@ -28,7 +6,7 @@ rule run_king:
         kinship0="king/data.kin0",
         segments="king/data.segments.gz"
     params:
-        input = "plink/data",
+        input = "preprocessed/data",
         out = "king/data",
         kin = "king/data"
     threads: workflow.cores
