@@ -6,7 +6,7 @@
 **Description:**
 
 We are checking accuracy of IBIS workflow with `simulate` command. 
-It will take roughly an hour. 
+It takes roughly an hour. 
 
 **Command:**
 
