@@ -1,5 +1,5 @@
 rule run_king:
-    input: rules.convert_mapped_to_plink.output
+    input: "preprocessed/data.bed"
     output:
         king="king/data.seg",
         kinship="king/data.kin",
