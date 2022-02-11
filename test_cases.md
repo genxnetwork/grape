@@ -30,7 +30,7 @@ It takes roughly an hour.
 **Command:**
 
 ```
-docker run --rm --privileged -it -v /media/data1/relatives:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py simulate --ref-directory /media/big_ref --cores 8 --directory /media/runs/sim-ibis-king-small --flow ibis_king --assembly hg37 --real-run
+docker run --rm --privileged -it -v /media/data1/relatives:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py simulate --ref-directory /media/big_ref --cores 8 --directory /media/runs/sim-ibis-king-small --flow ibis-king --assembly hg37 --real-run
 ```
 
 
