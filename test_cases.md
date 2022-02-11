@@ -1,4 +1,4 @@
-# List of testing cases before release
+# List of test cases
 
 ### Accuracy check via simulation: IBIS workflow
 
