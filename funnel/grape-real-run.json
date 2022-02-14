@@ -1,0 +1,46 @@
+{
+    "name": "GRAPE real run",
+    "description": "Demonstrate GRAPE",
+
+    "inputs": [{
+        "url": "file:///media",
+        "path": "/media",
+        "type": "DIRECTORY"
+    }],
+
+    "outputs": [{
+        "url": "file:///media/containers/outputs/real-run.txt",
+        "path": "/outputs/real-run.txt"
+    }],
+
+    "executors": [
+        {
+            "image": "genxnetwork/grape:latest",
+            "command": [
+                "launcher.py", "preprocess",
+                "--samples", "/media/data/samples.tsv",
+                "--input", "/media/data",
+                "--directory", "/media/data",
+                "--ref-directory", "/media/ref",
+                "--real-run"
+            ],
+            "stdout": "/outputs/real-run.txt",
+            "workdir": "/src/repo",
+            "env": { "CONDA_ENVS_PATH": "/tmp/conda", "CONDA_PKGS_DIRS":  "/tmp/conda/pkgs"}
+        },
+        {
+            "image": "genxnetwork/grape:latest",
+            "command": [
+                "launcher.py", "find",
+                "--samples", "/media/ref/samples.tsv",
+                "--input", "/media/data",
+                "--directory", "/media/data",
+                "--ref-directory", "/media/ref",
+                "--real-run"
+            ],
+            "stdout": "/outputs/real-run.txt",
+            "workdir": "/src/repo",
+            "env": { "CONDA_ENVS_PATH": "/tmp/conda", "CONDA_PKGS_DIRS":  "/tmp/conda/pkgs"}
+        }
+    ]
+}
