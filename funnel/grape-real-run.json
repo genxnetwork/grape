@@ -15,7 +15,7 @@
 
     "executors": [
         {
-            "image": "genx_relatives:latest",
+            "image": "genxnetwork/grape:latest",
             "command": [
                 "launcher.py", "preprocess",
                 "--samples", "/media/data/samples.tsv",
@@ -29,7 +29,7 @@
             "env": { "CONDA_ENVS_PATH": "/tmp/conda", "CONDA_PKGS_DIRS":  "/tmp/conda/pkgs"}
         },
         {
-            "image": "genx_relatives:latest",
+            "image": "genxnetwork/grape:latest",
             "command": [
                 "launcher.py", "find",
                 "--samples", "/media/ref/samples.tsv",

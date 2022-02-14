@@ -14,7 +14,7 @@
     }],
 
     "executors": [{
-        "image": "genx_relatives:latest",
+        "image": "genxnetwork/grape:latest",
         "command": [
             "launcher.py", "preprocess",
             "--samples", "/media/data/samples.tsv",
