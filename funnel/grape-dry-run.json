@@ -1,0 +1,30 @@
+{
+    "name": "GRAPE dry run",
+    "description": "Check if GRAPE correctly sees input files",
+    
+    "inputs": [{
+        "url": "file:///media",
+        "path": "/media",
+        "type": "DIRECTORY"
+    }],
+        
+    "outputs": [{
+        "url": "file:///media/containers/outputs/dry-run.txt",
+        "path": "/outputs/dry-run.txt"
+    }],
+        
+    "executors": [{
+        "image": "genx_relatives:latest",
+        "command": [
+            "launcher.py", "preprocess",
+            "--samples", "/media/data/samples.tsv",
+            "--input", "/media/data",
+            "--directory", "/media/data",
+            "--ref-directory", "/media/ref"
+        ],
+        "stdout": "/output/dry-run.txt",
+        "workdir": "/src/repo",
+        "env": { "CONDA_ENVS_PATH": "/tmp/conda", "CONDA_PKGS_DIRS":  "/tmp/conda/pkgs"}
+    }]
+}
+        
