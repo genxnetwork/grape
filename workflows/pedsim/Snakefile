@@ -114,7 +114,7 @@ rule shuffle_phase:
         conda: "../../envs/plink.yaml"
         shell:
             """
-                plink --vcf {input.vcf} --make-bed --out {params.plink} 
+                plink --vcf {input.vcf} --make-bed --out {params.plink}
                 plink --bfile {params.plink} --export vcf bgz --out {params.vcf}
             """
 
@@ -160,29 +160,29 @@ rule evaluate_accuracy:
     script:
          '../../scripts/evaluate.py'
 
-rule split_map_for_ibd:
-    input:
-        bim = "preprocessed/data.bim"
-    output: expand("cm2/chr{chrom}.cm.map", chrom=CHROMOSOMES)
-    params:
-        cm_dir='cm2'
-    conda:
-        "../../envs/evaluation.yaml"
-    script:
-        "../../scripts/split_map.py"
+# rule split_map_for_ibd:
+#     input:
+#         bim = "preprocessed/data.bim"
+#     output: expand("cm2/chr{chrom}.cm.map", chrom=CHROMOSOMES)
+#     params:
+#         cm_dir='cm2'
+#     conda:
+#         "../../envs/evaluation.yaml"
+#     script:
+#         "../../scripts/split_map.py"
 
-rule evaluate_ibd:
-    input:
-        pedsim=rules.simulate.output['seg'],
-        ibd=aggregate_input, # only segments of first up to 2K samples
-        cm=expand("cm2/chr{chrom}.cm.map", chrom=CHROMOSOMES)
-    params:
-        cm_dir='cm2',
-    conda:
-        '../../envs/evaluation.yaml'
-    output:
-        overlap='results/overlaps.tsv',
-        seg_accuracy='results/seg_accuracy.png',
-        total_len_accuracy='results/total_len_accuracy.png'
-    script:
-        '../../scripts/evaluate_ibd.py'
+# rule evaluate_ibd:
+#     input:
+#         pedsim=rules.simulate.output['seg'],
+#         ibd=aggregate_input, # only segments of first up to 2K samples
+#         cm=expand("cm2/chr{chrom}.cm.map", chrom=CHROMOSOMES)
+#     params:
+#         cm_dir='cm2',
+#     conda:
+#         '../../envs/evaluation.yaml'
+#     output:
+#         overlap='results/overlaps.tsv',
+#         seg_accuracy='results/seg_accuracy.png',
+#         total_len_accuracy='results/total_len_accuracy.png'
+#     script:
+#         '../../scripts/evaluate_ibd.py'
