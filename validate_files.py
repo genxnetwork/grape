@@ -2,7 +2,7 @@ import yaml
 import sys
 from functools import wraps
 from ftplib import FTP
-from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
+from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse, ParseResult
 from urllib.request import Request, urlopen
 
 
@@ -32,16 +32,22 @@ def get_ftp_filesize(url):
 def get_http_filesize(url):
     url_parsed = urlparse(url)
     if 'dropbox' in url_parsed.hostname:
-        # https://stackoverflow.com/a/50067550/4377521
-        # otherwise you'll get html page, not file
-        url_dict = dict(parse_qsl(url_parsed.query))
-        url_dict.update({'dl': 1})
-        query = urlencode(url_dict)
-        url_parsed = url_parsed._replace(query=query)
-        url = urlunparse(url_parsed)
+        return get_dropbox_filesize(url_parsed)
 
     file = urlopen(Request(url, method='HEAD'))
     return int(file.headers.get('Content-Length'))
+
+
+def get_dropbox_filesize(url_parsed: ParseResult) -> int:
+    # https://stackoverflow.com/a/50067550/4377521
+    # otherwise you'll get html page, not file
+    url_dict = dict(parse_qsl(url_parsed.query))
+    url_dict.update({'dl': 1})
+    query = urlencode(url_dict)
+    url_parsed = url_parsed._replace(query=query)
+    url = urlunparse(url_parsed)
+    file = urlopen(Request(url, method='HEAD'))
+    return int(file.headers.get('X-Dropbox-Content-Length'))
 
 
 def get_url(url, access_keys):
