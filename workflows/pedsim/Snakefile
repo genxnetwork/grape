@@ -44,7 +44,7 @@ rule all:
     input:
         "results/relatives.tsv",
         "results/accuracy.png",
-        "results/overlaps.tsv"
+        # "results/overlaps.tsv"
 
 
 rule intersect:
