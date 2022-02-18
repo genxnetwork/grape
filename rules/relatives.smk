@@ -146,12 +146,14 @@ rule ersa:
         "logs/ersa/ersa.log"
     benchmark:
         "benchmarks/ersa/ersa.txt"
+    params:
+        ersa_l = config['zero_seg_count'], # the average number of IBD segments in population
+        ersa_th = config['zero_seg_len'],  # the average length of IBD segment
+        alpha = config['alpha'],           # ERSA confidence level
+        ersa_t = config['ibis_seg_len']    # min length of segment to be considered in segment aggregation
     shell:
         """
-        ERSA_L=2.0 # the average number of IBD segments in population
-        ERSA_TH=1.5 # the average length of IBD segment
-        ERSA_T=1.0 # min length of segment to be considered in segment aggregation
-        ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd} -o {output} |& tee {log}
+        ersa --avuncular-adj -ci --alpha {params.alpha} --dmax 14 -t {params.ersa_t} -l {params.ersa_l} -th {params.ersa_th} {input.ibd} -o {output} |& tee {log}
         """
 
 
