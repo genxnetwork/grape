@@ -7,7 +7,7 @@ It requires a single multisamples VCF file as input and has a separate workflow 
 GRAPE incorporates comprehensive data preprocessing, quality control (QC), and several workflows for relatedness inference.
 
 <p align="center">
-    <img src="./scheme.png" alt="drawing" width="300"/>
+    <img src="./scheme.png" alt="drawing" width="400"/>
 </p>
 
 ## Installation
@@ -234,7 +234,7 @@ GRAPE supports execution with the Dockstore.
 Dockstore page for the GRAPE pipeline can be found [here](https://dockstore.org/organizations/GenX/collections/GRAPE).
 
 
-1. [install dockstore](https://dockstore.org/quick-start).
+1. [Install dockstore](https://dockstore.org/quick-start).
 
 2. Clone the GRAPE repository.
 
@@ -242,25 +242,21 @@ Dockstore page for the GRAPE pipeline can be found [here](https://dockstore.org/
 
 ```bash
 # Download minimal reference datasets from public available sources (without phasing and imputation)
-
 dockstore tool launch --local-entry workflows/reference/cwl/ref_min.cwl --json workflows/reference/cwl/config.json --script
 ```
 
 ```bash
 # Download complete reference datasets from public available sources (for phasing and imputation)
-
 dockstore tool launch --local-entry workflows/reference/cwl/ref.cwl --json workflows/reference/cwl/config.json --script
 ```
 
 ```bash
 # Download minimal reference datasets as bundle from (without phasing and imputation)
-
 dockstore tool launch --local-entry workflows/bundle/cwl/bundle_min.cwl --json workflows/reference/bundle/config.json --script
 ```
 
 ```bash
 # Download complete reference datasets as bundle from (for phasing and imputation)
-
 dockstore tool launch --local-entry workflows/bundle/cwl/bundle.cwl --json workflows/reference/bundle/config.json --script
 ```
 
