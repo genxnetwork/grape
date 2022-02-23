@@ -111,7 +111,7 @@ rule download_GRCh37_fasta:
             set +e
             set -x
 
-            wget "{GRCH37_FASTA_url}{DATASET_KEY}" -O {REF_DIR}/{GRCH37_FASTA_basename} --tries 50 |& tee -a {log}           
+            wget "{GRCH37_FASTA_url}{DATASET_KEY}" -O {REF_DIR}/{GRCH37_FASTA_basename} --tries 50 |& tee -a {log}
             sum=$(md5sum {REF_DIR}/{GRCH37_FASTA_basename} | cut -d " " -f1)
             if [ $sum != {GRCH37_FASTA_md5} ]; then
                 echo "md5 sum of GRCH37_FASTA is invalid" |& tee -a {log}
@@ -119,13 +119,13 @@ rule download_GRCh37_fasta:
             fi
             # gzip exit with "decompression OK, trailing garbage ignored". need to silence
             gzip -d {REF_DIR}/{GRCH37_FASTA_basename} |& tee -a {log}
-            
+
             wget "{GRCH37_FASTA_FAI_url}{DATASET_KEY}" -O {GRCH37_FASTA_FAI} --tries 50 |& tee -a {log}
             sum2=$(md5sum {GRCH37_FASTA_FAI} | cut -d " " -f1)
-            if [ $sum2 != {GRCH37_FASTA_FAI_md5} ]; then 
+            if [ $sum2 != {GRCH37_FASTA_FAI_md5} ]; then
                 echo "md5 sum of GRCH37_FASTA_FAI is invalid" |& tee -a {log}
                 exit 1
-            fi           
+            fi
             exit 0
         """
 

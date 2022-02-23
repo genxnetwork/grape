@@ -49,7 +49,7 @@ if full:
                 if [ $sum != {BUNDLE_md5} ]; then
                     echo "md5 sum of BUDNLE is invalid" |& tee -a {log}
                     exit 1
-                fi  
+                fi
                 tar -xzvf {REF_DIR}/{BUNDLE_basename} -C {REF_DIR} |& tee -a {log}
                 rm -f {REF_DIR}/{BUNDLE_basename} |& tee -a {log}
             """
@@ -76,7 +76,7 @@ else:
                 if [ $sum != {BUNDLE_md5} ]; then
                     echo "md5 sum of BUDNLE is invalid" |& tee -a {log}
                     exit 1
-                fi  
+                fi
                 tar -xzvf {REF_DIR}/{BUNDLE_basename} -C {REF_DIR} |& tee -a {log}
                 rm -f {REF_DIR}/{BUNDLE_basename} |& tee -a {log}
             """

@@ -143,7 +143,7 @@ def get_parser_args():
         default=0.5,
         type=float,
         help="""
-            Average count of IBD segments in two unrelated individuals in population. 
+            Average count of IBD segments in two unrelated individuals in population.
             Smaller values of 0.1, 0.2 tend to give more distant matches than default 0.5.
             """
     )
@@ -153,7 +153,7 @@ def get_parser_args():
         default=5.0,
         type=float,
         help="""
-            Average length of IBD segment in two unrelated individuals in population. 
+            Average length of IBD segment in two unrelated individuals in population.
             Smaller values of tend to give more distant matches than default 5.0
             """
     )
@@ -164,7 +164,7 @@ def get_parser_args():
         type=float,
         help="""
             ERSA P-value limit for testing for an existence of an relationship.
-            Values of 0.02-0.05 tend to give more distant matches that default 0.01. 
+            Values of 0.02-0.05 tend to give more distant matches that default 0.01.
             """
     )
 
@@ -173,7 +173,7 @@ def get_parser_args():
         default=7.0,
         type=float,
         help="""
-                Minimum length of IBD segment for ibis. 
+                Minimum length of IBD segment for ibis.
                 Smaller values of it tend to give more distant matches than default 7.0 and more false-positives.
             """
     )
@@ -183,7 +183,7 @@ def get_parser_args():
         default=500,
         type=int,
         help="""
-                Minimum number of SNPs in IBD segment. 
+                Minimum number of SNPs in IBD segment.
                 Smaller values of it tend to give more distant matches than default 500 and more false-positives.
             """
     )
