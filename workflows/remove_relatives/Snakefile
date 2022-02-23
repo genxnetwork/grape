@@ -113,6 +113,6 @@ rule create_chip:
         "../../envs/bcftools.yaml"
     shell:
         """
-            bcftools view {input.background} --force-samples --samples-file {input.remove_list} -O z -o {output.back}
+            bcftools view {input.background} --force-samples --samples-file ^{input.remove_list} -O z -o {output.back}
             bcftools query --list-samples {output.back} > list.samples
         """
