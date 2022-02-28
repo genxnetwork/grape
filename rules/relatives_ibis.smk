@@ -1,20 +1,20 @@
 rule ibis:
     input:
-        bed="preprocessed/data.bed",
-        fam="preprocessed/data.fam",
-        bim="preprocessed/data_mapped.bim"
+        bed = "preprocessed/data.bed",
+        fam = "preprocessed/data.fam",
+        bim = "preprocessed/data_mapped.bim"
     conda:
         "../envs/ibis.yaml"
     output:
-        ibd     = "ibis/merged_ibis.seg"
+        ibd = "ibis/merged_ibis.seg"
     log:
         "logs/ibis/run_ibis.log"
     benchmark:
         "benchmarks/ibis/run_ibis.txt"
     threads: workflow.cores
     params:
-        mL=config['ibis_seg_len'],
-        mT=config['ibis_min_snp']
+        mL = config['ibis_seg_len'],
+        mT = config['ibis_min_snp']
     shell:
         """
         ibis {input.bed} {input.bim} {input.fam} -t {threads} -mt {params.mT} -mL {params.mL} -ibd2 -mL2 3 -hbd -f ibis/merged_ibis |& tee -a {log}
@@ -61,12 +61,12 @@ rule ersa:
         ERSA_L={params.ersa_l} # the average number of IBD segments in population
         ERSA_TH={params.ersa_th} # the average length of IBD segment in population
         ERSA_T={params.ersa_t} # min length of segment to be considered in segment aggregation
-        
+
         FILES="{input.ibd}"
         TEMPFILE=ersa/temp_relatives.tsv
         rm -f $TEMPFILE
         rm -f {output}
-        
+
         for input_file in $FILES; do
 
             ersa --avuncular-adj -ci --alpha {params.alpha} --dmax 14 -t $ERSA_T -l $ERSA_L -th $ERSA_TH $input_file -o $TEMPFILE  |& tee {log}

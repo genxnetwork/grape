@@ -14,15 +14,17 @@ def total_memory_gb():
 def get_parser_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('command',
-                        default='find',
-                        help="""What pipeline should do, possible values are find, preprocess, simulate, hapmap.
-                        preprocess converts hg38 per-sample 23andme input files to the one single vcf in hg37;
-                        find detects relatives in vcf file;
-                        simulate generates pedigree and vcf file with distant relatives from 1000 genomes CEU(CEPH) population using pedsim;
-                        hapmap extracts CEU(CEPH) data for running find;
-                        reference downloads and preprocess all the references to the --ref-directory;
-                        For running the main pipeline you can provide .vcf file and use find or use preprocess with 23andme inputs""")
+    parser.add_argument(
+        'command',
+        default='find',
+        help="""What pipeline should do, possible values are find, preprocess, simulate, hapmap.
+                preprocess converts hg38 per-sample 23andme input files to the one single vcf in hg37;
+                find detects relatives in vcf file;
+                simulate generates pedigree and vcf file with distant relatives from 1000 genomes CEU(CEPH) population using pedsim;
+                hapmap extracts CEU(CEPH) data for running find;
+                reference downloads and preprocess all the references to the --ref-directory;
+                For running the main pipeline you can provide .vcf file and use find or use preprocess with 23andme inputs"""
+    )
 
     parser.add_argument(
         "--configfile",
@@ -143,7 +145,7 @@ def get_parser_args():
         default=0.5,
         type=float,
         help="""
-            Average count of IBD segments in two unrelated individuals in population. 
+            Average count of IBD segments in two unrelated individuals in population.
             Smaller values of 0.1, 0.2 tend to give more distant matches than default 0.5.
             """
     )
@@ -153,7 +155,7 @@ def get_parser_args():
         default=5.0,
         type=float,
         help="""
-            Average length of IBD segment in two unrelated individuals in population. 
+            Average length of IBD segment in two unrelated individuals in population.
             Smaller values of tend to give more distant matches than default 5.0
             """
     )
@@ -164,7 +166,7 @@ def get_parser_args():
         type=float,
         help="""
             ERSA P-value limit for testing for an existence of an relationship.
-            Values of 0.02-0.05 tend to give more distant matches that default 0.01. 
+            Values of 0.02-0.05 tend to give more distant matches that default 0.01.
             """
     )
 
@@ -173,7 +175,7 @@ def get_parser_args():
         default=7.0,
         type=float,
         help="""
-                Minimum length of IBD segment for ibis. 
+                Minimum length of IBD segment for ibis.
                 Smaller values of it tend to give more distant matches than default 7.0 and more false-positives.
             """
     )
@@ -183,7 +185,7 @@ def get_parser_args():
         default=500,
         type=int,
         help="""
-                Minimum number of SNPs in IBD segment. 
+                Minimum number of SNPs in IBD segment.
                 Smaller values of it tend to give more distant matches than default 500 and more false-positives.
             """
     )
@@ -216,9 +218,14 @@ def get_parser_args():
         help='Download all references as single file'
     )
 
+    parser.add_argument(
+        '--weight-mask',
+        help='Mask of weights used to re-weight IBD segments length while using ERSA algorithm'
+    )
+
     args = parser.parse_args()
 
-    valid_commands = ['preprocess', 'find', 'simulate', 'hapmap', 'reference', 'bundle']
+    valid_commands = ['preprocess', 'find', 'simulate', 'hapmap', 'reference', 'bundle', 'compute-weight-mask']
     if args.command not in valid_commands:
         raise RuntimeError(f'command {args.command} not in list of valid commands: {valid_commands}')
 
@@ -293,7 +300,7 @@ if __name__ == '__main__':
     if args.command == 'preprocess':
         shutil.copy(args.vcf_file, os.path.join(args.directory, 'input.vcf.gz'))
 
-    if args.command in ['preprocess', 'find', 'reference', 'bundle']:
+    if args.command in ['preprocess', 'find', 'reference', 'bundle', 'compute-weight-mask']:
         if args.directory != '.':
             shutil.copy(os.path.join(current_path, 'config.yaml'), os.path.join(args.directory, 'config.yaml'))
 
@@ -303,7 +310,8 @@ if __name__ == '__main__':
         'simulate': 'workflows/pedsim/Snakefile',
         'hapmap': 'workflows/hapmap/Snakefile',
         'reference': 'workflows/reference/Snakefile',
-        'bundle': 'workflows/bundle/Snakefile'
+        'bundle': 'workflows/bundle/Snakefile',
+        'compute-weight-mask': 'workflows/weight/Snakefile'
     }
 
     if args.client:
