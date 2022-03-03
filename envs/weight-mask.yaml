@@ -1,8 +1,7 @@
-name: compute-weight-mask
+name: weight-mask
 channels:
   - conda-forge
 dependencies:
   - numpy
-  - pandas
   - scikit-learn
   - matplotlib

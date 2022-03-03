@@ -46,14 +46,14 @@ rule ibis_ibd_segment_detection:
              -f {IBIS_OUTPUT_PREFIX} |& tee -a {log}
         """
 
-SNAKEFILE_DIRECTORY = os.path.dirname(workflow.snakefile)
+SNAKEFILE_FOLDER = os.path.dirname(workflow.snakefile)
 
 rule compute_weight_mask:
     input:
         ibd = rules.ibis_ibd_segment_detection.output.ibd,
-        script = path.join(SNAKEFILE_DIRECTORY, '../../weight/compute_weight_mask.py')
+        script = path.join(SNAKEFILE_FOLDER, '../../weight/compute_weight_mask.py')
     conda:
-        '../../envs/compute-weight-mask.yaml'
+        '../../envs/weight-mask.yaml'
     output:
         mask = path.join(WEIGHT_MASK_FOLDER, 'mask.json'),
         plot = path.join(WEIGHT_MASK_FOLDER, 'mask.png')

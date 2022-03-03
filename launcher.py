@@ -221,6 +221,7 @@ def get_parser_args():
     parser.add_argument(
         '--weight-mask',
         help='Mask of weights used to re-weight IBD segments length while using ERSA algorithm'
+            'for `ibis` and `ibis-king` flows'
     )
 
     args = parser.parse_args()
@@ -354,6 +355,7 @@ if __name__ == '__main__':
     config_dict['alpha'] = args.alpha
     config_dict['ibis_seg_len'] = args.ibis_seg_len
     config_dict['ibis_min_snp'] = args.ibis_min_snp
+    config_dict['weight_mask'] = args.weight_mask
 
     if not snakemake.snakemake(
             snakefile=snakefile,

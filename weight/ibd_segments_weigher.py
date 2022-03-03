@@ -250,23 +250,19 @@ class IBDSegmentsWeigher:
 
         return length - length_penalty
 
-    def apply_mask(self, input_segments_path, ibis_segments_path, output_segments_path):
+    def apply_mask(self, input_segments_path, output_segments_path):
         """
         TODO:
         """
 
         with (
             open(input_segments_path) as input_segments_file,
-            open(ibis_segments_path) as ibis_segments_file,
             open(output_segments_path, 'w') as output_segments_file
         ):
             input_segments_reader = csv.reader(input_segments_file, delimiter='\t')
-            ibis_segments_reader = csv.reader(ibis_segments_file, delimiter='\t')
             output_segments_writer = csv.writer(output_segments_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
 
-            for input_row, ibis_row in zip(input_segments_reader, ibis_segments_reader):
-                chrom, length = input_row[2], float(input_row[6])
-                start, end = float(ibis_row[6]), float(ibis_row[7])
-
-                input_row[6] = self.compute_weighted_length(chrom, start, end, length)
-                output_segments_writer.writerow(input_row)
+            for row in input_segments_reader:
+                chrom, start, end, length = row[2], float(row[6]), float(row[7]), float(row[8])
+                row[8] = self.compute_weighted_length(chrom, start, end, length)
+                output_segments_writer.writerow(row)
