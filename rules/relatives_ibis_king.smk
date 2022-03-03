@@ -111,44 +111,79 @@ def aggregate_input(wildcards):
     ids = glob_wildcards(f"ibd/{{id}}.tsv").id
     return expand(f"ibd/{{id}}.tsv", id=ids)
 
-rule ersa:
-    input:
-        ibd=aggregate_input
-    output:
-        "ersa/relatives.tsv"
-    conda:
-        "../envs/ersa.yaml"
-    log:
-        "logs/ersa/ersa.log"
-    benchmark:
-        "benchmarks/ersa/ersa.txt"
-    params:
-        ersa_l = config['zero_seg_count'],
-        ersa_th = config['zero_seg_len'],
-        alpha = config['alpha'],
-        ersa_t = config['ibis_seg_len']
-    shell:
-        """
-        ERSA_L={params.ersa_l} # the average number of IBD segments in population
-        ERSA_TH={params.ersa_th} # the average length of IBD segment in population
-        ERSA_T={params.ersa_t} # min length of segment to be considered in segment aggregation
 
-        FILES="{input.ibd}"
-        TEMPFILE=ersa/temp_relatives.tsv
-        rm -f $TEMPFILE
-        rm -f {output}
+if config['weight_mask']:
+    rule ersa:
+        input:
+            ibd = aggregate_input
+        output:
+            "ersa/relatives.tsv"
+        conda:
+            "../envs/ersa.yaml"
+        log:
+            "logs/ersa/ersa.log"
+        benchmark:
+            "benchmarks/ersa/ersa.txt"
+        params:
+            l = config['zero_seg_count'],
+            th = config['zero_seg_len'],
+            a = config['alpha'],
+            t = config['ibis_seg_len'],
+            r = config['ersa_r']
+        shell:
+            """
+            FILES="{input.ibd}"
+            TEMPFILE=ersa/temp_relatives.tsv
+            rm -f $TEMPFILE
+            rm -f {output}
 
-        for input_file in $FILES; do
+            for input_file in $FILES; do
+                ersa --nomask --avuncular-adj -ci -a {params.a} --dmax 14 -t {params.t} -l {params.l} \
+                    -r {params.r} -th {params.th} $input_file -o $TEMPFILE |& tee {log}
 
-            ersa --avuncular-adj -ci --alpha {params.alpha} --dmax 14 -t $ERSA_T -l $ERSA_L -th $ERSA_TH $input_file -o $TEMPFILE  |& tee {log}
+                if [[ "$input_file" == "${{FILES[0]}}" ]]; then
+                    cat $TEMPFILE >> {output}
+                else
+                    sed 1d $TEMPFILE >> {output}
+                fi
+            done
+            """
+else:
+    rule ersa:
+        input:
+            ibd = aggregate_input
+        output:
+            "ersa/relatives.tsv"
+        conda:
+            "../envs/ersa.yaml"
+        log:
+            "logs/ersa/ersa.log"
+        benchmark:
+            "benchmarks/ersa/ersa.txt"
+        params:
+            l = config['zero_seg_count'],
+            th = config['zero_seg_len'],
+            a = config['alpha'],
+            t = config['ibis_seg_len']
+        shell:
+            """
+            FILES="{input.ibd}"
+            TEMPFILE=ersa/temp_relatives.tsv
+            rm -f $TEMPFILE
+            rm -f {output}
 
-            if [[ "$input_file" == "${{FILES[0]}}" ]]; then
-                cat $TEMPFILE >> {output}
-            else
-                sed 1d $TEMPFILE >> {output}
-            fi
-        done
-        """
+            for input_file in $FILES; do
+                ersa --avuncular-adj -ci -a {params.a} --dmax 14 -t {params.t} -l {params.l} \
+                    -th {params.th} $input_file -o $TEMPFILE |& tee {log}
+
+                if [[ "$input_file" == "${{FILES[0]}}" ]]; then
+                    cat $TEMPFILE >> {output}
+                else
+                    sed 1d $TEMPFILE >> {output}
+                fi
+            done
+            """
+
 
 rule split_map:
     input:
