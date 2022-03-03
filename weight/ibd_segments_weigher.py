@@ -196,6 +196,9 @@ class IBDSegmentsWeigher:
             json.dump(mask, mask_file)
 
     def visualize(self, path):
+        """
+        Visualize the weight mask. In the result figure, ERSA mask is marked with pink hatching.
+        """
         plt.figure(figsize=(12, 6.5))
         ax = plt.gca()
 
