@@ -16,24 +16,23 @@ from matplotlib.patches import Rectangle
 
 class IBDSegmentsWeigher:
     """
-    TODO: ...
+    Provide methods for computing and applying IBD segments weight mask.
     """
 
     """
-    used in MCD algorithm
-    TODO: ...
+    Fraction of non-weighted (weight = 1) regions in each chromosome, used in MCD algorithm.
     """
     SUPPORT_FRACTION = 0.8
 
     """
     Expected number of recombinations per meiosis, used in the ERSA likelihood model.
-    This value should be adjusted after weighing genome regions, r := r - \sum_i length(window_i) * weight_i,
+    This value should be adjusted after the genome regions weighing, r := r - \sum_i length(window_i) * weight_i,
     where weight_i is a weight assigned to the i-th window.
     """
     ERSA_EXPECTED_RECOMBINATIONS_NUMBER = 35.2548101
 
     """
-    Genome regions masked by ERSA algorithm. These regions were computer in (paper).
+    Genome regions masked by ERSA algorithm. These regions were computer in 10.1371/journal.pgen.1004144.
     ERSA mask is compared with the weight mask in the resuting weight mask figure.
     """
     ERSA_MASKED_REGIONS = {
@@ -128,6 +127,9 @@ class IBDSegmentsWeigher:
         Create `IBDSegmentsWeigher` from IBD segments file produced by IBIS (.seg). This file should represent
         background distribution of the IBD segments among unrelated inividuals.
 
+        To create weight mask Minimum Covariance Determinant (MCD) algorithm is used. The approach is based on
+        determining outliers in the IBD segments overlaps distribution within each chromosome.
+
         :param path: path to the IBD segments file to compute weight mask from
         """
         segments = IBDSegmentsWeigher.load_segments(path)
@@ -159,8 +161,9 @@ class IBDSegmentsWeigher:
 
     def __init__(self, mask):
         """
-        TODO: ...
+        Transofrm JSON representation of the weight mask to numpy arrays.
         """
+
         self.mask = {}
         for chrom in mask:
             self.mask[chrom] = {
@@ -180,7 +183,7 @@ class IBDSegmentsWeigher:
 
     def to_json_mask_file(self, path):
         """
-        TODO: ...
+        Store weight mask to the JSON file.
         """
 
         mask = {}
@@ -239,7 +242,7 @@ class IBDSegmentsWeigher:
 
     def compute_weighted_length(self, chrom, start, end, length):
         """
-        TODO:
+        Compute weighted length using weigh mask.
         """
 
         if chrom not in self.mask:
@@ -259,7 +262,7 @@ class IBDSegmentsWeigher:
 
     def apply_mask(self, input_segments_path, output_segments_path):
         """
-        TODO:
+        Apply weight mask to the IBIS IBD segments file (.seg) and store the results in the same format.
         """
 
         with open(input_segments_path) as input_segments_file, open(output_segments_path, 'w') as output_segments_file:
