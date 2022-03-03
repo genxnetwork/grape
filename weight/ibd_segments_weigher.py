@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import csv
 import json
 import matplotlib
@@ -18,17 +20,21 @@ class IBDSegmentsWeigher:
     """
 
     """
+    used in MCD algorithm
     TODO: ...
     """
     SUPPORT_FRACTION = 0.8
 
     """
-    TODO: ...
+    Expected number of recombinations per meiosis, used in the ERSA likelihood model.
+    This value should be adjusted after weighing genome regions, r := r - \sum_i length(window_i) * weight_i,
+    where weight_i is a weight assigned to the i-th window.
     """
     ERSA_EXPECTED_RECOMBINATIONS_NUMBER = 35.2548101
 
     """
-    TODO: ...
+    Genome regions masked by ERSA algorithm. These regions were computer in (paper).
+    ERSA mask is compared with the weight mask in the resuting weight mask figure.
     """
     ERSA_MASKED_REGIONS = {
         1: [(150.31366473433604, 168.04559253633377)],
@@ -63,7 +69,7 @@ class IBDSegmentsWeigher:
     @staticmethod
     def load_segments(path: str) -> dict[dict[str, np.ndarray]]:
         """
-        TODO:
+        Load IBD segments from .seg file produced by IBIS.
 
         :param path: path to the IBD segments file
         """
@@ -88,7 +94,7 @@ class IBDSegmentsWeigher:
         segments: dict[dict[str, np.ndarray]]
     ) -> dict[str, tuple[float, float, float]]:
         """
-        TODO: ...
+        Compute total length of overlaps between IBD segments and each genome window.
         """
 
         overlaps = defaultdict(lambda: [])
@@ -119,7 +125,8 @@ class IBDSegmentsWeigher:
     @staticmethod
     def from_ibd_segments_file(path):
         """
-        TODO: ...
+        Create `IBDSegmentsWeigher` from IBD segments file produced by IBIS (.seg). This file should represent
+        background distribution of the IBD segments among unrelated inividuals.
 
         :param path: path to the IBD segments file to compute weight mask from
         """
@@ -255,10 +262,7 @@ class IBDSegmentsWeigher:
         TODO:
         """
 
-        with (
-            open(input_segments_path) as input_segments_file,
-            open(output_segments_path, 'w') as output_segments_file
-        ):
+        with open(input_segments_path) as input_segments_file, open(output_segments_path, 'w') as output_segments_file:
             input_segments_reader = csv.reader(input_segments_file, delimiter='\t')
             output_segments_writer = csv.writer(output_segments_file, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
 

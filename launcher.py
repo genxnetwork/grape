@@ -4,7 +4,10 @@ import psutil
 import argparse
 import shutil
 import os
+
 from inspect import getsourcefile
+from weight.ibd_segments_weigher import IBDSegmentsWeigher
+
 
 # Returns an integer value for total available memory, in GB.
 def total_memory_gb():
@@ -355,7 +358,11 @@ if __name__ == '__main__':
     config_dict['alpha'] = args.alpha
     config_dict['ibis_seg_len'] = args.ibis_seg_len
     config_dict['ibis_min_snp'] = args.ibis_min_snp
-    config_dict['weight_mask'] = args.weight_mask
+
+    if args.weight_mask:
+        config_dict['weight_mask'] = os.path.join(args.directory, args.weight_mask)
+        config_dict['ersa_r'] = IBDSegmentsWeigher.from_json_mask_file(config_dict['weight_mask']) \
+            .adjusted_expected_recombination_number
 
     if not snakemake.snakemake(
             snakefile=snakefile,

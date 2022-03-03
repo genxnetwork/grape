@@ -1,6 +1,6 @@
-import os
-# TODO: document this workflow
-# TODO: apply `snamefmt` to this file
+"""
+This workflow performs computation of the weight mask based on results of IBD segments detection with IBIS.
+"""
 
 from os import path
 
@@ -8,17 +8,16 @@ from os import path
 configfile: "config.yaml"
 
 
+IBIS_OUTPUT_FOLDER = 'ibis'
+IBIS_OUTPUT_PREFIX = path.join(IBIS_OUTPUT_FOLDER, 'merged_ibis')
+WEIGHT_MASK_FOLDER = 'weight-mask'
+
+
 # IBIS tools is used to determine IBD segments for the weight mask
 rule all:
     input:
-        'weight-mask/mask.json',
-        'weight-mask/mask.png'
-
-
-IBIS_OUTPUT_FOLDER = 'ibis'
-IBIS_OUTPUT_PREFIX = path.join(IBIS_OUTPUT_FOLDER, 'merged_ibis')
-
-WEIGHT_MASK_FOLDER = 'weight-mask'
+        path.join(WEIGHT_MASK_FOLDER, 'mask.json'),
+        path.join(WEIGHT_MASK_FOLDER, 'mask.png')
 
 
 # Performs IBD segment with IBIS
@@ -46,7 +45,7 @@ rule ibis_ibd_segment_detection:
              -f {IBIS_OUTPUT_PREFIX} |& tee -a {log}
         """
 
-SNAKEFILE_FOLDER = os.path.dirname(workflow.snakefile)
+SNAKEFILE_FOLDER = path.dirname(workflow.snakefile)
 
 rule compute_weight_mask:
     input:
