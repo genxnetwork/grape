@@ -32,7 +32,7 @@ rule split_into_segments:
         "../envs/bcftools.yaml"
     shell:
         """
-        bcftools view -S {input.samples} {input.vcf} > {output.vcf} --force-samples
+        bcftools view -S {input.samples} {input.vcf} -O z -o {output.vcf} --force-samples
         """
 
 rule recode_vcf:
