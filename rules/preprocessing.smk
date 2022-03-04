@@ -1,3 +1,5 @@
+NUM_BATCHES        = config["num_batches"]
+
 rule get_lists:
     input:
         vcf="input.vcf.gz"
