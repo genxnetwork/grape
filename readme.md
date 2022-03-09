@@ -34,7 +34,7 @@ The command below downloads needed references to the directory specified by the 
 After that `--ref-directory` argument should now be used in all subsequent commands.
 
 ```bash
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
+docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
     genx_relatives:latest launcher.py reference --ref-directory /media/ref --real-run
 ```
 
@@ -42,7 +42,7 @@ If phasing and imputation are required (mainly for the GERMLINE workflow) one sh
 Total amount of required disk space is about **50GB**.
 
 ```bash
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
+docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
     genx_relatives:latest launcher.py reference \
         --ref-directory /media/ref --phase --impute --real-run
 ```
@@ -53,7 +53,7 @@ It can be done by specifying additional flag `--use-bundle` to the `reference` c
 This way is faster, since all the post-processing procedures have been already performed.
 
 ```bash
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
+docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
     genx_relatives:latest launcher.py reference --use-bundle \
         --ref-directory /media/ref --phase --impute --real-run
 ```
@@ -102,7 +102,7 @@ GRAPE working directory is `/media/data`.
 Assembly of the input VCF file is `hg37`.
 
 ```bash
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
+docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
     genx_relatives:latest launcher.py preprocess --ref-directory /media/ref \
         --vcf-file /media/input.vcf.gz --directory /media/data --assembly hg37 --real-run
 ```
@@ -113,7 +113,7 @@ GERMLINE can work with phased data only, so we add phasing procedure to the prep
 Genotype imputation is also added.
 
 ```bash
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
+docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
     genx_relatives:latest launcher.py preprocess --ref-directory /media/ref \
         --vcf-file /media/input.vcf.gz --directory /media/data \
         --assembly hg38 --phase --impute --real-run
@@ -140,7 +140,7 @@ Workflow selection is made by the `--flow` parameter.
 1. Relationship inference with the IBIS + ERSA & KING workflow.
 
 ```bash
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
+docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
     genx_relatives:latest launcher.py find --flow ibis-king --ref-directory /media/ref \
         --directory /media/data --ibis-seg-len 7 --ibis-min-snp 500 \
         --zero-seg-count 0.5 --zero-seg-len 5.0 --alpha 0.01 --real-run
@@ -149,7 +149,7 @@ docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localti
 2. Relationship inference with GERMLINE + ERSA \& KING workflow.
 
 ```bash
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
+docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
     genx_relatives:latest launcher.py find --flow germline-king --ref-directory /media/ref \
         --directory /media/data --zero-seg-count 0.5 --zero-seg-len 5.0 \
         --alpha 0.01 --real-run
@@ -300,7 +300,7 @@ Visualization of structure of simulated pedigree is given below:
 Use the `simulate` command of the GRAPE launcher.
 
 ```bash
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
+docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
     genx_relatives:latest launcher.py simulate --flow ibis-king --ref-directory /media/ref \
         --directory /media/data --sim-params-file params/relatives_average.def \
         --sim-samples-file ceph_unrelated_all.tsv --assembly hg37 --ibis-seg-len 5 \
@@ -331,14 +331,14 @@ Use command `hapmap` for the downloading and preparation of the Hapmap CEU data.
 Options --input and --samples are not needed in this case.
 
 ```bash
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
+docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
 launcher.py hapmap --directory /media/data/hapmap --ref-directory /media/ref --real-run
 ```
 
 Use `find` command to estimate relationships.
 
 ```bash
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
+docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
 launcher.py find --directory /media/data/hapmap --ref-directory /media/ref --real-run
 ```
 
