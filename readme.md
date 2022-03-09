@@ -309,14 +309,14 @@ docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
 
 ### Precision / Recall Analysis
 
-For each degree $i$ of relationships we computed precision and recall metrics:
+For each degree i of relationships we computed precision and recall metrics:
 
-$$\mathrm{Precision}(i) = \frac{\mathrm{TP}(i)}{\mathrm{TP}(i) + \mathrm{FP}(i)}; \quad \mathrm{Recall}(i) = \frac{\mathrm{TP}(i)}{\mathrm{TP}(i) + \mathrm{FN}(i)}.$$
+![\mathrm{Precision}(i) = \frac{\mathrm{TP}(i)}{\mathrm{TP}(i) + \mathrm{FP}(i)}; \quad \mathrm{Recall}(i) = \frac{\mathrm{TP}(i)}{\mathrm{TP}(i) + \mathrm{FN}(i)}](https://latex.codecogs.com/svg.latex?\mathrm{Precision}(i)=\frac{\mathrm{TP}(i)}{\mathrm{TP}(i)+\mathrm{FP}(i)};\quad\mathrm{Recall}(i)=\frac{\mathrm{TP}(i)}{\mathrm{TP}(i)+\mathrm{FN}(i)}.)
 
-Here $\mathrm{TP}(i)$, $\mathrm{FP}(i)$, $\mathrm{FN}(i)$ are the numbers of true positive, false positive, and false negative relationship matches predicted for the degree $i$.
+Here TP(i), FP(i), FN(i) are the numbers of true positive, false positive, and false negative relationship matches predicted for the degree i.
 In our analysis we used non-exact (fuzzy) interval metrics.
 For the 1st degree, we require an exact match.
-For the 2nd, 3rd, and 4th degrees, we allow a degree interval of $\pm 1$.
+For the 2nd, 3rd, and 4th degrees, we allow a degree interval of ±1.
 For example, for the 2nd true degree we consider a predicted 3rd degree as a true positive match.
 For the 5th+ degrees, we use the ERSA confidence intervals which are typically 3-4 degrees wide.
 For 10th+ degrees, these intervals are 6-7 degrees wide.
