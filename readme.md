@@ -7,7 +7,7 @@ It requires a single multisamples VCF file as input and has a separate workflow 
 GRAPE incorporates comprehensive data preprocessing, quality control (QC), and several workflows for relatedness inference.
 
 <p align="center">
-    <img src="./scheme.png" alt="drawing" width="400"/>
+    <img src="./scheme.png" alt="drawing" width="50%"/>
 </p>
 
 ## Installation
@@ -292,7 +292,7 @@ Then, we randomly assigned sex to each individual and used sex-specific genetic 
 Visualization of structure of simulated pedigree is given below:
 
 <p align="center">
-    <img src="https://user-images.githubusercontent.com/19895289/123947763-6a3cc500-d9a9-11eb-8cf9-8bd8d47e6e33.png" alt="drawing" width="400"/>
+    <img src="./pedigree.png" alt="drawing" width="60%"/>
 </p>
 
 ### How to run simulation
