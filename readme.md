@@ -325,26 +325,6 @@ For 10th+ degrees, these intervals are 6-7 degrees wide.
     <img src="./precision & recall.png" alt="drawing"/>
 </p>
 
-## Evaluation on the Hapmap Data
-
-Use command `hapmap` for the downloading and preparation of the Hapmap CEU data.
-Options --input and --samples are not needed in this case.
-
-```bash
-docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py hapmap --directory /media/data/hapmap --ref-directory /media/ref --real-run
-```
-
-Use `find` command to estimate relationships.
-
-```bash
-docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py find --directory /media/data/hapmap --ref-directory /media/ref --real-run
-```
-
-HapMap has information about close relatives only.
-The pipeline determines them with 100% accuracy.
-
 ## Known limitations
 
 It is known that for some small isolated populations IBD sharing is very high.
