@@ -16,11 +16,10 @@ def get_parser_args():
 
     parser.add_argument('command',
                         default='find',
-                        help="""What pipeline should do, possible values are find, preprocess, simulate, hapmap.
+                        help="""What pipeline should do, possible values are find, preprocess, simulate.
                         preprocess converts hg38 per-sample 23andme input files to the one single vcf in hg37;
                         find detects relatives in vcf file;
                         simulate generates pedigree and vcf file with distant relatives from 1000 genomes CEU(CEPH) population using pedsim;
-                        hapmap extracts CEU(CEPH) data for running find;
                         reference downloads and preprocess all the references to the --ref-directory;
                         For running the main pipeline you can provide .vcf file and use find or use preprocess with 23andme inputs""")
 
@@ -143,7 +142,7 @@ def get_parser_args():
         default=0.5,
         type=float,
         help="""
-            Average count of IBD segments in two unrelated individuals in population. 
+            Average count of IBD segments in two unrelated individuals in population.
             Smaller values of 0.1, 0.2 tend to give more distant matches than default 0.5.
             """
     )
@@ -153,7 +152,7 @@ def get_parser_args():
         default=5.0,
         type=float,
         help="""
-            Average length of IBD segment in two unrelated individuals in population. 
+            Average length of IBD segment in two unrelated individuals in population.
             Smaller values of tend to give more distant matches than default 5.0
             """
     )
@@ -164,7 +163,7 @@ def get_parser_args():
         type=float,
         help="""
             ERSA P-value limit for testing for an existence of an relationship.
-            Values of 0.02-0.05 tend to give more distant matches that default 0.01. 
+            Values of 0.02-0.05 tend to give more distant matches that default 0.01.
             """
     )
 
@@ -173,7 +172,7 @@ def get_parser_args():
         default=7.0,
         type=float,
         help="""
-                Minimum length of IBD segment for ibis. 
+                Minimum length of IBD segment for ibis.
                 Smaller values of it tend to give more distant matches than default 7.0 and more false-positives.
             """
     )
@@ -183,7 +182,7 @@ def get_parser_args():
         default=500,
         type=int,
         help="""
-                Minimum number of SNPs in IBD segment. 
+                Minimum number of SNPs in IBD segment.
                 Smaller values of it tend to give more distant matches than default 500 and more false-positives.
             """
     )
@@ -218,7 +217,7 @@ def get_parser_args():
 
     args = parser.parse_args()
 
-    valid_commands = ['preprocess', 'find', 'simulate', 'hapmap', 'reference', 'bundle']
+    valid_commands = ['preprocess', 'find', 'simulate', 'reference', 'bundle']
     if args.command not in valid_commands:
         raise RuntimeError(f'command {args.command} not in list of valid commands: {valid_commands}')
 
@@ -281,15 +280,6 @@ if __name__ == '__main__':
             os.path.join(args.directory, 'config.yaml')
         )
 
-    if args.command == 'hapmap':
-        # for some reason launching with docker from command line
-        # sets root directory for 'configfile' directive in Snakefile as snakemake.workdir
-        # therefore config.yaml must be in snakemake.workdir
-        shutil.copy(
-            os.path.join(current_path, 'workflows/hapmap/config.yaml'),
-            os.path.join(args.directory, 'config.yaml')
-        )
-
     if args.command == 'preprocess':
         shutil.copy(args.vcf_file, os.path.join(args.directory, 'input.vcf.gz'))
 
@@ -301,7 +291,6 @@ if __name__ == '__main__':
         'preprocess': 'workflows/preprocess2/Snakefile',
         'find': 'workflows/find/Snakefile',
         'simulate': 'workflows/pedsim/Snakefile',
-        'hapmap': 'workflows/hapmap/Snakefile',
         'reference': 'workflows/reference/Snakefile',
         'bundle': 'workflows/bundle/Snakefile'
     }
@@ -336,7 +325,7 @@ if __name__ == '__main__':
     if args.flow not in ['ibis', 'ibis-king', 'germline-king']:
         raise ValueError(f'--flow can be one of the ["ibis", "ibis-king", "germline-king"] and not {args.flow}')
     config_dict['flow'] = args.flow
-    if args.command in ['preprocess', 'simulate', 'hapmap', 'reference', 'bundle']:
+    if args.command in ['preprocess', 'simulate', 'reference', 'bundle']:
         config_dict['remove_imputation'] = args.remove_imputation
         config_dict['impute'] = args.impute
         config_dict['phase'] = args.phase

@@ -14,9 +14,6 @@ REF_HAPS           = join(REF_DIR, config["reference"]["refHaps"]["file"])
 LIFT_CHAIN         = join(REF_DIR, config["reference"]["lift_chain"]["file"])
 CMMAP              = join(REF_DIR, config["reference"]["cmmap"]["file"])
 SITE_1000GENOME    = join(REF_DIR, config["reference"]["SITE_1000GENOME"]["file"])
-HAPMAP_PED         = join(REF_DIR, config["reference"]["hapmap_ped"]["file"])
-HAPMAP_MP          = join(REF_DIR, config["reference"]["hapmap_mp"]["file"])
-HAPMAP_FAM         = join(REF_DIR, config["reference"]["hapmap_fam"]["file"])
 AFFYMETRIX_CHIP    = join(REF_DIR, config["reference"]["affymetrix_chip"]["file"])
 PEDSIM_MAP         = join(REF_DIR, config["reference"]["pedsim_map"]["file"])
 
@@ -48,9 +45,6 @@ CMMAP_md5              = config["reference"]["cmmap"]["md5"]
 SITE_1000GENOME_url    = config["reference"]["SITE_1000GENOME"]["url"]
 SITE_1000GENOME_md5    = config["reference"]["SITE_1000GENOME"]["md5"]
 SITE_1000GENOME_basename = basename(SITE_1000GENOME_url)
-
-HAPMAP_FAM_url         = config["reference"]["hapmap_fam"]["url"]
-HAPMAP_FAM_md5         = config["reference"]["hapmap_fam"]["md5"]
 
 AFFYMETRIX_CHIP_url    = config["reference"]["affymetrix_chip"]["url"]
 AFFYMETRIX_CHIP_md5    = config["reference"]["affymetrix_chip"]["md5"]
@@ -111,7 +105,7 @@ rule download_GRCh37_fasta:
             set +e
             set -x
 
-            wget "{GRCH37_FASTA_url}{DATASET_KEY}" -O {REF_DIR}/{GRCH37_FASTA_basename} --tries 50 |& tee -a {log}           
+            wget "{GRCH37_FASTA_url}{DATASET_KEY}" -O {REF_DIR}/{GRCH37_FASTA_basename} --tries 50 |& tee -a {log}
             sum=$(md5sum {REF_DIR}/{GRCH37_FASTA_basename} | cut -d " " -f1)
             if [ $sum != {GRCH37_FASTA_md5} ]; then
                 echo "md5 sum of GRCH37_FASTA is invalid" |& tee -a {log}
@@ -119,13 +113,13 @@ rule download_GRCh37_fasta:
             fi
             # gzip exit with "decompression OK, trailing garbage ignored". need to silence
             gzip -d {REF_DIR}/{GRCH37_FASTA_basename} |& tee -a {log}
-            
+
             wget "{GRCH37_FASTA_FAI_url}{DATASET_KEY}" -O {GRCH37_FASTA_FAI} --tries 50 |& tee -a {log}
             sum2=$(md5sum {GRCH37_FASTA_FAI} | cut -d " " -f1)
-            if [ $sum2 != {GRCH37_FASTA_FAI_md5} ]; then 
+            if [ $sum2 != {GRCH37_FASTA_FAI_md5} ]; then
                 echo "md5 sum of GRCH37_FASTA_FAI is invalid" |& tee -a {log}
                 exit 1
-            fi           
+            fi
             exit 0
         """
 
@@ -310,22 +304,6 @@ rule download_SITE_1000GENOME:
             rm "{REF_DIR}/1000genome/allele_info/{SITE_1000GENOME_basename}" |& tee -a {log}
         """
 
-rule download_hapmap_fam:
-    output:
-        hapmap_fam=HAPMAP_FAM
-    conda:
-        "../../envs/download.yaml"
-    log:
-        "logs/ref/download_hapmap_fam.log"
-    shell:
-        """
-            wget {HAPMAP_FAM_url} -O {HAPMAP_FAM} --tries 50 |& tee -a {log}
-            sum=$(md5sum {HAPMAP_FAM} | cut -d " " -f1)
-            if [ $sum != {HAPMAP_FAM_md5} ]; then
-                echo "md5 sum of HAPMAP_FAM is invalid" |& tee -a {log}
-                exit 1
-            fi
-        """
 
 rule download_affymetrix_chip:
     output:
@@ -345,6 +323,7 @@ rule download_affymetrix_chip:
             fi
             wget "{AFFYMETRIX_CHIP_url}.tbi{DATASET_KEY}" -O {AFFYMETRIX_CHIP}.tbi --tries 50 -c  |& tee -a {log}
         """
+
 
 rule download_pedsim_map:
     output:
