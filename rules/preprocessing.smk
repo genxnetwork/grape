@@ -211,7 +211,7 @@ rule merge_bed:
     output:
         bed="preprocessed/data.bed",
         fam="preprocessed/data.fam",
-        bim_mapped="preprocessed/data_mapped.bim",
+        bim_mapped="preprocessed/data_mapped.bim"
     params:
         seg=expand("preprocessed/segment{s}_data",s=list(range(1,int(NUM_BATCHES) + 1)))
     conda:
@@ -232,3 +232,13 @@ rule merge_bed:
         plink --merge-list files_list.txt --make-bed --out preprocessed/data 
         mv preprocessed/data.bim preprocessed/data_mapped.bim
         """
+
+rule remove_mapping:
+    input:
+        bim_mapped = "preprocessed/data_mapped.bim"
+    output:
+        bim = "preprocessed/data.bim"
+    conda:
+        "../envs/remove_map.yaml"
+    script:
+        "../scripts/remove_mapping.py"
