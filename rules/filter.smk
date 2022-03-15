@@ -135,6 +135,7 @@ rule prepare_vcf:
         """
         plink --bfile {params.input} --a1-allele plink/{wildcards.segment}_merged_filter.bim.force_allele --make-bed --out plink/{wildcards.segment}_merged_mapped_alleled |& tee -a {log.plink}
         plink --bfile plink/{wildcards.segment}_merged_mapped_alleled --keep-allele-order --output-chr M --export vcf bgz --out vcf/{wildcards.segment}_merged_mapped_clean |& tee -a {log.vcf}
+        mkdir vcf/temp_{wildcards.segment}
         bcftools sort -T vcf/temp_{wildcards.segment} vcf/{wildcards.segment}_merged_mapped_clean.vcf.gz -O z -o {output.temp_vcf} |& tee -a {log.vcf}
         bcftools index -f {output.temp_vcf} |& tee -a {log.vcf}
         # need to check output for the potential issues
