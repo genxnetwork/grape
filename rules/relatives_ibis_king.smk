@@ -65,7 +65,7 @@ rule ibis:
         """
 
 
-WEIGHTED_IBD_SEGEMNTS_FOLDER = 'ibis-weighted'
+WEIGHTED_IBD_SEGMENTS_FOLDER = 'ibis-weighted'
 SNAKEFILE_FOLDER = os.path.dirname(workflow.snakefile)
 
 
@@ -77,7 +77,7 @@ if config['weight_mask']:
         conda:
             '../envs/weight-mask.yaml'
         output:
-            ibd = path.join(WEIGHTED_IBD_SEGEMNTS_FOLDER, 'ibis_weighted.seg'),
+            ibd = path.join(WEIGHTED_IBD_SEGMENTS_FOLDER, 'ibis_weighted.seg'),
         params:
             mask = config['weight_mask']
         shell:

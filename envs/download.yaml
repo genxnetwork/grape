@@ -1,6 +1,7 @@
 name: download
 channels:
   - conda-forge
+  - bioconda
 dependencies:
   - unzip
   - wget
