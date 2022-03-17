@@ -1,10 +1,11 @@
 NUM_BATCHES        = config["num_batches"]
+BATCHES            = list(range(1, int(NUM_BATCHES) + 1))))
 
 rule get_lists:
     input:
         vcf="input.vcf.gz"
     output:
-        temp(expand("vcf/segment{i}.txt",i=list(range(1,int(NUM_BATCHES) + 1))))
+        temp(expand("vcf/segment{i}.txt",i=BATCHES)
     params:
         num_batches=NUM_BATCHES
     conda:
@@ -193,8 +194,8 @@ rule index_vcf:
         """
 rule merge_vcf:
     input:
-        segments_vcf_index = expand("preprocessed/segment{s}_data.vcf.gz.csi",s=list(range(1,int(NUM_BATCHES) + 1))),
-        segments_vcf = expand("preprocessed/segment{s}_data.vcf.gz",s=list(range(1,int(NUM_BATCHES) + 1)))
+        segments_vcf_index = expand("preprocessed/segment{s}_data.vcf.gz.csi",s=BATCHES),
+        segments_vcf = expand("preprocessed/segment{s}_data.vcf.gz",s=BATCHES)
     output:
         vcf = "preprocessed/data.vcf.gz"
     conda:
@@ -205,15 +206,15 @@ rule merge_vcf:
         """
 rule merge_bed:
     input:
-        segments_bim_mapped=expand("preprocessed/segment{s}_data_mapped.bim",s=list(range(1,int(NUM_BATCHES) + 1))),
-        segments_bed=expand("preprocessed/segment{s}_data.bed",s=list(range(1,int(NUM_BATCHES) + 1))),
-        segments_fam=expand("preprocessed/segment{s}_data.fam",s=list(range(1,int(NUM_BATCHES) + 1)))
+        segments_bim_mapped=expand("preprocessed/segment{s}_data_mapped.bim",s=BATCHES),
+        segments_bed=expand("preprocessed/segment{s}_data.bed",s=BATCHES),
+        segments_fam=expand("preprocessed/segment{s}_data.fam",s=BATCHES)
     output:
         bed="preprocessed/data.bed",
         fam="preprocessed/data.fam",
         bim_mapped="preprocessed/data_mapped.bim"
     params:
-        seg=expand("preprocessed/segment{s}_data",s=list(range(1,int(NUM_BATCHES) + 1)))
+        seg=expand("preprocessed/segment{s}_data",s=BATCHES)
     conda:
         "../envs/plink.yaml"
     shell:
