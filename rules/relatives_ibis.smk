@@ -29,7 +29,7 @@ WEIGHTED_IBD_SEGMENTS_FOLDER = 'ibis-weighted'
 SNAKEFILE_FOLDER = os.path.dirname(workflow.snakefile)
 
 
-if config['weight_mask']:
+if config.get('weight_mask'):
     rule ibis_segments_weighing:
         input:
             ibd = rules.ibis.output.ibd,
@@ -72,77 +72,41 @@ def aggregate_input(wildcards):
     return expand(f"ibd/{{id}}.tsv", id=ids)
 
 
-if config['weight_mask']:
-    rule ersa:
-        input:
-            ibd = aggregate_input
-        output:
-            "ersa/relatives.tsv"
-        conda:
-            "../envs/ersa.yaml"
-        log:
-            "logs/ersa/ersa.log"
-        benchmark:
-            "benchmarks/ersa/ersa.txt"
-        params:
-            l = config['zero_seg_count'],
-            th = config['zero_seg_len'],
-            a = config['alpha'],
-            t = config['ibis_seg_len'],
-            r = config['ersa_r']
-        shell:
-            """
-            FILES="{input.ibd}"
-            TEMPFILE=ersa/temp_relatives.tsv
-            rm -f $TEMPFILE
-            rm -f {output}
+rule ersa:
+    input:
+        ibd = aggregate_input
+    output:
+        "ersa/relatives.tsv"
+    conda:
+        "../envs/ersa.yaml"
+    log:
+        "logs/ersa/ersa.log"
+    benchmark:
+        "benchmarks/ersa/ersa.txt"
+    params:
+        l = config['zero_seg_count'],
+        th = config['zero_seg_len'],
+        a = config['alpha'],
+        t = config['ibis_seg_len'],
+        r = '--nomask ' + '-r ' + str(config['ersa_r']) if config.get('weight_mask') else ''
+    shell:
+        """
+        FILES="{input.ibd}"
+        TEMPFILE=ersa/temp_relatives.tsv
+        rm -f $TEMPFILE
+        rm -f {output}
 
-            for input_file in $FILES; do
-                ersa --nomask --avuncular-adj -ci -a {params.a} --dmax 14 -t {params.t} -l {params.l} \
-                    -r {params.r} -th {params.th} $input_file -o $TEMPFILE |& tee {log}
+        for input_file in $FILES; do
+            ersa --avuncular-adj -ci -a {params.a} --dmax 14 -t {params.t} -l {params.l} \
+                {params.r} -th {params.th} $input_file -o $TEMPFILE |& tee {log}
 
-                if [[ "$input_file" == "${{FILES[0]}}" ]]; then
-                    cat $TEMPFILE >> {output}
-                else
-                    sed 1d $TEMPFILE >> {output}
-                fi
-            done
-            """
-else:
-    rule ersa:
-        input:
-            ibd = aggregate_input
-        output:
-            "ersa/relatives.tsv"
-        conda:
-            "../envs/ersa.yaml"
-        log:
-            "logs/ersa/ersa.log"
-        benchmark:
-            "benchmarks/ersa/ersa.txt"
-        params:
-            l = config['zero_seg_count'],
-            th = config['zero_seg_len'],
-            a = config['alpha'],
-            t = config['ibis_seg_len']
-        shell:
-            """
-            FILES="{input.ibd}"
-            TEMPFILE=ersa/temp_relatives.tsv
-            rm -f $TEMPFILE
-            rm -f {output}
-
-            for input_file in $FILES; do
-                ersa --avuncular-adj -ci -a {params.a} --dmax 14 -t {params.t} -l {params.l} \
-                    -th {params.th} $input_file -o $TEMPFILE |& tee {log}
-
-                if [[ "$input_file" == "${{FILES[0]}}" ]]; then
-                    cat $TEMPFILE >> {output}
-                else
-                    sed 1d $TEMPFILE >> {output}
-                fi
-            done
-            """
+            if [[ "$input_file" == "${{FILES[0]}}" ]]; then
+                cat $TEMPFILE >> {output}
+            else
+                sed 1d $TEMPFILE >> {output}
+            fi
+        done
+        """
 
 
 rule postprocess_ersa:
