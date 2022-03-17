@@ -5,7 +5,7 @@ rule get_lists:
     input:
         vcf="input.vcf.gz"
     output:
-        temp(expand("vcf/segment{i}.txt",i=BATCHES)
+        temp(expand("vcf/segment{i}.txt", i=BATCHES)
     params:
         num_batches=NUM_BATCHES
     conda:
@@ -24,7 +24,7 @@ rule get_lists:
         done
         """
 
-
+             
 rule split_into_segments:
     input:
         vcf="input.vcf.gz",
@@ -38,6 +38,7 @@ rule split_into_segments:
         bcftools view -S {input.samples} {input.vcf} -O z -o {output.vcf} --force-samples
         """
 
+             
 rule recode_vcf:
     input: vcf='vcf/{segment}.vcf.gz'
     output: vcf=temp('vcf/{segment}_merged_recoded.vcf.gz')
@@ -53,6 +54,7 @@ rule recode_vcf:
         bcftools annotate --rename-chrs chr_name_conv.txt {input.vcf} | bcftools view -m2 -M2 -v snps -t "^X,Y,XY,MT" -O z -o {output.vcf}  
         """
 
+             
 if need_remove_imputation:
     rule remove_imputation:
         input:
@@ -72,6 +74,7 @@ else:
                 cp {input.vcf} {output.vcf}
             """
 
+             
 if assembly == "hg38":
     rule liftover:
         input:
@@ -101,6 +104,7 @@ else:
                 cp {input.vcf} {output.vcf}
             """
 
+             
 rule recode_snp_ids:
     input:
         vcf="vcf/{segment}_merged_lifted.vcf.gz"
@@ -113,8 +117,10 @@ rule recode_snp_ids:
             bcftools annotate --set-id '%CHROM:%POS:%REF:%FIRST_ALT' {input.vcf} -O z -o {output.vcf}
         """
 
+             
 include: "../rules/filter.smk"
 
+             
 if need_phase:
     include: "../rules/phasing.smk"
 else:
@@ -128,6 +134,7 @@ else:
                 cp {input.vcf} {output.vcf}
             """
 
+             
 if need_imputation:
     include: "../rules/imputation.smk"
 else:
@@ -141,6 +148,7 @@ else:
                cp {input.vcf} {output.vcf}
             """
 
+             
 rule convert_mapped_to_plink:
     input:
         vcf="preprocessed/{segment}_data.vcf.gz"
@@ -161,6 +169,7 @@ rule convert_mapped_to_plink:
         plink --vcf {input} --make-bed --out {params.out} |& tee {log}
         """
 
+             
 rule ibis_mapping:
     input:
         bim=rules.convert_mapped_to_plink.output['bim']
@@ -180,7 +189,7 @@ rule ibis_mapping:
         (add-map-plink.pl -cm {input.bim} {params.genetic_map_GRCh37}> {output}) |& tee -a {log}
         """
 
-#seg = glob_wildcards("preprocessed/{segment}_data.bed")
+
 rule index_vcf:
     input:
         segments_vcf="preprocessed/{segment}_data.vcf.gz"
@@ -192,10 +201,12 @@ rule index_vcf:
         """
         bcftools index -f {input.segments_vcf}
         """
+             
+             
 rule merge_vcf:
     input:
-        segments_vcf_index = expand("preprocessed/segment{s}_data.vcf.gz.csi",s=BATCHES),
-        segments_vcf = expand("preprocessed/segment{s}_data.vcf.gz",s=BATCHES)
+        segments_vcf_index = expand("preprocessed/segment{s}_data.vcf.gz.csi", s=BATCHES),
+        segments_vcf = expand("preprocessed/segment{s}_data.vcf.gz", s=BATCHES)
     output:
         vcf = "preprocessed/data.vcf.gz"
     conda:
@@ -204,17 +215,19 @@ rule merge_vcf:
         """
             bcftools merge --merge id {input.segments_vcf} -O z -o {output.vcf}
         """
+             
+             
 rule merge_bed:
     input:
-        segments_bim_mapped=expand("preprocessed/segment{s}_data_mapped.bim",s=BATCHES),
-        segments_bed=expand("preprocessed/segment{s}_data.bed",s=BATCHES),
-        segments_fam=expand("preprocessed/segment{s}_data.fam",s=BATCHES)
+        segments_bim_mapped=expand("preprocessed/segment{s}_data_mapped.bim", s=BATCHES),
+        segments_bed=expand("preprocessed/segment{s}_data.bed", s=BATCHES),
+        segments_fam=expand("preprocessed/segment{s}_data.fam", s=BATCHES)
     output:
         bed="preprocessed/data.bed",
         fam="preprocessed/data.fam",
         bim_mapped="preprocessed/data_mapped.bim"
     params:
-        seg=expand("preprocessed/segment{s}_data",s=BATCHES)
+        seg=expand("preprocessed/segment{s}_data", s=BATCHES)
     conda:
         "../envs/plink.yaml"
     shell:
@@ -234,6 +247,7 @@ rule merge_bed:
         mv preprocessed/data.bim preprocessed/data_mapped.bim
         """
 
+             
 rule remove_mapping:
     input:
         bim_mapped = "preprocessed/data_mapped.bim"
