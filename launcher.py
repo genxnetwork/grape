@@ -241,9 +241,10 @@ def get_parser_args():
     )
 
     parser.add_argument(
-        '--num_batches',
-        default="10",
-        help='Number of batches for dataset to be cut in'
+        '--num-batches',
+        default=10,
+        type=int,
+        help='Number of batches for dataset to be cut in by samples'
     )
 
     args = parser.parse_args()
@@ -376,7 +377,7 @@ if __name__ == '__main__':
     config_dict['mem_gb'] = args.memory
     if args.ref_directory != '':
         config_dict['ref_dir'] = args.ref_directory
-    if args.chip != '':
+    if args.chip:
         config_dict['chip'] = args.chip
     if args.num_batches != '':
         config_dict['num_batches'] = args.num_batches
