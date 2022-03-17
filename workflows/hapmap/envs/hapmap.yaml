@@ -1,7 +1,0 @@
-channels:
-    - bioconda
-    - conda-forge
-dependencies:
-    - bcftools
-    - networkx
-    - pandas

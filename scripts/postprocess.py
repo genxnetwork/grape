@@ -64,7 +64,7 @@ def bcftools_reheader(infile, sample, outname=None):
     return outname
 
 
-def read_pedigree(fn = './hapmap_sim.fam'):
+def read_pedigree(fn):
     pedigree = nx.DiGraph()
     for i in open(fn):
         _, iid ,f ,m = i.split()[:4]

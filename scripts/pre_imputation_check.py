@@ -55,7 +55,7 @@ def get_id(a1_a2, id_element, chr_, pos_, ref_, alt_):
     return None
 
 
-def pre_imputation_check(params, reference, fn='./data/hapmap20'):
+def pre_imputation_check(params, reference):
     """Given a plink bim file
     0. Remove SNPS with worldwide MAF < 0.02
     1. Remove SNPs can not be matched
@@ -63,10 +63,8 @@ def pre_imputation_check(params, reference, fn='./data/hapmap20'):
     3. Swap SNPs that match after swap or flip&swap
     4. Update chromosomes and positions for these SNPs
     """
-    # read in bim first
     prefix = params
-    fn_new = prefix  # + '_filter.bim'
-    # filter_bim(fn + '.bim', fn_new)
+    fn_new = prefix
     a1_a2 = {}
     for i in open(fn_new):
         items = i.split()
@@ -122,7 +120,6 @@ def pre_imputation_check(params, reference, fn='./data/hapmap20'):
                         flip_file.write(id_ + "\n")
                         flip_swap += 1
 
-    logging.info("{} ids in {}.bim, {} can be found in reference.".format(len(a1_a2), fn, in_ref))
     logging.info("Exclude: {} Keep: {}".format(exclude, in_ref - exclude))
     logging.info("Total flip: {}.".format(strand_flip))
     logging.info("Total swap: {}.".format(swap))
