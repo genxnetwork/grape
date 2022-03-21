@@ -2,22 +2,22 @@
 This workflow performs computation of the weight mask based on results of IBD segments detection with IBIS.
 """
 
-from os import path
+import os
 
 
 configfile: "config.yaml"
 
 
 IBIS_OUTPUT_FOLDER = 'ibis'
-IBIS_OUTPUT_PREFIX = path.join(IBIS_OUTPUT_FOLDER, 'merged_ibis')
+IBIS_OUTPUT_PREFIX = os.path.join(IBIS_OUTPUT_FOLDER, 'merged_ibis')
 WEIGHT_MASK_FOLDER = 'weight-mask'
 
 
 # IBIS tools is used to determine IBD segments for the weight mask
 rule all:
     input:
-        path.join(WEIGHT_MASK_FOLDER, 'mask.json'),
-        path.join(WEIGHT_MASK_FOLDER, 'mask.png')
+        os.path.join(WEIGHT_MASK_FOLDER, 'mask.json'),
+        os.path.join(WEIGHT_MASK_FOLDER, 'mask.png')
 
 
 # Performs IBD segment with IBIS
@@ -45,17 +45,17 @@ rule ibis_ibd_segment_detection:
              -f {IBIS_OUTPUT_PREFIX} |& tee -a {log}
         """
 
-SNAKEFILE_FOLDER = path.dirname(workflow.snakefile)
+SNAKEFILE_FOLDER = os.path.dirname(workflow.snakefile)
 
 rule compute_weight_mask:
     input:
         ibd = rules.ibis_ibd_segment_detection.output.ibd,
-        script = path.join(SNAKEFILE_FOLDER, '../../weight/compute_weight_mask.py')
+        script = os.path.join(SNAKEFILE_FOLDER, '../../weight/compute_weight_mask.py')
     conda:
         '../../envs/weight-mask.yaml'
     output:
-        mask = path.join(WEIGHT_MASK_FOLDER, 'mask.json'),
-        plot = path.join(WEIGHT_MASK_FOLDER, 'mask.png')
+        mask = os.path.join(WEIGHT_MASK_FOLDER, 'mask.json'),
+        plot = os.path.join(WEIGHT_MASK_FOLDER, 'mask.png')
     shell:
         """
         python {input.script} \

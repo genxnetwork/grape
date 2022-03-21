@@ -1,4 +1,4 @@
-from os import path
+import os
 
 
 rule run_king:
@@ -73,11 +73,11 @@ if config.get('weight_mask'):
     rule ibis_segments_weighing:
         input:
             ibd = rules.ibis.output.ibd,
-            script = path.join(SNAKEFILE_FOLDER, '../weight/apply_weight_mask.py')
+            script = os.path.join(SNAKEFILE_FOLDER, '../weight/apply_weight_mask.py')
         conda:
             '../envs/weight-mask.yaml'
         output:
-            ibd = path.join(WEIGHTED_IBD_SEGMENTS_FOLDER, 'ibis_weighted.seg'),
+            ibd = os.path.join(WEIGHTED_IBD_SEGMENTS_FOLDER, 'ibis_weighted.seg'),
         params:
             mask = config['weight_mask']
         shell:
