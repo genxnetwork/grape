@@ -1,3 +1,6 @@
+import os
+
+
 rule run_king:
     input:
         bed="preprocessed/data.bed",
@@ -23,7 +26,7 @@ rule run_king:
 
         king -b {input.bed} --cpus {threads} --ibdseg --degree $KING_DEGREE --prefix {params.out} |& tee {log}
         king -b {input.bed} --cpus {threads} --kinship --degree 4 --prefix {params.kin} |& tee -a {log}
-        
+
         # we need at least an empty file for the downstream analysis
         if [ ! -f "{output.king}" ]; then
             touch {output.king}
@@ -61,10 +64,38 @@ rule ibis:
         ibis {input.bed} {input.bim} {input.fam} -t {threads} -mt {params.mT} -mL {params.mL} -ibd2 -mL2 3 -hbd -f ibis/merged_ibis |& tee -a {log}
         """
 
+
+WEIGHTED_IBD_SEGMENTS_FOLDER = 'ibis-weighted'
+SNAKEFILE_FOLDER = os.path.dirname(workflow.snakefile)
+
+
+if config.get('weight_mask'):
+    rule ibis_segments_weighing:
+        input:
+            ibd = rules.ibis.output.ibd,
+            script = os.path.join(SNAKEFILE_FOLDER, '../weight/apply_weight_mask.py')
+        conda:
+            '../envs/weight-mask.yaml'
+        output:
+            ibd = os.path.join(WEIGHTED_IBD_SEGMENTS_FOLDER, 'ibis_weighted.seg'),
+        params:
+            mask = config['weight_mask']
+        shell:
+            """
+            python {input.script} \
+                --input-ibd-segments-file {input.ibd} \
+                --mask-file {params.mask} \
+                --output-ibd-segments-file {output.ibd}
+            """
+    ibd_segments_file = rules.ibis_segments_weighing.output.ibd
+else:
+    ibd_segments_file = rules.ibis.output.ibd
+
+
 checkpoint transform_ibis_segments:
     input:
-        ibd=rules.ibis.output.ibd,
-        fam="preprocessed/data.fam"
+        ibd = ibd_segments_file,
+        fam = "preprocessed/data.fam"
     output:
         bucket_dir = directory("ibd")
     log:
@@ -80,9 +111,10 @@ def aggregate_input(wildcards):
     ids = glob_wildcards(f"ibd/{{id}}.tsv").id
     return expand(f"ibd/{{id}}.tsv", id=ids)
 
+
 rule ersa:
     input:
-        ibd=aggregate_input
+        ibd = aggregate_input
     output:
         "ersa/relatives.tsv"
     conda:
@@ -92,24 +124,21 @@ rule ersa:
     benchmark:
         "benchmarks/ersa/ersa.txt"
     params:
-        ersa_l = config['zero_seg_count'],
-        ersa_th = config['zero_seg_len'],
-        alpha = config['alpha'],
-        ersa_t = config['ibis_seg_len']
+        l = config['zero_seg_count'],
+        th = config['zero_seg_len'],
+        a = config['alpha'],
+        t = config['ibis_seg_len'],
+        r = '--nomask ' + '-r ' + str(config['ersa_r']) if config.get('weight_mask') else ''
     shell:
         """
-        ERSA_L={params.ersa_l} # the average number of IBD segments in population
-        ERSA_TH={params.ersa_th} # the average length of IBD segment in population
-        ERSA_T={params.ersa_t} # min length of segment to be considered in segment aggregation
-        
         FILES="{input.ibd}"
         TEMPFILE=ersa/temp_relatives.tsv
         rm -f $TEMPFILE
         rm -f {output}
-        
-        for input_file in $FILES; do
 
-            ersa --avuncular-adj -ci --alpha {params.alpha} --dmax 14 -t $ERSA_T -l $ERSA_L -th $ERSA_TH $input_file -o $TEMPFILE  |& tee {log}
+        for input_file in $FILES; do
+            ersa --avuncular-adj -ci -a {params.a} --dmax 14 -t {params.t} -l {params.l} \
+                {params.r} -th {params.th} $input_file -o $TEMPFILE |& tee {log}
 
             if [[ "$input_file" == "${{FILES[0]}}" ]]; then
                 cat $TEMPFILE >> {output}
@@ -118,6 +147,7 @@ rule ersa:
             fi
         done
         """
+
 
 rule split_map:
     input:

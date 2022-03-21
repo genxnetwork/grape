@@ -4,7 +4,10 @@ import psutil
 import argparse
 import shutil
 import os
+
 from inspect import getsourcefile
+from weight.ibd_segments_weigher import IBDSegmentsWeigher
+
 
 # Returns an integer value for total available memory, in GB.
 def total_memory_gb():
@@ -14,14 +17,16 @@ def total_memory_gb():
 def get_parser_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('command',
-                        default='find',
-                        help="""What pipeline should do, possible values are find, preprocess, simulate.
-                        preprocess converts hg38 per-sample 23andme input files to the one single vcf in hg37;
-                        find detects relatives in vcf file;
-                        simulate generates pedigree and vcf file with distant relatives from 1000 genomes CEU(CEPH) population using pedsim;
-                        reference downloads and preprocess all the references to the --ref-directory;
-                        For running the main pipeline you can provide .vcf file and use find or use preprocess with 23andme inputs""")
+    parser.add_argument(
+        'command',
+        default='find',
+        help="""What pipeline should do, possible values are find, preprocess, simulate.
+                preprocess converts hg38 per-sample 23andme input files to the one single vcf in hg37;
+                find detects relatives in vcf file;
+                simulate generates pedigree and vcf file with distant relatives from 1000 genomes CEU(CEPH) population using pedsim;
+                reference downloads and preprocess all the references to the --ref-directory;
+                For running the main pipeline you can provide .vcf file and use find or use preprocess with 23andme inputs"""
+    )
 
     parser.add_argument(
         "--configfile",
@@ -215,9 +220,15 @@ def get_parser_args():
         help='Download all references as single file'
     )
 
+    parser.add_argument(
+        '--weight-mask',
+        help='Mask of weights used to re-weight IBD segments length while using ERSA algorithm'
+            'for `ibis` and `ibis-king` flows'
+    )
+
     args = parser.parse_args()
 
-    valid_commands = ['preprocess', 'find', 'simulate', 'reference', 'bundle']
+    valid_commands = ['preprocess', 'find', 'simulate', 'reference', 'bundle', 'compute-weight-mask']
     if args.command not in valid_commands:
         raise RuntimeError(f'command {args.command} not in list of valid commands: {valid_commands}')
 
@@ -283,7 +294,7 @@ if __name__ == '__main__':
     if args.command == 'preprocess':
         shutil.copy(args.vcf_file, os.path.join(args.directory, 'input.vcf.gz'))
 
-    if args.command in ['preprocess', 'find', 'reference', 'bundle']:
+    if args.command in ['preprocess', 'find', 'reference', 'bundle', 'compute-weight-mask']:
         if args.directory != '.':
             shutil.copy(os.path.join(current_path, 'config.yaml'), os.path.join(args.directory, 'config.yaml'))
 
@@ -292,7 +303,8 @@ if __name__ == '__main__':
         'find': 'workflows/find/Snakefile',
         'simulate': 'workflows/pedsim/Snakefile',
         'reference': 'workflows/reference/Snakefile',
-        'bundle': 'workflows/bundle/Snakefile'
+        'bundle': 'workflows/bundle/Snakefile',
+        'compute-weight-mask': 'workflows/weight/Snakefile'
     }
 
     if args.client:
@@ -335,6 +347,11 @@ if __name__ == '__main__':
     config_dict['alpha'] = args.alpha
     config_dict['ibis_seg_len'] = args.ibis_seg_len
     config_dict['ibis_min_snp'] = args.ibis_min_snp
+
+    if args.weight_mask:
+        config_dict['weight_mask'] = os.path.join(args.directory, args.weight_mask)
+        config_dict['ersa_r'] = IBDSegmentsWeigher.from_json_mask_file(config_dict['weight_mask']) \
+            .adjusted_expected_recombination_number
 
     if not snakemake.snakemake(
             snakefile=snakefile,

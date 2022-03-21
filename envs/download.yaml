@@ -2,8 +2,6 @@ name: download
 channels:
   - conda-forge
   - bioconda
-  - anaconda
-  - defaults
 dependencies:
   - unzip
   - wget

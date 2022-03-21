@@ -22,6 +22,7 @@ dag.png
 .idea
 results/relatives.tsv
 scripts/__pycache__/*
+*/__pycache__/*
 logs/*
 scripts/utils/__pycache__/*
 .zattrs/*
