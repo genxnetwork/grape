@@ -1,6 +1,6 @@
 #!/usr/bin/env cwl-runner
 
-class: CommandLineTool
+class: Workflow
 id: "GRAPE"
 label: "GRAPE preprocessing"
 cwlVersion: v1.1

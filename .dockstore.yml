@@ -1,4 +1,5 @@
 version: 1.2
+class: CommandLineTool
 workflows:
    - name: GRAPE preprocessing
      subclass: CWL
