@@ -240,13 +240,6 @@ def get_parser_args():
         help='Path to chip file'
     )
 
-    parser.add_argument(
-        '--num-batches',
-        default=10,
-        type=int,
-        help='Number of batches for dataset to be cut in by samples'
-    )
-
     args = parser.parse_args()
 
     valid_commands = ['preprocess', 'find', 'simulate', 'hapmap', 'reference', 'bundle', 'simbig', 'remove_relatives']
@@ -375,12 +368,11 @@ if __name__ == '__main__':
     config_dict['sim_samples_file'] = args.sim_samples_file
     config_dict['assembly'] = args.assembly
     config_dict['mem_gb'] = args.memory
+    config_dict['num_batches'] = args.cores
     if args.ref_directory != '':
         config_dict['ref_dir'] = args.ref_directory
     if args.chip:
         config_dict['chip'] = args.chip
-    if args.num_batches != '':
-        config_dict['num_batches'] = args.num_batches
 
     if args.flow not in ['germline', 'ibis', 'ibis_king']:
         raise ValueError(f'--flow can be one of the ["germline", "ibis", "ibis_king"] and not {args.flow}')
