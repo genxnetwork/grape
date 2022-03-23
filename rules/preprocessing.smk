@@ -1,5 +1,5 @@
 NUM_BATCHES = config['num_batches']
-BATCHES = list(range(1,int(NUM_BATCHES) + 1))
+BATCHES = list(range(1, int(NUM_BATCHES) + 1))
 
 rule get_lists:
     input:
