@@ -7,5 +7,5 @@ if __name__ == '__main__':
 
   bim_mapped = pd.read_csv(bim_mapped_path, sep='\t', header=None)
   bim_mapped.iloc[:, 2] = {'2': [0] * len(bim_mapped)}
-  bim_mapped.iloc[:,2] = bim_mapped.iloc[:,2].fillna(0)
+  bim_mapped.iloc[:, 2] = bim_mapped.iloc[:, 2].fillna(0)
   bim_mapped.to_csv(bim_path, sep="\t", header=False, index=False)
