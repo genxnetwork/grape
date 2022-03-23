@@ -26,6 +26,8 @@ function parallel_bcftools_merge() {
     'bcftools merge -r {1} -O u ' $@ ' > ' ${output_prefix}'.{1}.bcf' ::: ${contigs}
 
     order=`echo $contigs | tr ' ' '\n' | awk -v "prefix=${output_prefix}" '{ print prefix "." $0 ".bcf" }'`
-    bcftools concat -O v ${order} | grep -v 'parallel_merge' | sed 's/##bcftools_mergeCommand=merge -r I -O u /##bcftools_mergeCommand=merge /g' | bcftools view -O u
+    bcftools concat -O v ${order} | grep -v 'parallel_merge' | \
+    sed 's/##bcftools_mergeCommand=merge -r I -O u /##bcftools_mergeCommand=merge /g' | \
+    bcftools view -O u
     rm ${order}
 }
