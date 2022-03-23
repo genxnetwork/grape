@@ -368,9 +368,10 @@ if __name__ == '__main__':
     config_dict['sim_samples_file'] = args.sim_samples_file
     config_dict['assembly'] = args.assembly
     config_dict['mem_gb'] = args.memory
+    config_dict['num_batches'] = args.cores
     if args.ref_directory != '':
         config_dict['ref_dir'] = args.ref_directory
-    if args.chip != '':
+    if args.chip:
         config_dict['chip'] = args.chip
 
     if args.flow not in ['germline', 'ibis', 'ibis_king']:
