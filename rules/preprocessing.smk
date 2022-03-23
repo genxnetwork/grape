@@ -5,7 +5,7 @@ rule get_lists:
     input:
         vcf='input.vcf.gz'
     output:
-        temp(expand('vcf/batch{i}.txt',i=BATCHES))
+        temp(expand('vcf/batch{i}.txt', i=BATCHES))
     params:
         num_batches=NUM_BATCHES
     conda:
