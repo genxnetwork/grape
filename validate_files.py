@@ -2,7 +2,7 @@ import yaml
 import sys
 from functools import wraps
 from ftplib import FTP
-from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
+from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse, ParseResult
 from urllib.request import Request, urlopen
 
 
@@ -14,7 +14,7 @@ def retry(number):
                 try:
                     result = func(*args, **kwargs)
                     return result
-                except Exception:
+                except Exception as e:
                     pass
         return wrapper
     return dec
@@ -32,24 +32,40 @@ def get_ftp_filesize(url):
 def get_http_filesize(url):
     url_parsed = urlparse(url)
     if 'dropbox' in url_parsed.hostname:
-        # https://stackoverflow.com/a/50067550/4377521
-        # otherwise you'll get html page, not file
-        url_dict = dict(parse_qsl(url_parsed.query))
-        url_dict.update({'dl': 1})
-        query = urlencode(url_dict)
-        url_parsed = url_parsed._replace(query=query)
-        url = urlunparse(url_parsed)
+        return get_dropbox_filesize(url_parsed)
 
     file = urlopen(Request(url, method='HEAD'))
-    return file.headers.get('Content-Length')
+    return int(file.headers.get('Content-Length'))
 
 
-def get_filesize(data):
-    url = data['url']
+def get_dropbox_filesize(url_parsed: ParseResult) -> int:
+    # https://stackoverflow.com/a/50067550/4377521
+    # otherwise you'll get html page, not file
+    url_dict = dict(parse_qsl(url_parsed.query))
+    url_dict.update({'dl': 1})
+    query = urlencode(url_dict)
+    url_parsed = url_parsed._replace(query=query)
+    url = urlunparse(url_parsed)
+    file = urlopen(Request(url, method='HEAD'))
+    return int(file.headers.get('X-Dropbox-Content-Length'))
+
+
+def get_url(url, access_keys):
+    if url.startswith('https://dataset1000genomes.blob.core.windows.net'):
+        return url + access_keys['1000g_public_key']
+    if url.startswith('https://bioinformatics.file.core.windows.net'):
+        return url + access_keys['azure_public_key']
+    return url
+
+
+def get_filesize(data, access_keys):
     if 'expand_rule' in data:
+        url = data['url']
         key = data['expand_rule']['key']
         values = data['expand_rule']['values']
-        return [get_filesize({'url': url.replace(key, str(val))}) for val in values]
+        return [get_filesize({'url': url.replace(key, str(val))}, access_keys) for val in values]
+    else:
+        url = get_url(data['url'], access_keys)
 
     if urlparse(url).scheme == 'ftp':
         return get_ftp_filesize(url)
@@ -59,12 +75,12 @@ def get_filesize(data):
 def main(yaml_url):
     with open(yaml_url, 'r') as file:
         content = yaml.safe_load(file)
-
+    access_keys = {k: content.get(k) for k in ('azure_public_key', '1000g_public_key')}
     errors = {}
     for k, v in content['reference'].items():
         if 'url' not in v or 'filesize' not in v:
             continue
-        filesize = get_filesize(v)
+        filesize = get_filesize(v, access_keys)
         if str(filesize) != str(v['filesize']):
             errors[k] = f'Expected {v["filesize"]}, got {filesize}'
 

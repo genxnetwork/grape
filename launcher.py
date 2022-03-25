@@ -4,7 +4,10 @@ import psutil
 import argparse
 import shutil
 import os
+
 from inspect import getsourcefile
+from weight.ibd_segments_weigher import IBDSegmentsWeigher
+
 
 
 # Returns an integer value for total available memory, in GB.
@@ -16,15 +19,16 @@ def total_memory_gb():
 def get_parser_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('command',
-                        default='find',
-                        help="""What pipeline should do, possible values are find, preprocess, simulate, hapmap.
-                        preprocess converts hg38 per-sample 23andme input files to the one single vcf in hg37;
-                        find detects relatives in vcf file;
-                        simulate generates pedigree and vcf file with distant relatives from 1000 genomes CEU(CEPH) population using pedsim;
-                        hapmap extracts CEU(CEPH) data for running find;
-                        reference downloads and preprocess all the references to the --ref-directory;
-                        For running the main pipeline you can provide .vcf file and use find or use preprocess with 23andme inputs""")
+    parser.add_argument(
+        'command',
+        default='find',
+        help="""What pipeline should do, possible values are find, preprocess, simulate.
+                preprocess converts hg38 per-sample 23andme input files to the one single vcf in hg37;
+                find detects relatives in vcf file;
+                simulate generates pedigree and vcf file with distant relatives from 1000 genomes CEU(CEPH) population using pedsim;
+                reference downloads and preprocess all the references to the --ref-directory;
+                For running the main pipeline you can provide .vcf file and use find or use preprocess with 23andme inputs"""
+    )
 
     parser.add_argument(
         "--configfile",
@@ -137,7 +141,7 @@ def get_parser_args():
     parser.add_argument(
         '--flow',
         default='ibis',
-        help='How to find ibd segments: values are germline, ibis, ibis_king, default is ibis'
+        help='How to find ibd segments: values are ibis, ibis-king, germline-king, default is ibis'
     )
 
     parser.add_argument(
@@ -145,7 +149,7 @@ def get_parser_args():
         default=0.5,
         type=float,
         help="""
-            Average count of IBD segments in two unrelated individuals in population. 
+            Average count of IBD segments in two unrelated individuals in population.
             Smaller values of 0.1, 0.2 tend to give more distant matches than default 0.5.
             """
     )
@@ -155,7 +159,7 @@ def get_parser_args():
         default=5.0,
         type=float,
         help="""
-            Average length of IBD segment in two unrelated individuals in population. 
+            Average length of IBD segment in two unrelated individuals in population.
             Smaller values of tend to give more distant matches than default 5.0
             """
     )
@@ -166,7 +170,7 @@ def get_parser_args():
         type=float,
         help="""
             ERSA P-value limit for testing for an existence of an relationship.
-            Values of 0.02-0.05 tend to give more distant matches that default 0.01. 
+            Values of 0.02-0.05 tend to give more distant matches that default 0.01.
             """
     )
 
@@ -175,7 +179,7 @@ def get_parser_args():
         default=7.0,
         type=float,
         help="""
-                Minimum length of IBD segment for ibis. 
+                Minimum length of IBD segment for ibis.
                 Smaller values of it tend to give more distant matches than default 7.0 and more false-positives.
             """
     )
@@ -185,7 +189,7 @@ def get_parser_args():
         default=500,
         type=int,
         help="""
-                Minimum number of SNPs in IBD segment. 
+                Minimum number of SNPs in IBD segment.
                 Smaller values of it tend to give more distant matches than default 500 and more false-positives.
             """
     )
@@ -207,22 +211,6 @@ def get_parser_args():
         help="List of samples from 1000genomes for pedsim to use as founders. You can choose only from 'ceph_unrelated_all.tsv', 'all.tsv'")
 
     parser.add_argument(
-        "--use-singularity",
-        help="If this argument is present, Snakemake will use Singularity for the containerization environment",
-        action="store_true")
-
-    # --singularity-prefix /tmp --singularity-args='-B /media:/media -B /tmp:/tmp -W /tmp' --conda-prefix /tmp
-    parser.add_argument(
-        '--singularity-prefix',
-        default='/tmp',
-        help='Directory where snakemake will put singularity images'
-    )
-    parser.add_argument(
-        '--singularity-args',
-        default='-B /media:/media -B /tmp:/tmp -W /tmp',
-        help='Additional singularity arguments'
-    )
-    parser.add_argument(
         '--conda-prefix',
         default='/tmp',
         help='Conda prefix for environments'
@@ -236,13 +224,29 @@ def get_parser_args():
 
     parser.add_argument(
         '--chip',
-        default="background.vcf.gz",
+        default='background.vcf.gz',
         help='Path to chip file'
+    )
+
+    parser.add_argument(
+        '--weight-mask',
+        help='Mask of weights used to re-weight IBD segments length while using ERSA algorithm'
+            'for `ibis` and `ibis-king` flows'
     )
 
     args = parser.parse_args()
 
-    valid_commands = ['preprocess', 'find', 'simulate', 'hapmap', 'reference', 'bundle', 'simbig', 'remove_relatives']
+    valid_commands = [
+        'preprocess',
+        'find',
+        'simulate',
+        'reference',
+        'bundle',
+        'compute-weight-mask',
+        'simbig',
+        'remove_relatives'
+    ]
+
     if args.command not in valid_commands:
         raise RuntimeError(f'command {args.command} not in list of valid commands: {valid_commands}')
 
@@ -316,19 +320,10 @@ if __name__ == '__main__':
             os.path.join(args.directory, 'config.yaml')
         )
 
-    if args.command == 'hapmap':
-        # for some reason launching with docker from command line
-        # sets root directory for 'configfile' directive in Snakefile as snakemake.workdir
-        # therefore config.yaml must be in snakemake.workdir
-        shutil.copy(
-            os.path.join(current_path, 'workflows/hapmap/config.yaml'),
-            os.path.join(args.directory, 'config.yaml')
-        )
-
     if args.command == 'preprocess':
         shutil.copy(args.vcf_file, os.path.join(args.directory, 'input.vcf.gz'))
 
-    if args.command in ['preprocess', 'find', 'reference', 'bundle', 'remove_relatives']:
+    if args.command in ['preprocess', 'find', 'reference', 'bundle', 'remove_relatives', 'compute-weight-mask']:
         if args.directory != '.':
             shutil.copy(os.path.join(current_path, 'config.yaml'), os.path.join(args.directory, 'config.yaml'))
 
@@ -336,11 +331,11 @@ if __name__ == '__main__':
         'preprocess': 'workflows/preprocess2/Snakefile',
         'find': 'workflows/find/Snakefile',
         'simulate': 'workflows/pedsim/Snakefile',
-        'hapmap': 'workflows/hapmap/Snakefile',
         'reference': 'workflows/reference/Snakefile',
         'bundle': 'workflows/bundle/Snakefile',
         'simbig': 'workflows/simbig/Snakefile',
-        'remove_relatives': 'workflows/remove_relatives/Snakefile'
+        'remove_relatives': 'workflows/remove_relatives/Snakefile',
+        'compute-weight-mask': 'workflows/weight/Snakefile'
     }
 
     if args.client:
@@ -372,11 +367,10 @@ if __name__ == '__main__':
         config_dict['ref_dir'] = args.ref_directory
     if args.chip != '':
         config_dict['chip'] = args.chip
-
-    if args.flow not in ['germline', 'ibis', 'ibis_king']:
-        raise ValueError(f'--flow can be one of the ["germline", "ibis", "ibis_king"] and not {args.flow}')
+    if args.flow not in ['ibis', 'ibis-king', 'germline-king']:
+        raise ValueError(f'--flow can be one of the ["ibis", "ibis-king", "germline-king"] and not {args.flow}')
     config_dict['flow'] = args.flow
-    if args.command in ['preprocess', 'simulate', 'hapmap', 'reference', 'bundle', 'simbig', 'remove_relatives']:
+    if args.command in ['preprocess', 'simulate', 'reference', 'bundle', 'simbig', 'remove_relatives']:
         config_dict['remove_imputation'] = args.remove_imputation
         config_dict['impute'] = args.impute
         config_dict['phase'] = args.phase
@@ -386,6 +380,11 @@ if __name__ == '__main__':
     config_dict['alpha'] = args.alpha
     config_dict['ibis_seg_len'] = args.ibis_seg_len
     config_dict['ibis_min_snp'] = args.ibis_min_snp
+
+    if args.weight_mask:
+        config_dict['weight_mask'] = os.path.join(args.directory, args.weight_mask)
+        config_dict['ersa_r'] = IBDSegmentsWeigher.from_json_mask_file(config_dict['weight_mask']) \
+            .adjusted_expected_recombination_number
 
     if not snakemake.snakemake(
             snakefile=snakefile,
@@ -402,9 +401,6 @@ if __name__ == '__main__':
             until=[args.until] if args.until is not None else [],
             use_conda=True,
             conda_prefix=args.conda_prefix,
-            use_singularity=args.use_singularity,
-            singularity_prefix=args.singularity_prefix,
-            singularity_args=args.singularity_args,
             envvars=['CONDA_ENVS_PATH', 'CONDA_PKGS_DIRS']
     ):
         raise ValueError("Pipeline failed see Snakemake error message for details")

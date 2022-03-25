@@ -1,39 +1,17 @@
-rule convert_mapped_to_plink:
-    input:
-        vcf="preprocessed/data.vcf.gz",
-        index="preprocessed/data.vcf.gz.csi"
-    output:
-        plink=expand("plink/{i}.{ext}", i="data", ext=PLINK_FORMATS),
-        vcf=temp('vcf/merged_mapped_sorted_22.vcf.gz')
-    params:
-        out = "plink/data"
-    conda:
-        "../envs/bcf_plink.yaml"
-    log:
-        "logs/plink/convert_mapped_to_plink.log"
-    benchmark:
-        "benchmarks/plink/convert_mapped_to_plink.txt"
-    shell:
-        """
-        # leave only chr1..22 because we need to map it later
-        bcftools view {input.vcf} --regions 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 -O z -o {output.vcf}
-        plink --vcf {output.vcf} --make-bed --out {params.out} |& tee {log}
-        """
-
 rule run_king:
-    input: rules.convert_mapped_to_plink.output
+    input: "preprocessed/data.bed"
     output:
         king="king/data.seg",
         kinship="king/data.kin",
         kinship0="king/data.kin0",
         segments="king/data.segments.gz"
     params:
-        input = "plink/data",
+        input = "preprocessed/data",
         out = "king/data",
         kin = "king/data"
     threads: workflow.cores
-    singularity:
-        "docker://lifebitai/king:latest"
+    conda:
+        "../envs/king.yaml"
     log:
         "logs/king/run_king.log"
     benchmark:
@@ -122,8 +100,6 @@ rule interpolate:
 rule germline:
     input: rules.interpolate.output
     output: "germline/chr{chrom}.germline.match"
-    singularity:
-        "docker://genxnetwork/germline:stable"
     log:
         "logs/germline/germline-{chrom}.log"
     benchmark:
@@ -164,18 +140,20 @@ rule ersa:
         ibd=rules.merge_ibd_segments.output['ibd']
     output:
         "ersa/relatives.tsv"
-    singularity:
-        "docker://genxnetwork/ersa:stable"
+    conda:
+        "../envs/ersa.yaml"
     log:
         "logs/ersa/ersa.log"
     benchmark:
         "benchmarks/ersa/ersa.txt"
+    params:
+        ersa_l = config['zero_seg_count'], # the average number of IBD segments in population
+        ersa_th = config['zero_seg_len'],  # the average length of IBD segment
+        alpha = config['alpha'],           # ERSA confidence level
+        ersa_t = config['ibis_seg_len']    # min length of segment to be considered in segment aggregation
     shell:
         """
-        ERSA_L=2.0 # the average number of IBD segments in population
-        ERSA_TH=1.5 # the average length of IBD segment
-        ERSA_T=1.0 # min length of segment to be considered in segment aggregation
-        ersa --avuncular-adj -t $ERSA_T -l $ERSA_L -th $ERSA_TH {input.ibd} -o {output} |& tee {log}
+        ersa --avuncular-adj -ci --alpha {params.alpha} --dmax 14 -t {params.ersa_t} -l {params.ersa_l} -th {params.ersa_th} {input.ibd} -o {output} |& tee {log}
         """
 
 

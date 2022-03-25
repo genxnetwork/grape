@@ -37,8 +37,8 @@ rule liftover:
         vcf=rules.recode_vcf.output['vcf']
     output:
         vcf="vcf/merged_lifted.vcf"
-    singularity:
-        "docker://genxnetwork/picard:stable"
+    conda:
+        "../envs/liftover.yaml"
     log:
         "logs/liftover/liftover.log"
     params:

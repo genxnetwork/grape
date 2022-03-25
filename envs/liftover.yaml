@@ -1,0 +1,6 @@
+name: liftover
+channels:
+    - bioconda
+    - conda-forge
+dependencies:
+    - picard-slim==2.26.4

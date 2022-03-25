@@ -3,7 +3,7 @@ import numpy
 import os
 import logging
 from collections import Counter, namedtuple
-from utils.ibd import read_king_segments as rks, interpolate_all
+from utils.ibd import read_king_segments as rks, interpolate_all, Segment
 
 
 def is_non_zero_file(fpath):
@@ -14,6 +14,22 @@ def _sort_ids(data):
     unsorted_mask = data.id2 < data.id1
     data.loc[unsorted_mask, 'id1'], data.loc[unsorted_mask, 'id2'] = data.loc[unsorted_mask, 'id2'], data.loc[
         unsorted_mask, 'id1']
+
+
+def read_bucket_dir(bucket_dir):
+
+    total = None
+    for file in os.listdir(bucket_dir):
+        if not file.endswith('tsv'):
+            continue
+        path = os.path.join(bucket_dir, file)
+        bucket = read_germline(path)
+        if total is None:
+            total = bucket
+        else:
+            total = total.append(bucket)
+    return total
+
 
 def read_germline(ibd_path):
     germline_names = [
@@ -79,8 +95,8 @@ def read_king(king_path):
         data.loc[:, 'king_degree'] = map_king_degree(data.InfType)
         data.loc[:, 'king_relation'] = map_king_relation(data.InfType)
         data.loc[:, 'king_degree'] = data.king_degree.astype(float).astype(pandas.Int32Dtype())
-        data.rename({'PropIBD': 'shared_genome_proportion'}, axis='columns', inplace=True)
-        indexed = data.loc[:, ['id1', 'id2', 'king_degree', 'king_relation', 'shared_genome_proportion']].\
+        data.rename({'PropIBD': 'shared_genome_proportion', 'IBD1Seg': 'king_ibd1_prop', 'IBD2Seg': 'king_ibd2_prop'}, axis='columns', inplace=True)
+        indexed = data.loc[:, ['id1', 'id2', 'king_degree', 'king_relation', 'king_ibd1_prop', 'king_ibd2_prop', 'shared_genome_proportion']].\
             set_index(['id1', 'id2'])
         return indexed
 
@@ -90,7 +106,50 @@ def read_king(king_path):
                                          'id2',
                                          'king_degree',
                                          'king_relation',
+                                         'king_ibd1_prop',
+                                         'king_ibd2_prop',
                                          'shared_genome_proportion']).set_index(['id1', 'id2'])
+
+
+def read_king_segments_chunked(king_segments_path, map_dir):
+    total = None
+    try:
+        for i, chunk in enumerate(pandas.read_table(
+                                                    king_segments_path, 
+                                                    compression='gzip', 
+                                                    dtype={'FID1': str, 'ID1': str, 'FID2': str, 'ID2': str}, 
+                                                    chunksize=1e+6)):
+
+            segments = {}
+            for i, row in chunk.iterrows():
+                id1 = row['FID1'] + '_' + row['ID1']
+                id2 = row['FID2'] + '_' + row['ID2']
+                seg = Segment(id1, id2, row['Chr'],
+                            bp_start=row['StartMB']*1e+6, bp_end=row['StopMB']*1e+6)
+                key = tuple(sorted((seg.id1, seg.id2)))
+                if key not in segments:
+                    segments[key] = [seg]
+                else:
+                    segments[key].append(seg)
+
+            segments = interpolate_all(segments, map_dir)
+            data = pandas.DataFrame(columns=['id1', 'id2', 'total_seg_len_king', 'seg_count_king'])
+            logging.info(f'loaded and interpolated segments from chunk {i} for {len(segments)} pairs')
+            for key, segs in segments.items():
+                row = {'id1': key[0],
+                    'id2': key[1],
+                    'total_seg_len_king': sum([s.cm_len for s in segs]),
+                    'seg_count_king': len(segs)}
+                data = data.append(row, ignore_index=True)
+
+            _sort_ids(data)
+            data = data.set_index(['id1', 'id2'])
+            total = total.append(data) if total is not None else data
+
+        return total
+
+    except pandas.errors.EmptyDataError:
+        return pandas.DataFrame(columns=['id1', 'id2', 'total_seg_len_king', 'seg_count_king']).set_index(['id1', 'id2'])
 
 
 def read_king_segments(king_segments_path, map_dir):
@@ -171,8 +230,8 @@ def read_ersa(ersa_path):
     # Indv_1     Indv_2      Rel_est1      Rel_est2      d_est     lower_d  upper_d     N_seg     Tot_cM
     data = pandas.read_table(ersa_path, header=0,
                              names=['id1', 'id2', 'rel_est1', 'rel_est2',
-                                    'ersa_degree', 'ersa_lower_bound', 'ersa_upper_bound', 'seg_count', 'total_seg_len'],
-                             dtype={'ersa_degree': str})
+                                    'ersa_degree', 'ersa_lower_bound', 'ersa_upper_bound', 'seg_count_ersa', 'total_seg_len_ersa'],
+                             dtype={'ersa_degree': str, 'seg_count_ersa': str, 'total_seg_len_ersa': str})
 
     data = data.loc[(data.rel_est1 != 'NA') | (data.rel_est2 != 'NA'), :]
     data.loc[:, 'id1'] = data.id1.str.strip()
@@ -184,18 +243,20 @@ def read_ersa(ersa_path):
         pandas.Int32Dtype())
     data.loc[:, 'ersa_upper_bound'] = pandas.to_numeric(data.ersa_upper_bound.str.strip(), errors='coerce').astype(
         pandas.Int32Dtype())
+    print('dtypes are: ', data.dtypes)
+    data.loc[:, 'seg_count_ersa'] = pandas.to_numeric(data.seg_count_ersa.str.strip(), errors='coerce').astype(
+        pandas.Int32Dtype())
+    data.loc[:, 'total_seg_len_ersa'] = pandas.to_numeric(data.total_seg_len_ersa.str.strip(), errors='coerce')
 
     data.loc[data.ersa_lower_bound != 1, 'ersa_lower_bound'] = data.ersa_lower_bound - 1
     data.loc[data.ersa_upper_bound != 1, 'ersa_upper_bound'] = data.ersa_upper_bound - 1
 
-    print(f'Bad degrees are {(data.ersa_lower_bound > data.ersa_degree).sum()}')
-    print(Counter(data.ersa_degree[data.ersa_lower_bound > data.ersa_degree]))
     logging.info(f'read {data.shape[0]} pairs from ersa output')
     logging.info(f'ersa after reading has {pandas.notna(data.ersa_degree).sum()}')
     data.loc[:, 'is_niece_aunt'] = [True if 'Niece' in d else False for d in data.rel_est1]
     logging.info(f'we have total of {data.is_niece_aunt.sum()} possible Niece/Aunt relationships')
-    print(f'we have total of {data.is_niece_aunt.sum()} possible Niece/Aunt relationships')
-    return data.loc[data.id1 != data.id2, ['id1', 'id2', 'ersa_degree', 'ersa_lower_bound', 'ersa_upper_bound', 'is_niece_aunt']].\
+
+    return data.loc[data.id1 != data.id2, ['id1', 'id2', 'ersa_degree', 'ersa_lower_bound', 'ersa_upper_bound', 'is_niece_aunt', 'seg_count_ersa', 'total_seg_len_ersa']].\
         set_index(['id1', 'id2'])
 
 
@@ -237,8 +298,7 @@ if __name__ == '__main__':
         test_dir = '/media_ssd/pipeline_data/TF-CEU-TRIBES-ibis-king-2'
         Snakemake = namedtuple('Snakemake', ['input', 'output', 'params', 'log'])
         snakemake = Snakemake(
-            input={'ibd': f'{test_dir}/ibd/merged_ibd.tsv',
-                   'king': f'{test_dir}/king/data.seg',
+            input={'king': f'{test_dir}/king/data.seg',
                    'king_segments': f'{test_dir}/king/data.segments.gz',
                    'kinship': f'{test_dir}/king/data.kin',
                    'kinship0': f'{test_dir}/king/data.kin0',
@@ -251,7 +311,6 @@ if __name__ == '__main__':
 
     logging.basicConfig(filename=snakemake.log[0], level=logging.DEBUG, format='%(levelname)s:%(asctime)s %(message)s')
 
-    ibd_path = snakemake.input['ibd']
     king_path = snakemake.input['king']
     king_segments_path = snakemake.input['king_segments']
     # within families
@@ -262,20 +321,14 @@ if __name__ == '__main__':
     map_dir = snakemake.params['cm_dir']
     output_path = snakemake.output[0]
 
-    ibd = read_germline(ibd_path)
     king = read_king(king_path)
     kinship = read_kinship(kinship_path, kinship0_path)
-    king_segments = read_king_segments(king_segments_path, map_dir)
+    king_segments = read_king_segments_chunked(king_segments_path, map_dir)
     ersa = read_ersa(ersa_path)
 
-    logging.info(f'ibd shape: {ibd.shape[0]}, ersa shape: {ersa.shape[0]}')
-    # print('ibd test:',  ibd[('GRC12118091', 'GRC12118096')])
-    # print('ibd test2:', ibd[('GRC12118096', 'GRC12118091')])
-
-    relatives = ibd.merge(king, how='outer', left_index=True, right_index=True).\
-                    merge(kinship, how='outer', left_index=True, right_index=True).\
-                    merge(ersa, how='outer', left_index=True, right_index=True).\
-                    merge(king_segments, how='outer', left_index=True, right_index=True)
+    relatives = king.merge(kinship, how='outer', left_index=True, right_index=True).\
+                     merge(ersa, how='outer', left_index=True, right_index=True).\
+                     merge(king_segments, how='outer', left_index=True, right_index=True)
 
     prefer_ersa_mask = pandas.isnull(relatives.king_degree) | (relatives.king_degree > 3)
     relatives.loc[:, 'final_degree'] = relatives.king_degree
@@ -283,17 +336,18 @@ if __name__ == '__main__':
     relatives.loc[prefer_ersa_mask, 'final_degree'] = relatives.ersa_degree
     logging.info(f'king is null or more than 3: {prefer_ersa_mask.sum()}')
     logging.info(f'ersa is not null: {pandas.notna(relatives.ersa_degree).sum()}')
-
+    print(f'relatives columns are {relatives.columns}')
     if 'total_seg_len_king' in relatives.columns:
-        relatives.loc[:, 'total_seg_len'] = relatives.total_seg_len_king
+        relatives.loc[:, 'total_seg_len'] = relatives.total_seg_len_king*relatives.king_ibd1_prop
+        relatives.loc[:, 'total_seg_len_ibd2'] = relatives.total_seg_len_king*relatives.king_ibd2_prop
         relatives.loc[:, 'seg_count'] = relatives.seg_count_king
 
-    relatives.loc[prefer_ersa_mask, 'total_seg_len'] = relatives.total_seg_len_germline
-    relatives.loc[prefer_ersa_mask, 'seg_count'] = relatives.seg_count_germline
-
+    relatives.loc[prefer_ersa_mask, 'total_seg_len'] = relatives.total_seg_len_ersa
+    relatives.loc[prefer_ersa_mask, 'seg_count'] = relatives.seg_count_ersa
+    print('is na: ', pandas.isna(relatives.loc[prefer_ersa_mask, 'total_seg_len_ersa']).sum())
     # approximate calculations, IBD share is really small in this case
-    relatives.loc[prefer_ersa_mask, 'shared_genome_proportion'] = 0.5*relatives.loc[prefer_ersa_mask, 'total_seg_len'] / 3540
-    relatives.drop(['total_seg_len_king', 'seg_count_king', 'total_seg_len_germline', 'seg_count_germline'],
+    relatives.loc[prefer_ersa_mask, 'shared_genome_proportion'] = 0.5*relatives.loc[prefer_ersa_mask, 'total_seg_len'].values / 3440
+    relatives.drop(['total_seg_len_king', 'seg_count_king', 'total_seg_len_ersa', 'seg_count_ersa', 'king_ibd1_prop', 'king_ibd2_prop'],
                    axis='columns', inplace=True)
 
     logging.info(f'final degree not null: {pandas.notna(relatives.final_degree).sum()}')
