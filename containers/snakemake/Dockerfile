@@ -1,35 +1,9 @@
-FROM golang:1.14.0-buster as builder
-
-ARG SINGULARITY_TAG="v3.7.1"
-
-ENV DEBIAN_FRONTEND noninteractive
-
-WORKDIR $GOPATH/src/github.com/sylabs
-#RUN apt-get update && apt-get install -y gawk gcc git libc-dev linux-headers libressl-dev libuuid libseccomp-dev make util-linux-dev
-RUN apt-get update && apt-get install -y gawk gcc git libseccomp-dev make
-RUN git clone https://github.com/sylabs/singularity.git \
-    && cd singularity \
-    && git checkout "tags/$SINGULARITY_TAG" \
-    && ./mconfig -p /usr/local/singularity \
-    && cd builddir \
-    && make \
-    && make install
-RUN apt-get clean
-
 FROM debian:buster
 
 ENV DEBIAN_FRONTEND noninteractive
 
-COPY --from=builder /usr/local/singularity /usr/local/singularity
-ENV PATH="/usr/local/singularity/bin:$PATH" \
-    SINGULARITY_TMPDIR="/tmp-singularity"
 RUN apt-get clean && apt-get update && apt-get install -y ca-certificates libseccomp-dev squashfs-tools \
-    && rm -rf /tmp/* \
-    && mkdir -p $SINGULARITY_TMPDIR
-
-#WORKDIR /work
-
-#ENTRYPOINT ["/usr/local/singularity/bin/singularity"]
+    && rm -rf /tmp/*
 
 ADD envs/snakemake.yaml envs/snakemake.yaml
 
@@ -37,9 +11,7 @@ ENV PATH /opt/conda/bin:${PATH}
 ENV LANG C.UTF-8
 ENV SHELL /bin/bash
 
-#ENV CONDA_PKGS_DIR /tmp/conda/pgks
-
-RUN apt-get install -y wget bzip2 gnupg2 git openjdk-11-jre openjdk-11-jdk libgomp1 && \
+RUN apt-get install -y wget bzip2 gnupg2 git libgomp1 && \
     wget -nv https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
     bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda && \
     rm Miniconda3-latest-Linux-x86_64.sh && \
@@ -47,11 +19,33 @@ RUN apt-get install -y wget bzip2 gnupg2 git openjdk-11-jre openjdk-11-jdk libgo
     mamba env create -f envs/snakemake.yaml && \
     conda clean --all -y
 
-RUN wget "https://bioinformatics.file.core.windows.net/bundles/Minimac3Executable.tar.gz?sv=2020-08-04&ss=f&srt=sco&sp=r&se=2022-08-08T14:35:53Z&st=2021-08-27T06:35:53Z&spr=https&sig=SjxrSn2KBuQYjYgT2ZZTHQ6IOhA%2BRUSvLIgog%2FH2Tnk%3D" -O Minimac3Executable.tar.gz
+# Intall Minimac3
+RUN wget "https://bioinformatics.file.core.windows.net/bundles/Minimac3Executable.tar.gz?sv=2020-08-04&ss=f&srt=sco&sp=r&se=2022-08-08T14:35:53Z&st=2021-08-27T06:35:53Z&spr=https&sig=SjxrSn2KBuQYjYgT2ZZTHQ6IOhA%2BRUSvLIgog%2FH2Tnk%3D" -O /opt/Minimac3Executable.tar.gz
+RUN tar -xzvf /opt/Minimac3Executable.tar.gz -C /opt/
+RUN rm /opt/Minimac3Executable.tar.gz
+ENV PATH "$PATH:/opt/Minimac3Executable/bin"
 
-RUN tar -xzvf Minimac3Executable.tar.gz
+# Install Minimac4
+RUN apt-get install -y minimac4
 
-ENV PATH "$PATH:/Minimac3Executable/bin"
+# Install Eagle
+RUN wget "https://data.broadinstitute.org/alkesgroup/Eagle/downloads/dev/eagle_v2.4.1" -O /usr/bin/eagle
+RUN chmod a+x /usr/bin/eagle
+
+# Install Germline
+# conda version of germline has a problem with non-zero error code
+# https://github.com/gusevlab/germline/issues/8
+WORKDIR /opt
+RUN apt-get install -y make g++ git && \
+    git clone https://github.com/gusevlab/germline && \
+    cd germline && \
+    mkdir -p bin && \
+    make all && \
+    mv germline bin/germline && \
+    apt-get --purge -y remove g++ make git && \
+    apt-get -y autoremove
+ENV PATH "$PATH:/opt/germline/bin"
+WORKDIR /
 
 # Workaround of NonWritableError when conda tries to create environments for the first time
 # funnel launches docker containers with --read-only and snakemake cannot create conda envs

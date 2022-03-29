@@ -1,149 +1,180 @@
-## GRAPE – Genomic relatedness detection pipeline
-### Description
+# GRAPE – Genomic relatedness detection pipeline
 
-The project intends to implement best-practices of estimation of recent shared ancestry in a production-ready way.
+## Description
 
-Support: https://t.me/joinchat/NsX48w4OzcpkNTRi
+GRAPE is an open-source end-to-end Genomic RelAtedness detection PipelinE.
+It requires a single multisamples VCF file as input and has a separate workflow for downloading and checking the integrity of reference datasets
+GRAPE incorporates comprehensive data preprocessing, quality control (QC), and several workflows for relatedness inference.
 
-Main features:
+<p align="center">
+    <img src="./scheme.png" alt="drawing" width="50%"/>
+</p>
 
-1. It can handle input in hg37 and hg38.
-2. Implements phasing and imputation pipeline with GERMLINE + ERSA recent shared ancestry estimation
-3. It has a very fast alternative pipeline without phasing and imputation. It uses IBIS + ERSA.
-4. It has a special simulation workflow for the accuracy analysis.
-5. It is fully containerized in Docker.
-6. Fast pipeline workflow with `--flow ibis` option can process 2000 samples in a few minutes.
+## Installation
 
-### Stack
-
-The pipeline is implemented with the Snakemake framework. All used components are wrapped in Singularity containers or isolated in a Conda environment.
-Pipeline can also be executed with dockstore (https://dockstore.org).
-
-The visualisation of execution graph: [svg](https://raw.githubusercontent.com/genxnetwork/grape/master/dag.svg).
-
-Multi-core parallelization is highly utilized due to the ability to split input data by each sample/chromosome.
-
-Information about stages:
-
-**Germline workflow**
-
-1. Preprocessing: we remove all multiallelic variants and indels.
-2. Liftover: we use picard tools and lift data from hg38 to hg37.
-3. Phasing: Eagle 2.4.1 and 1000 Genomes reference panel.
-4. Imputation: Minimac4 and 1000 Genomes reference panel.
-5. Close Relatives: KING IBD search.
-6. IBD Search: Germline with merging closely located IBD segments together.
-7. Distant Relatives: ERSA with default params estimated on CEU founders.
-8. Merge: KING degree has priority over ersa degree for close relatives (degrees 1-3), otherwise, we take ERSA output.
-
-**Fast IBIS workflow**
-
-1. Preprocessing: we remove all multiallelic variants and indels.
-2. Liftover: we use picard tools and lift data from hg38 to hg37.
-3. Close Relatives: KING IBD search.
-4. IBD Search: IBIS.
-5. Distant Relatives: ERSA with default params estimated on CEU founders.
-6. Merge: KING degree has priority over ersa degree for close relatives (degrees 1-3), otherwise, we take ERSA output.
-
-![image](https://user-images.githubusercontent.com/19895289/123947586-35c90900-d9a9-11eb-976a-b98b1a25ba5d.png)
-
-### Installation
-
-1. Clone the repository.
-
-2. Build docker container 
-```   
+```bash
 docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
 ```
 
-3. Download all needed references to the `--ref-directory` of your choice. 
-```
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py reference  --ref-directory /media/ref
+The pipeline has three main steps:
+1. Downloading of the reference datasets.
+2. Quality control and data preprocessing.
+3. Application of the relationship inference workflow.
 
-```
+The pipeline is implemented with the Snakemake framework and can be accessible through the `snakemake` command.
+All the pipeline functionality is embedded into the GRAPE launcher: `launcher.py`, that invokes Snakemake under the hood.
+By default, all the commands just check the accessibility of the data and build the computational graph.
+To actually perform computation one should add `--real-run` flag to all the commands.
 
-If you want to run simulation after reference downloading you should add either `--impute` or `--phase` flag
+## Downloading of the Reference Datasets
 
-4. (Optional) Compile Funnel from https://github.com/messwith/funnel with go 1.12+ and make. Then one can just use bin/funnel binary.  
-This Funnel fork simply adds the ‘--privileged’ flag to all task docker commands.  
-Without ‘--privileged’ singularity containers do not work inside docker.
+This step only needs to be done once.
+To download reference dataset one should use `reference` command of the pipeline launcher.
+The command below downloads needed references to the directory specified by the flag `--ref-directory`.
+After that `--ref-directory` argument should now be used in all subsequent commands.
 
-### Usage
-
-Pipeline has three steps: reference downloading, preprocessing data and finding relatives. 
-Reference downloading should only be done once. Before using it, one needs to build a docker container:
-
-```
-docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB . 
-```
-
-#### Reference downloading
-
-Firstly, one needs to download all needed references to the `--ref-directory` of your choice.
-These references will take up to **40GB** of disk space. `--ref-directory` argument can now be used in all subsequent commands
-```
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py reference --real-run --ref-directory /media/ref --directory /media/ref
+```bash
+docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
+    genx_relatives:latest launcher.py reference --ref-directory /media/ref --real-run
 ```
 
-Please note that reference post-processing is a computationally intensive task and can take a lot of time. Consider using `--cores all` (or number) flag because the default behavior uses only 1 core.
+If phasing and imputation are required (mainly for the GERMLINE workflow) one should specify additional `--phase` and `--impute` flags to previous command to download additional reference datasets.
+Total amount of required disk space is about **50GB**.
 
-#### Preprocessing
-
-Preprocessing features:
-    - Lifting to hg37 if input file is in hg38, invoked by option `--assembly hg38`. 
-    - Optional removing of imputed SNPs. In our tests 600K SNPs is enough and further imputation does not improve quality.
-     If your dataset has less then 300K SNPs, imputation can improve results.
-     Search of relatives requires substantially more time with increased number of SNPs.  
-     Invoked by option `--remove-imputation`. Currently it removes all SNPs with `IMPUTED` in it.
-    - Optional phasing, invoked by `--phase`. It is required for searching for relatives with Germline `--flow germline`, 
-    however we do not recommend using Germline for now.
-    - Optional imputation, invoked by `--impute`. One must also use `--phase` with this.
-    
-Option `--ref-directory` required to point to the downloaded references, option `--directory` points to the working directory
-where results and some files from intermediate steps will be saved.
-   
-**Important: add `--real-run` to all of these commands if you want a real launch and not just building of computational graph**
- 
-Simple command when input file is in hg37 already and removing imputation, phasing and imputation is not required:
- 
-```
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py preprocess --ref-directory /media/ref --vcf-file /media/input.vcf.gz --directory /media/pipeline_data/real-data 
+```bash
+docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
+    genx_relatives:latest launcher.py reference \
+        --ref-directory /media/ref --phase --impute --real-run
 ```
 
-Command with lifting from hg38 to hg37:
+There is another options to download all required reference data as a single file.
+This file is prepared by us and preloaded on our side in the cloud.
+It can be done by specifying additional flag `--use-bundle` to the `reference` command.
+This way is faster, since all the post-processing procedures have been already performed.
 
-```
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py preprocess --ref-directory /media/ref --vcf-file /media/input.vcf.gz --directory /media/pipeline_data/real-data \
---assembly hg38  
-```
-
-Command with lifting from hg38 to hg37, phasing and imputation:
-
-```
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py preprocess --ref-directory /media/ref --vcf-file /media/input.vcf.gz --directory /media/pipeline_data/real-data \
---assembly hg38 --phase --impute 
+```bash
+docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
+    genx_relatives:latest launcher.py reference --use-bundle \
+        --ref-directory /media/ref --phase --impute --real-run
 ```
 
-#### Finding relatives using IBIS
+## Quality Control and Data Preprocessing
 
-After preprocessing, there will be a file `data.vcf.gz` in directory /media/pipeline_data/real-data/preprocessed/ .
-One have to use the same `--directory` value for both preprocessing and invoking search of relatives using `find` command.
- `--vcf-file` is ignored. Option `--flow ibis` invokes fast IBD estimation using IBIS software.  
+GRAPE have a versatile and configurable preprocessing workflow.
+One part of the preprocessing is required and must be performed before the relationship inference workflow.
+It is launched by the `preprocess` command of the GRAPE.
+Along with some necessary technical procedures, preprocessing includes the following steps.
 
+* **[Required] SNPs quality control by minor allele frequency (MAF) and the missingness rate**.
+    We discovered that blocks of rare SNPs with low MAF value in genotype arrays may produce false positive IBD segments.
+    To address this problem, we filter SNPs by minor allele frequency.
+    We remove SNPs with MAF value less than 0.02.
+    Additionally, we remove multiallelic SNPs, insertions / deletions, and SNPs with the high missingness rate, because such SNPs are inconsistent with IBD detection tools.
+
+* **[Required] Per-sample quality control, using missingness and heterozygosity**.
+    Extensive testing revealed that samples with an unusually low level of heterozygosity could produce many false relatives matches among individuals.
+    GRAPE excludes such samples from the analysis and creates a report file with the description of the exclusion reason.
+
+* **[Required] Control for strands and SNP IDs mismatches**.
+    During this step GRAPE fixes inconsistencies in strands and reference alleles.
+
+* **[Optional] LiftOver from hg38 to hg37**.
+    Currently GRAPE uses hg37 build version of the human genome reference.
+    The pipeline supports input in hg38 and hg37 builds (see `--assembly` flag of the pipeline launcher).
+    If hg38 build is selected (`--assembly h38`), then GRAPE applies liftOver tool to the input data in order to match the hg37 reference assembly.
+
+* **[Optional] Phasing and imputation**.
+    GRAPE supports phasing and genotype imputation using 1000 Genomes Project reference panel.
+    GERMLINE IBD detection tool requires phased data.
+    So, if input data is unphased, one should include phasing (Eagle 2.4.1) (`--phase` flag) into the preprocessing before running the GERMLINE workflow.
+    If input data is highly _heterogeneous_ in a sense of available SNPs positions, one can also add imputation (Minimac4) procedure to the preprocessing (`--impute` flag).
+
+* **[Optional] Removal of imputed SNPs**.
+    We found, that if input data is _homogeneous_ in a sense of SNPs positions, the presence of imputed SNPs does not affect the overall IBD detection accuracy of the IBIS tool, but it significantly slows down the overall performance.
+    For this particular case, when input data initially contains a lot of imputed SNPs, we recommend to remove them by specifying `--remove-imputation` flag to the GRAPE launcher.
+    GRAPE removes all SNPs which are marked with `IMPUTED` flag in the input VCF file.
+
+### Usages
+
+1. Preprocessing for the IBIS + KING relatedness inference workflow.
+Input file is located at `/media/input.vcf.gz`.
+GRAPE working directory is `/media/data`.
+Assembly of the input VCF file is `hg37`.
+
+```bash
+docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
+    genx_relatives:latest launcher.py preprocess --ref-directory /media/ref \
+        --vcf-file /media/input.vcf.gz --directory /media/data --assembly hg37 --real-run
 ```
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py find --ref-directory /media/ref --directory /media/pipeline_data/real-data --flow ibis 
+
+2. Preprocessing for the GERMLINE + KING workflow.
+Assembly of the input VCF file is `hg38`.
+GERMLINE can work with phased data only, so we add phasing procedure to the preprocessing.
+Genotype imputation is also added.
+
+```bash
+docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
+    genx_relatives:latest launcher.py preprocess --ref-directory /media/ref \
+        --vcf-file /media/input.vcf.gz --directory /media/data \
+        --assembly hg38 --phase --impute --real-run
 ```
 
+## GRAPE Relatedness Inference Workflows
 
-#### Description of output file
+There are _three_ relationship inference workflows implemented in GRAPE.
+These workflows are activated by the `find` command of the launcher.
+Workflow selection is made by the `--flow` parameter.
 
-Output file is in .tsv file format, and contains one line for each detected pair of relatives.
+1. **IBIS + ERSA**, `--flow ibis`.
+    During this workflow IBD segments detection is performed by IBIS, and estimation of relationship degree is carried out by means of ERSA algorithm.
+    This is the fastest workflow.
+2. **IBIS + ERSA & KING**, `--flow ibis-king`.
+    During this workflow, GRAPE uses KING tool for the first 3 degrees of relationships, and IBIS + ERSA approach for higher order degrees.
+3. **GERMLINE + ERSA & KING**, `--flow germline-king`.
+    The workflow uses GERMLINE for IBD segments detection.
+    KING is used to identify relationship for the first 3 degrees, and ERSA algorithm is used for higher order degrees.
+    This workflow was added to GRAPE mainly for the case, when input data is already phased and accurately preprocessed.
+
+### Usages
+
+1. Relationship inference with the IBIS + ERSA & KING workflow.
+
+```bash
+docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
+    genx_relatives:latest launcher.py find --flow ibis-king --ref-directory /media/ref \
+        --directory /media/data --ibis-seg-len 7 --ibis-min-snp 500 \
+        --zero-seg-count 0.5 --zero-seg-len 5.0 --alpha 0.01 --real-run
+```
+
+2. Relationship inference with GERMLINE + ERSA \& KING workflow.
+
+```bash
+docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
+    genx_relatives:latest launcher.py find --flow germline-king --ref-directory /media/ref \
+        --directory /media/data --zero-seg-count 0.5 --zero-seg-len 5.0 \
+        --alpha 0.01 --real-run
+```
+
+## Description of the IBIS and ERSA Parameters
+
+* **[IBIS]** `--ibis-seg-len`.
+    Minimum length of the IBD segment to be found by IBIS.
+    Higher values reduce false positive rate and give less distant matches (default = 7 cM).
+* **[IBIS]** `--ibis-min-snp`.
+    Minimum number of SNPs per IBD segment to be detected (default = 500 SNPs).
+* **[ERSA]** `--zero-seg-count`.
+    Mean number of shared segments for two unrelated individuals in the population.
+    Smaller values tend to give more distant matches and increase the false positive rate (default = 0.5).
+* **[ERSA]** `--zero-seg-len`.
+    Average length of IBD segment for two unrelated individuals in the population.
+    Smaller values tend to give more distant matches and increase the false positive rate (default = 5 cM).
+* **[ERSA]** `--alpha`.
+    ERSA significance level (default = 0.01).
+
+## Description of the Output Relatives File
+
+Output relatives file is in TSV file format.
+It contains one line for each detected pair of relatives.
 
 ```text
 id1      id2     king_degree king_relation shared_genome_proportion kinship kinship_degree ersa_degree ersa_lower_bound ersa_upper_bound shared_ancestors final_degree  total_seg_len        seg_count
@@ -153,256 +184,158 @@ g1-b1-i1 g2-b3-i1     1           PO                0.4999          0.2467      
 g1-b1-i1 g3-b1-i1     2           2                 0.2369          0.1163      2.0             2               2               2               1.0             2       1644.634182188072       60
 ```
 
-
- * `id1` - ID of first sample in a pair of relatives.
- * `id2` - ID of second sample in a pair of relatives, `id1` is always less than `id2` by the rules of string comparison in python.
- * `king_degree` - Numeric degree of relationship estimated by KING. 0 means duplicates or MZ twins, 
-   1 means parent-offspring (PO), 2 can be either full siblings (FS), half siblings and grandmother/grandfather with a granddaughter/grandson.
-   3 is aunt/uncle with a niece/nephew, as described in table in https://en.wikipedia.org/wiki/Coefficient_of_relationship.
-   If `king_degree` exists, then `final_degree` will be equal to `king_degree`. 
- * `king_relation` - further differentiation for first 2 degrees of KING. `king_degree` 1 means PO - parent-offspring, 
-   also KING detects FS in some of second degrees.
- * `shared_genome_proportion` is the approximate fraction of genome shared by two individuals. 
-   It should be approximately 0.5 for PO and FS, 0.25 for grandmother-granddaughter and half-siblings.
-   For the first 3 degrees it is calculated as total len of IBD2 segments + half of total length of IBD1 segments. 
-   For 4th+ degrees it is simply half of total length of IBD1 segments.  
+ * `id1` - ID of the first sample in a pair of relatives.
+ * `id2` - ID of the second sample in a pair of relatives, `id1` is always less than `id2`.
+ * `king_degree` - Numeric degree of relationship estimated by KING; `0` means duplicates or MZ twins,
+    `1` means parent-offspring (PO), `2` can be either full siblings (FS), half siblings and grandmother/grandfather with a granddaughter/grandson.
+    `3` is aunt/uncle with a niece/nephew, as described in table in https://en.wikipedia.org/wiki/Coefficient_of_relationship.
+    If `king_degree` exists, then `final_degree` will be equal to `king_degree`.
+ * `king_relation` - further differentiation for the first 2 degrees of KING; `king_degree` equals `1` means PO - parent-offspring, also KING detects FS in some of second degrees.
+ * `shared_genome_proportion` is the approximate fraction of genome shared by two individuals.
+    It should be approximately 0.5 for PO and FS, 0.25 for grandmother-granddaughter and half-siblings.
+    For the first 3 degrees it is calculated as total len of IBD2 segments + half of total length of IBD1 segments.
+    For 4th+ degrees it is simply half of total length of IBD1 segments.
  * `kinship` is the KING kinship coefficient.
- * `ersa_degree` is the degree estimated from IBD segments by ERSA, it is used for the `final_degree` in the cases where `king_degree` does not exist.
- * `ersa_lower_bound` is the lower bound degree estimation of ERSA using confidence interval 0.99,
-  i.e. with probability (1-0.99)/2=0.005 degree will be lower than `ersa_lower_bound`.
- * `ersa_upper_bound` is the upper bound degree estimation of ERSA using confidence interval 0.99,
-  i.e. with probability (1-0.99)/2=0.005 degree will be higher than `ersa_upper_bound`.
- * `shared_ancestors` is the most likeliest number of shared ancestors, if it is 0, then one relative is a direct descendant of the other, 
- if 1 then they probably have one common ancestor, i.e. half siblings, if 2 then they have common mother and father, for example.  
- * `final_degree` is simply `king_degree` for close relatives up to 3rd degree and `ersa_degree` for distant relatives.
- * `total_seg_len` is the total length of all IBD segments, for the first 3 degrees it is calculated using KING IBD data, 
-   for the 4th+ degrees it is calculated using IBID or Germline IBD data.
- * `seg_count` is the total number of all IBD segments found by KING for the first 3 degrees and found by IBIS\Germline for the 4th+ degrees.
+ * `ersa_degree` is the degree estimated from IBD segments by ERSA, it is used for the `final_degree` when `king_degree` does not exist.
+ * `ersa_lower_bound` / `ersa_upper_bound` is the lower / upper bound of the degree estimated by the ERSA using confidence interval corresponding to the significance level $\alpha$ (`--alpha`).
+    Accordingly to the ERSA likelihood model, true degree does not belong to this interval with probability equals to $\alpha$.
+ * `shared_ancestors` is the most likeliest number of shared ancestors.
+    If it equals 0, then one relative is a direct descendant of the other;if equals 1, then they most probably have one common ancestor and represent half siblings; if equals 2, then, for examples, individuals may have common mother and father.
+ * `final_degree` is the final relationship degree predicted by GRAPE.
+    If KING is used (`--flow ibis-king` or `--flow germline-king`), it equals `king_degree` for close relatives up to the 3rd degree, and `ersa_degree` for distant relatives.
+ * `total_seg_len` is the total length of all IBD1 segments.
+    It's calculated using IBIS or GERMLINE IBD data.
+    If KING is involved, then for the first 3 degrees it's calculated using KING IBD data.
+ * `seg_count` is the total number of all IBD segments found by IBIS / GERMLINE tools.
+    If KING is involved, the total number of found IBD segmets is taken from KING for the first 3 degrees.
 
-#### Description of some launcher parameters
+## Execution by Scheduler
+The pipeline can be executed using lightweight scheduler [Funnel](https://ohsu-comp-bio.github.io/funnel), which implements [Task Execution Schema](https://github.com/ga4gh/task-execution-schemas) developed by [GA4GH](https://github.com/ga4gh/wiki/wiki).
 
-`--zero-seg-count`, default=0.5
-Average count of IBD segments in two unrelated individuals in population. 
-Smaller values of 0.1, 0.2 tend to give more distant matches than default 0.5.
+During execution, incoming data for analysis can be obtained in several ways: locally, FTP, HTTPS, S3, Google, etc.
+The resulting files can be uploaded in the same ways.
+It is possible to add other features such as writing to the database, and sending to the REST service.
+The scheduler itself can work in various environments from a regular VM to a Kubernetes cluster with resource quotas support.
+See the [doc](https://ohsu-comp-bio.github.io/funnel/docs) for more information.
 
-`--zero-seg-len`, default=5.0
-Average length of IBD segment in two unrelated individuals in population. 
-Smaller values of tend to give more distant matches than default 5.0
-
-`--alpha`, default=0.01
-ERSA P-value limit for testing for an existence of an relationship.
-Values of 0.02-0.05 tend to give more distant matches that default 0.01. 
-
-#### Execution by scheduler
-The pipeline can be executed using lightweight scheduler [Funnel](https://ohsu-comp-bio.github.io/funnel/), which implements [Task Execution Schema](https://github.com/ga4gh/task-execution-schemas) developed by [GA4GH](https://github.com/ga4gh/wiki/wiki).  
-  
-During execution, incoming data for analysis can be obtained in several ways: locally, FTP, HTTPS, S3, Google, etc.  
-The resulting files can be uploaded in the same ways. It is possible to add another feature such as writing to the database, sending to the REST service.  
-The scheduler itself can work in various environments from a regular VM to a Kubernetes cluster with resource quotas support.  
-
-More information: https://ohsu-comp-bio.github.io/funnel/docs/  
-
-How to execute dry-run (sample output):
-
-```text 
-# Firstly, if server is not running, start it
-/path/to/funnel server run
-
-# Then, use funnel as client
-/path/to/funnel task create examples/snakemake-dry-23andme.json                                                                                                                                      
-```
-
-How to execute operational run (sample output):
-
-```text 
-/path/to/funnel task create examples/snakemake-real-23andme.json                                                                                                                                      
-```
-
-
-#### Standalone version (not recommended)
-
-It is possible to run the pipeline using standalone version. First, you need to clone the repository and setup the references as described above.
-
-The main idea of using Docker containers that you no need configure your execution environment manually. You need to do it before you can run the pipeliune in the standalone mode.
-
-Assuming that you use Ubuntu 18 the following steps are needed to run the pipeline:
-
-1. Docker
-
-https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-18-04
-
-It is recomended to move docker storage from /var to some other partition with enought free space:
-https://www.guguweb.com/2019/02/07/how-to-move-docker-data-directory-to-another-location-on-ubuntu/
-
-2. Singularity
-
-You need to compile at least version 3.x from https://github.com/hpcng/singularity/releases/
-Please note that you need Go compiler in order to do so https://golang.org/dl/
-
-3. Conda
-
-Snakemake pipeline can use Singularity containers (same as Docker but working from user space) as well as Conda wrapped tools for the virtualization of the execution steps.
-
-https://www.digitalocean.com/community/tutorials/how-to-install-the-anaconda-python-distribution-on-ubuntu-18-04
-
-4. Snakemake
-
-https://snakemake.readthedocs.io/en/stable/getting_started/installation.html
-
-5. Setup env vars for temp / cache directories for Singularity, ex:
-
-```bash
-export SINGULARITY_TMPDIR=/media/tmp
-export SINGULARITY_CACHEDIR=/media/tmp
-```
-
-You can also pass this values using Snakemake:
-`--singularity-prefix DIR`
-`--singularity-args ARGS`
-
-6. Launch
+How to use Funnel:
 
 ```text
-snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media --singularity-args="-B /media:/media" -p all -n
+# Start the Funnel server
+/path/to/funnel server run
+
+# Use Funnel as client
+/path/to/funnel task create funnel/grape-real-run.json
 ```
 
-Please mind `-n` flag for dry-run
+## Launch with Dockstore
 
-7. Useful commands
-
-Please see useful_commands.md.
-
-
-### Launch with Dockstore
-
-1. First you want to [install dockstore](https://dockstore.org/quick-start).
+GRAPE supports execution with the Dockstore.
+Dockstore page for the GRAPE pipeline can be found [here](https://dockstore.org/organizations/GenX/collections/GRAPE).
 
 
-2. Next clone this repository.
+1. [Install dockstore](https://dockstore.org/quick-start).
 
+2. Clone the GRAPE repository.
 
-3. Note about configuration and runtime. 
-    Each step requires `config.json`. Each config has predefined directories and paths, but you can override these paths by changing them in these files.
-   
-    Also notice that dockstore saves its runtime in `datastore` directory. This directory will grow up with each run. You may desire to clean it up.
+3. Download reference datasets. There are four available options.
 
+```bash
+# Download minimal reference datasets from public available sources (without phasing and imputation)
+dockstore tool launch --local-entry workflows/reference/cwl/ref_min.cwl --json workflows/reference/cwl/config.json --script
+```
 
-4. To download references there are two options:
-    
-    4.1 Through open source links with our pipeline. 
-    
-    For full reference download (required by `--phase` and `--impute` options)
-    ```
-    dockstore tool launch --local-entry workflows/reference/cwl/ref.cwl --json workflows/reference/cwl/config.json --script
-    ```
-    or mininal reference downloading
-    ```
-    dockstore tool launch --local-entry workflows/reference/cwl/ref_min.cwl --json workflows/reference/cwl/config.json --script
-    ```
+```bash
+# Download complete reference datasets from public available sources (for phasing and imputation)
+dockstore tool launch --local-entry workflows/reference/cwl/ref.cwl --json workflows/reference/cwl/config.json --script
+```
 
-    4.2 Using our bundle (tar archive of the same files)
-    ```
-    dockstore tool launch --local-entry workflows/bundle/cwl/bundle.cwl --json workflows/reference/bundle/config.json --script
-    ```
-    For minimal bundle
-    ```
-    dockstore tool launch --local-entry workflows/bundle/cwl/bundle_min.cwl --json workflows/reference/bundle/config.json --script
-    ```
-    
-    As mentioned before - dockstore saves its runtime. In this case it means that all downloaded files will be also saved in `datastore` directory.
-    So, in this case you'll need 60Gb of free space. Removing `datastore` folder after running this step is highly recommended.
+```bash
+# Download minimal reference datasets as bundle from (without phasing and imputation)
+dockstore tool launch --local-entry workflows/bundle/cwl/bundle_min.cwl --json workflows/reference/bundle/config.json --script
+```
 
+```bash
+# Download complete reference datasets as bundle from (for phasing and imputation)
+dockstore tool launch --local-entry workflows/bundle/cwl/bundle.cwl --json workflows/reference/bundle/config.json --script
+```
 
-5. Preprocessing
+5. Run the preprocessing.
+```bash
+dockstore tool launch --local-entry workflows/preprocess2/cwl/preprocess.cwl --json workflows/preprocess2/cwl/config.json --script
+```
 
-    ```
-    dockstore tool launch --local-entry workflows/preprocess2/cwl/preprocess.cwl --json workflows/preprocess2/cwl/config.json --script
-    ```
-   
+6. Run the relatedness inference workflow.
+```bash
+dockstore tool launch --local-entry workflows/find/cwl/find.cwl --json workflows/find/cwl/config.json --script
+```
 
-6. Find
+Each pipeline step requires `config.json`.
+Each config has predefined directories and paths, but you can override these paths by changing them in these files.
+Also notice that Dockstore saves its runtime in `datastore` directory.
+This directory will grow up with each run.
+We recommend to clean it up after each step, especially after reference downloading.
 
-   ```
-   dockstore tool launch --local-entry workflows/find/cwl/find.cwl --json workflows/find/cwl/config.json --script
-   ```
+## Evaluation on Simulated Data
 
-### Known limitations
+We added a simulation workflow into GRAPE to perform a precision / recall analysis of the pipeline.
+It's accessible by `simulate` command of the pipeline launcher and incorporates the following steps:
 
-1. It is known that in some small, isolated populations IBD sharing is very high. 
-   Therefore, our pipeline will overestimate the relationship degree for them. 
-   It is not recommended to mix standard populations like CEU and small populations as isolated native ones. 
-   This problem is discussed in https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0034267 .
-2. If one intends to analyze diverse datasets, it is recommended to impute them with the same pipeline. 
-   It can be done with our pipeline using `--until` option:
-    ```text
-    
-    docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
-    
-    # use --assembly hg37 if vcf file is in hg37 and not in hg38 
-    docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-    launcher.py vcf --vcf-file /media/ref/input.vcf.gz --directory /media/pipeline_data/imputed_data \
-    --real-run
-    
-    # now we can find relatives
-    docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-    launcher.py find --directory /media/pipeline_data/imputed_data \
-    --until merge_imputation_filter --real-run
-    ```
-    Then, one can grab file `/media/pipeline_data/imputed_data/vcf/merged_imputed.vcf.gz`
+1. Pedigree simulation with unrelated founders; we use the [Ped-sim](https://github.com/williamslab/ped-sim) simulation package.
+2. Relatedness degrees estimation;
+3. Comparison between true and estimated degrees.
 
-
-### Evaluation on Simulated Data
-
-Pedigree simulation is performed on European populations from 1KG using the `pedsim` package.  
-Pedsim can use sex-specific genetic maps and randomly assigns the sex of each parent (or uses user-specified sexes) when using such maps.  
-Sex-specific map is preferable because men and women have different recombination rates.  
-Founders for the pedigree simulation are selected from 1000genomes HD genotype chip data, CEU population.  
-CEU data consists of trios, and we select no more than one member of each trio as founder.  
-
+The source dataset for the simulation is taken from CEU population data of 1000 Genomes Project.
+As CEU data consists of trios, we picked no more than one member of each trio as a founder.
+We also ran GRAPE on selected individuals to remove all cryptic relationships up to the 6th degree.
+Then, we randomly assigned sex to each individual and used sex-specific genetic maps to take into account the differences in recombination rates between men and women.
 Visualization of structure of simulated pedigree is given below:
 
-![image](https://user-images.githubusercontent.com/19895289/123947763-6a3cc500-d9a9-11eb-8cf9-8bd8d47e6e33.png)
+<p align="center">
+    <img src="./pedigree.png" alt="drawing" width="60%"/>
+</p>
 
-#### How to run simulation
+### How to run simulation
 
-Use command simulate. Options --input and --samples are not needed in this case.
-
-```bash
-docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
-
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py simulate --directory /media/pipeline_data/simulation --ref-directory /media/ref --real-run
-```
-
-#### Evaluation results
-
-
-![image](https://user-images.githubusercontent.com/19895289/123947788-70cb3c80-d9a9-11eb-8cff-e27eccae0847.png)
-
-The pipeline shows good accuracy for degrees from 1 to 6.  
-The results for degrees from 7 to 8 been improved by merging small IBD segments together if they are located near each other, thus,  
-it detects more than a half of pairs with those degrees of kinship.
-
-### Evaluation on Hapmap Data
-
-Use command HapMap for preparing Hapmap CEU data. Options --input and --samples are not needed in this case.
-Then, use find
+Use the `simulate` command of the GRAPE launcher.
 
 ```bash
-docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
-
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py hapmap --directory /media/pipeline_data/hapmap --ref-directory /media/ref --real-run
-
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
-launcher.py find --directory /media/pipeline_data/hapmap --ref-directory /media/ref --real-run
+docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
+    genx_relatives:latest launcher.py simulate --flow ibis-king --ref-directory /media/ref \
+        --directory /media/data --sim-params-file params/relatives_average.def \
+        --sim-samples-file ceph_unrelated_all.tsv --assembly hg37 --ibis-seg-len 5 \
+        --ibis-min-snp 400 --zero-seg-count 0.1 --zero-seg-len 5 --alpha 0.01 --real-run
 ```
 
-#### Evaluation results
+### Precision / Recall Analysis
 
-HapMap has information only about close relatives presented. The pipeline determines them with 100% accuracy.
+For each degree i of relationships we computed precision and recall metrics:
 
+![\mathrm{Precision}(i) = \frac{\mathrm{TP}(i)}{\mathrm{TP}(i) + \mathrm{FP}(i)}; \quad \mathrm{Recall}(i) = \frac{\mathrm{TP}(i)}{\mathrm{TP}(i) + \mathrm{FN}(i)}](https://latex.codecogs.com/svg.latex?\mathrm{Precision}(i)=\frac{\mathrm{TP}(i)}{\mathrm{TP}(i)+\mathrm{FP}(i)};\quad\mathrm{Recall}(i)=\frac{\mathrm{TP}(i)}{\mathrm{TP}(i)+\mathrm{FN}(i)}.)
 
-### Credits
+Here TP(i), FP(i), FN(i) are the numbers of true positive, false positive, and false negative relationship matches predicted for the degree i.
+In our analysis we used non-exact (fuzzy) interval metrics.
+For the 1st degree, we require an exact match.
+For the 2nd, 3rd, and 4th degrees, we allow a degree interval of ±1.
+For example, for the 2nd true degree we consider a predicted 3rd degree as a true positive match.
+For the 5th+ degrees, we use the ERSA confidence intervals which are typically 3-4 degrees wide.
+For 10th+ degrees, these intervals are 6-7 degrees wide.
+
+<p align="center">
+    <img src="./precision & recall.png" alt="drawing"/>
+</p>
+
+## Known limitations
+
+It is known that for some small isolated populations IBD sharing is very high.
+Therefore, our pipeline overestimates the relationship degree for them.
+It is not recommended to mix standard populations like CEU and the small populations like isolated native ones.
+This problem is discussed in https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0034267.
+
+## Credits
 
 License: GNU GPL v3
+
+## Support
+
+Join our Telegram chat for the support: https://t.me/joinchat/NsX48w4OzcpkNTRi.

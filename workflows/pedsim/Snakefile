@@ -13,9 +13,6 @@ REF_HAPS           = join(REF_DIR, config["reference"]["refHaps"]["file"])
 LIFT_CHAIN         = join(REF_DIR, config["reference"]["lift_chain"]["file"])
 CMMAP              = join(REF_DIR, config["reference"]["cmmap"]["file"])
 SITE_1000GENOME    = join(REF_DIR, config["reference"]["SITE_1000GENOME"]["file"])
-HAPMAP_PED         = join(REF_DIR, config["reference"]["hapmap_ped"]["file"])
-HAPMAP_MP          = join(REF_DIR, config["reference"]["hapmap_mp"]["file"])
-HAPMAP_FAM         = join(REF_DIR, config["reference"]["hapmap_fam"]["file"])
 AFFYMETRIX_CHIP    = join(REF_DIR, config["reference"]["affymetrix_chip"]["file"])
 PEDSIM_MAP         = join(REF_DIR, config["reference"]["pedsim_map"]["file"])
 
@@ -43,8 +40,7 @@ def _mem_gb_for_ram_hungry_jobs():
 rule all:
     input:
         "results/relatives.tsv",
-        "results/accuracy.png",
-        "results/overlaps.tsv"
+        "results/accuracy.png"
 
 
 rule intersect:
@@ -114,7 +110,7 @@ rule shuffle_phase:
         conda: "../../envs/plink.yaml"
         shell:
             """
-                plink --vcf {input.vcf} --make-bed --out {params.plink} 
+                plink --vcf {input.vcf} --make-bed --out {params.plink}
                 plink --bfile {params.plink} --export vcf bgz --out {params.vcf}
             """
 
@@ -135,10 +131,10 @@ include: "../../rules/preprocessing.smk"
 
 if flow == 'ibis':
     include: "../../rules/relatives_ibis.smk"
-elif flow == 'germline':
-    include: "../../rules/relatives.smk"
-elif flow == 'ibis_king':
+elif flow == 'ibis-king':
     include: "../../rules/relatives_ibis_king.smk"
+elif flow == 'germline-king':
+    include: "../../rules/relatives.smk"
 
 rule evaluate_accuracy:
     input:
@@ -159,31 +155,3 @@ rule evaluate_accuracy:
         "../../envs/evaluation.yaml"
     script:
          '../../scripts/evaluate.py'
-
-rule split_map_for_ibd:
-    input:
-        bim = "preprocessed/data.bim"
-    output: expand("cm2/chr{chrom}.cm.map", chrom=CHROMOSOMES)
-    params:
-        cm_dir='cm2'
-    conda:
-        "../../envs/evaluation.yaml"
-    script:
-        "../../scripts/split_map.py"
-
-rule evaluate_ibd:
-    input:
-        pedsim=rules.simulate.output['seg'],
-        ibd=aggregate_input, # only segments of first up to 2K samples
-        cm=expand("cm2/chr{chrom}.cm.map", chrom=CHROMOSOMES)
-    params:
-        cm_dir='cm2',
-        is_rapid_ibd=False
-    conda:
-        '../../envs/evaluation.yaml'
-    output:
-        overlap='results/overlaps.tsv',
-        seg_accuracy='results/seg_accuracy.png',
-        total_len_accuracy='results/total_len_accuracy.png'
-    script:
-        '../../scripts/evaluate_ibd.py'

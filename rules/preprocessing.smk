@@ -17,8 +17,8 @@ rule get_lists:
         num_files={params.num_batches}
         ((lines_per_file = (total_lines + num_files - 1) / num_files))
         split -l $lines_per_file vcf/samples.txt vcf/batch --additional-suffix=.txt --numeric-suffixes=1
-        for file in $(find vcf -name 'batch0[1-9].txt') 
-        do 
+        for file in $(find vcf -name 'batch0[1-9].txt')
+        do
             new=$(echo '$file' | sed 's/0//g')
             mv '$file' '$new'
         done
@@ -51,14 +51,14 @@ rule recode_vcf:
             echo 'chr$i $i' >> chr_name_conv.txt
         done
 
-        bcftools annotate --rename-chrs chr_name_conv.txt {input.vcf} | bcftools view -m2 -M2 -v snps -t '^X,Y,XY,MT' -O z -o {output.vcf}  
+        bcftools annotate --rename-chrs chr_name_conv.txt {input.vcf} | bcftools view -m2 -M2 -v snps -t '^X,Y,XY,MT' -O z -o {output.vcf}
         '''
 
 
 if need_remove_imputation:
     rule remove_imputation:
         input:
-            vcf=rules.recode_vcf.output['vcf']
+            vcf='input.vcf.gz'
         output:
             vcf=temp('vcf/{batch}_imputation_removed.vcf.gz')
         log: 'logs/vcf/remove_imputation{batch}.log'
@@ -66,7 +66,7 @@ if need_remove_imputation:
 else:
     rule copy_vcf:
         input:
-            vcf=rules.recode_vcf.output['vcf']
+            vcf='input.vcf.gz'
         output:
             vcf=temp('vcf/{batch}_imputation_removed.vcf.gz')
         shell:
@@ -80,8 +80,8 @@ if assembly == 'hg38':
             vcf='vcf/{batch}_imputation_removed.vcf.gz'
         output:
             vcf=temp('vcf/{batch}_merged_lifted.vcf.gz')
-        singularity:
-            'docker://genxnetwork/picard:stable'
+        conda:
+            '../envs/liftover.yaml'
         log:
             'logs/liftover/liftover{batch}.log'
         params:
@@ -233,8 +233,8 @@ rule merge_bed:
         '../envs/plink.yaml'
     shell:
         '''
-        for file in $(find preprocessed -name '*_mapped.bim') 
-        do 
+        for file in $(find preprocessed -name '*_mapped.bim')
+        do
             new=$(echo '$file' | sed 's/_mapped//g')
             mv '$file' '$new'
         done
@@ -244,7 +244,7 @@ rule merge_bed:
             echo '$file.bed $file.bim $file.fam' >> files_list.txt
         done
 
-        plink --merge-list files_list.txt --make-bed --out preprocessed/data 
+        plink --merge-list files_list.txt --make-bed --out preprocessed/data
         mv preprocessed/data.bim preprocessed/data_mapped.bim
         '''
 

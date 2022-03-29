@@ -1,0 +1,65 @@
+"""
+This workflow performs computation of the weight mask based on results of IBD segments detection with IBIS.
+"""
+
+import os
+
+
+configfile: "config.yaml"
+
+
+IBIS_OUTPUT_FOLDER = 'ibis'
+IBIS_OUTPUT_PREFIX = os.path.join(IBIS_OUTPUT_FOLDER, 'merged_ibis')
+WEIGHT_MASK_FOLDER = 'weight-mask'
+
+
+# IBIS tools is used to determine IBD segments for the weight mask
+rule all:
+    input:
+        os.path.join(WEIGHT_MASK_FOLDER, 'mask.json'),
+        os.path.join(WEIGHT_MASK_FOLDER, 'mask.png')
+
+
+# Performs IBD segment with IBIS
+rule ibis_ibd_segment_detection:
+    input:
+        bed = 'preprocessed/data.bed',
+        fam = 'preprocessed/data.fam',
+        bim = 'preprocessed/data_mapped.bim'
+    conda:
+        '../../envs/ibis.yaml'
+    output:
+        ibd = IBIS_OUTPUT_PREFIX + '.seg'
+    log:
+        'logs/ibis/ibis.log'
+    benchmark:
+        'benchmarks/ibis/ibis.txt'
+    threads: workflow.cores
+    params:
+        mL = config['ibis_seg_len'],
+        mT = config['ibis_min_snp']
+    shell:
+        """
+        ibis {input.bed} {input.bim} {input.fam} \
+             -t {threads} -mt {params.mT} -mL {params.mL} -ibd2 -mL2 3 -hbd \
+             -f {IBIS_OUTPUT_PREFIX} |& tee -a {log}
+        """
+
+SNAKEFILE_FOLDER = os.path.dirname(workflow.snakefile)
+
+rule compute_weight_mask:
+    input:
+        ibd = rules.ibis_ibd_segment_detection.output.ibd,
+        script = os.path.join(SNAKEFILE_FOLDER, '../../weight/compute_weight_mask.py')
+    conda:
+        '../../envs/weight-mask.yaml'
+    output:
+        mask = os.path.join(WEIGHT_MASK_FOLDER, 'mask.json'),
+        plot = os.path.join(WEIGHT_MASK_FOLDER, 'mask.png')
+    shell:
+        """
+        python {input.script} \
+            --ibd-segments-file {input.ibd} \
+            --output-mask-file {output.mask} \
+            --output-mask-plot {output.plot}
+        """

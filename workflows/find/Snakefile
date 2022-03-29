@@ -1,6 +1,3 @@
-# run as "snakemake --cores all --use-conda --use-singularity --singularity-prefix=/media --singularity-args="-B /media:/media" -p all"
-# TODO: add reporting https://github.com/tanaes/snarkmark/blob/master/rules/report.rule
-
 from os.path import join
 
 flow               = config["flow"]
@@ -21,9 +18,6 @@ REF_HAPS           = join(REF_DIR, config["reference"]["refHaps"]["file"])
 LIFT_CHAIN         = join(REF_DIR, config["reference"]["lift_chain"]["file"])
 CMMAP              = join(REF_DIR, config["reference"]["cmmap"]["file"])
 SITE_1000GENOME    = join(REF_DIR, config["reference"]["SITE_1000GENOME"]["file"])
-HAPMAP_PED         = join(REF_DIR, config["reference"]["hapmap_ped"]["file"])
-HAPMAP_MP          = join(REF_DIR, config["reference"]["hapmap_mp"]["file"])
-HAPMAP_FAM         = join(REF_DIR, config["reference"]["hapmap_fam"]["file"])
 PEDSIM_MAP         = join(REF_DIR, config["reference"]["pedsim_map"]["file"])
 
 print('execution mode is: ' + config["mode"])
@@ -31,8 +25,6 @@ print('execution mode is: ' + config["mode"])
 CHROMOSOMES     = [str(i) for i in range(1, 23)]
 PLINK_FORMATS   = ['bed', 'bim', 'fam']
 PLINK_FORMATS_EXT   = ['bed', 'bim', 'fam', 'nosex']
-
-# include: "rules/report.rule"
 
 # if config["mode"] == "all":
 #     ruleorder: convert_imputed_to_plink > merge_convert_imputed_to_plink
@@ -47,7 +39,7 @@ rule all:
 
 if flow == 'ibis':
     include: "../../rules/relatives_ibis.smk"
-elif flow == 'germline':
-    include: "../../rules/relatives.smk"
-elif flow == 'ibis_king':
+elif flow == 'ibis-king':
     include: "../../rules/relatives_ibis_king.smk"
+elif flow == 'germline-king':
+    include: "../../rules/relatives.smk"

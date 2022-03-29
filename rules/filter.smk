@@ -12,8 +12,8 @@ rule vcf_stats:
         '''
             bcftools query --list-samples {input.vcf} > {params.samples}
             bcftools stats -S {params.samples} {input.vcf} > {output.stats}
-            # PSC means per-sample counts 
-            cat {output.stats} | grep '^PSC' > {output.psc}  
+            # PSC means per-sample counts
+            cat {output.stats} | grep '^PSC' > {output.psc}
         '''
 
 rule select_bad_samples:
