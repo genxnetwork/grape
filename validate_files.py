@@ -47,7 +47,7 @@ def get_dropbox_filesize(url_parsed: ParseResult) -> int:
     url_parsed = url_parsed._replace(query=query)
     url = urlunparse(url_parsed)
     file = urlopen(Request(url, method='HEAD'))
-    return int(file.headers.get('X-Dropbox-Content-Length'))
+    return int(file.headers.get('X-Dropbox-Content-Length') or file.headers.get('Content-Length'))
 
 
 def get_url(url, access_keys):
