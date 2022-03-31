@@ -19,7 +19,7 @@ inputs:
 outputs:
   simulation_result:
     type: Directory
-      outputBinding:
+    outputBinding:
         glob: "results"
 baseCommand:
     [

@@ -16,7 +16,7 @@ inputs:
 outputs:
   reference:
     type: Directory
-      outputBinding:
+    outputBinding:
         glob: "ref"
 baseCommand:
     [
