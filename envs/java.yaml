@@ -2,5 +2,5 @@ name: java
 channels:
   - conda-forge
 dependencies:
-  -  openjdk==11.0.9.1
+  - openjdk==11.0.9.1
   
