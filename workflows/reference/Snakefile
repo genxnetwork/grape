@@ -130,7 +130,7 @@ rule create_fasta_dict:
     log:
         "logs/ref/create_fasta_dict.log"
     conda:
-        "../../envs/picard.yaml"
+        "../../envs/java.yaml"
     shell:
         """
             wget {PICARD_url} --tries 50 -c |& tee -a {log}
