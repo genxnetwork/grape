@@ -1,4 +1,4 @@
-name: picard
+name: java
 channels:
   - conda-forge
 dependencies:
