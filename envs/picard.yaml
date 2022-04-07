@@ -1,0 +1,5 @@
+name: picard
+channels:
+  - conda-forge
+dependencies:
+  -  openjdk==11.0.9.1
