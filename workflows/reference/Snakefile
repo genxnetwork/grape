@@ -350,3 +350,4 @@ rule download_pedsim_map:
             done
             rm -f {REF_DIR}/{PEDSIM_MAP_basename} |& tee -a {log}
         """
+        
