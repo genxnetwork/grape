@@ -73,7 +73,6 @@ if need_phase or need_imputation:
             lift_chain = LIFT_CHAIN,
             SITE_1000GENOME = SITE_1000GENOME,
             pedsim_map = PEDSIM_MAP,
-            hd_genotype_chip = HD_GENOTYPE_CHIP,
             affymetrix_chip = AFFYMETRIX_CHIP,
             vcfRef = expand(REF_VCF, chrom=CHROMOSOMES),
             refHaps = expand(REF_HAPS, chrom=CHROMOSOMES)
@@ -130,6 +129,8 @@ rule create_fasta_dict:
         expand("{ref}.dict", ref=GRCH37_FASTA)
     log:
         "logs/ref/create_fasta_dict.log"
+    conda:
+        "../../envs/java.yaml"
     shell:
         """
             wget {PICARD_url} --tries 50 -c |& tee -a {log}
@@ -349,3 +350,4 @@ rule download_pedsim_map:
             done
             rm -f {REF_DIR}/{PEDSIM_MAP_basename} |& tee -a {log}
         """
+        
