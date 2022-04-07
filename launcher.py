@@ -391,7 +391,7 @@ if __name__ == '__main__':
             snakefile=snakefile,
             configfiles=[args.configfile or 'config.yaml'],
             config=config_dict,
-            workdir=args.directory,
+            workdir=args.directory if args.command != 'reference' else args.ref_directory,
             cores=args.cores,
             unlock=args.unlock,
             printshellcmds=True,
