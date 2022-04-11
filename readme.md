@@ -2,8 +2,10 @@
 
 ## Description
 
-GRAPE is an open-source end-to-end Genomic RelAtedness detection PipelinE.
-It requires a single multisamples VCF file as input and has a separate workflow for downloading and checking the integrity of reference datasets
+GRAPE is an open-source end-to-end Genomic Relatedness detection Pipeline.
+
+It requires a single multisamples VCF file as input and has a separate workflow for downloading and checking the integrity of reference datasets.
+
 GRAPE incorporates comprehensive data preprocessing, quality control (QC), and several workflows for relatedness inference.
 
 <p align="center">
@@ -21,16 +23,22 @@ The pipeline has three main steps:
 2. Quality control and data preprocessing.
 3. Application of the relationship inference workflow.
 
-The pipeline is implemented with the Snakemake framework and can be accessible through the `snakemake` command.
+The pipeline is implemented with the [Snakemake framework](https://snakemake.github.io/) and can be accessible through the `snakemake` command.
+
 All the pipeline functionality is embedded into the GRAPE launcher: `launcher.py`, that invokes Snakemake under the hood.
+
 By default, all the commands just check the accessibility of the data and build the computational graph.
+
 To actually perform computation one should add `--real-run` flag to all the commands.
 
 ## Downloading of the Reference Datasets
 
 This step only needs to be done once.
+
 To download reference dataset one should use `reference` command of the pipeline launcher.
+
 The command below downloads needed references to the directory specified by the flag `--ref-directory`.
+
 After that `--ref-directory` argument should now be used in all subsequent commands.
 
 ```bash
@@ -39,6 +47,7 @@ docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
 ```
 
 If phasing and imputation are required (mainly for the GERMLINE workflow) one should specify additional `--phase` and `--impute` flags to previous command to download additional reference datasets.
+
 Total amount of required disk space is about **50GB**.
 
 ```bash
@@ -48,8 +57,11 @@ docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
 ```
 
 There is another options to download all required reference data as a single file.
+
 This file is prepared by us and preloaded on our side in the cloud.
+
 It can be done by specifying additional flag `--use-bundle` to the `reference` command.
+
 This way is faster, since all the post-processing procedures have been already performed.
 
 ```bash
@@ -61,8 +73,11 @@ docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
 ## Quality Control and Data Preprocessing
 
 GRAPE have a versatile and configurable preprocessing workflow.
+
 One part of the preprocessing is required and must be performed before the relationship inference workflow.
+
 It is launched by the `preprocess` command of the GRAPE.
+
 Along with some necessary technical procedures, preprocessing includes the following steps.
 
 * **[Required] SNPs quality control by minor allele frequency (MAF) and the missingness rate**.
@@ -122,7 +137,9 @@ docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
 ## GRAPE Relatedness Inference Workflows
 
 There are _three_ relationship inference workflows implemented in GRAPE.
+
 These workflows are activated by the `find` command of the launcher.
+
 Workflow selection is made by the `--flow` parameter.
 
 1. **IBIS + ERSA**, `--flow ibis`.
@@ -186,9 +203,12 @@ g1-b1-i1 g3-b1-i1     2           2                 0.2369          0.1163      
 
  * `id1` - ID of the first sample in a pair of relatives.
  * `id2` - ID of the second sample in a pair of relatives, `id1` is always less than `id2`.
- * `king_degree` - Numeric degree of relationship estimated by KING; `0` means duplicates or MZ twins,
-    `1` means parent-offspring (PO), `2` can be either full siblings (FS), half siblings and grandmother/grandfather with a granddaughter/grandson.
-    `3` is aunt/uncle with a niece/nephew, as described in table in https://en.wikipedia.org/wiki/Coefficient_of_relationship.
+ * `king_degree` - Numeric degree of relationship estimated by KING;
+    - `0` means duplicates or MZ twins,
+    - `1` means parent-offspring (PO),
+    - `2` can be either full siblings (FS), half siblings and grandmother/grandfather with a granddaughter/grandson.
+    - `3` is aunt/uncle with a niece/nephew, as described in table in https://en.wikipedia.org/wiki/Coefficient_of_relationship.
+
     If `king_degree` exists, then `final_degree` will be equal to `king_degree`.
  * `king_relation` - further differentiation for the first 2 degrees of KING; `king_degree` equals `1` means PO - parent-offspring, also KING detects FS in some of second degrees.
  * `shared_genome_proportion` is the approximate fraction of genome shared by two individuals.
@@ -197,10 +217,10 @@ g1-b1-i1 g3-b1-i1     2           2                 0.2369          0.1163      
     For 4th+ degrees it is simply half of total length of IBD1 segments.
  * `kinship` is the KING kinship coefficient.
  * `ersa_degree` is the degree estimated from IBD segments by ERSA, it is used for the `final_degree` when `king_degree` does not exist.
- * `ersa_lower_bound` / `ersa_upper_bound` is the lower / upper bound of the degree estimated by the ERSA using confidence interval corresponding to the significance level $\alpha$ (`--alpha`).
+ * `ersa_lower_bound` / `ersa_upper_bound` is the lower / upper bound of the degree estimated by the ERSA using confidence interval corresponding to the significance level $\alpha$ (`--alpha`).  
     Accordingly to the ERSA likelihood model, true degree does not belong to this interval with probability equals to $\alpha$.
  * `shared_ancestors` is the most likeliest number of shared ancestors.
-    If it equals 0, then one relative is a direct descendant of the other;if equals 1, then they most probably have one common ancestor and represent half siblings; if equals 2, then, for examples, individuals may have common mother and father.
+    If it equals 0, then one relative is a direct descendant of the other; if equals 1, then they most probably have one common ancestor and represent half siblings; if equals 2, then, for examples, individuals may have common mother and father.
  * `final_degree` is the final relationship degree predicted by GRAPE.
     If KING is used (`--flow ibis-king` or `--flow germline-king`), it equals `king_degree` for close relatives up to the 3rd degree, and `ersa_degree` for distant relatives.
  * `total_seg_len` is the total length of all IBD1 segments.
@@ -213,9 +233,13 @@ g1-b1-i1 g3-b1-i1     2           2                 0.2369          0.1163      
 The pipeline can be executed using lightweight scheduler [Funnel](https://ohsu-comp-bio.github.io/funnel), which implements [Task Execution Schema](https://github.com/ga4gh/task-execution-schemas) developed by [GA4GH](https://github.com/ga4gh/wiki/wiki).
 
 During execution, incoming data for analysis can be obtained in several ways: locally, FTP, HTTPS, S3, Google, etc.
+
 The resulting files can be uploaded in the same ways.
+
 It is possible to add other features such as writing to the database, and sending to the REST service.
+
 The scheduler itself can work in various environments from a regular VM to a Kubernetes cluster with resource quotas support.
+
 See the [doc](https://ohsu-comp-bio.github.io/funnel/docs) for more information.
 
 How to use Funnel:
@@ -231,6 +255,7 @@ How to use Funnel:
 ## Launch with Dockstore
 
 GRAPE supports execution with the Dockstore.
+
 Dockstore page for the GRAPE pipeline can be found [here](https://dockstore.org/organizations/GenX/collections/GRAPE).
 
 
@@ -271,14 +296,19 @@ dockstore tool launch --local-entry workflows/find/cwl/find.cwl --json workflows
 ```
 
 Each pipeline step requires `config.json`.
+
 Each config has predefined directories and paths, but you can override these paths by changing them in these files.
+
 Also notice that Dockstore saves its runtime in `datastore` directory.
+
 This directory will grow up with each run.
+
 We recommend to clean it up after each step, especially after reference downloading.
 
 ## Evaluation on Simulated Data
 
 We added a simulation workflow into GRAPE to perform a precision / recall analysis of the pipeline.
+
 It's accessible by `simulate` command of the pipeline launcher and incorporates the following steps:
 
 1. Pedigree simulation with unrelated founders; we use the [Ped-sim](https://github.com/williamslab/ped-sim) simulation package.
@@ -286,9 +316,13 @@ It's accessible by `simulate` command of the pipeline launcher and incorporates 
 3. Comparison between true and estimated degrees.
 
 The source dataset for the simulation is taken from CEU population data of 1000 Genomes Project.
+
 As CEU data consists of trios, we picked no more than one member of each trio as a founder.
+
 We also ran GRAPE on selected individuals to remove all cryptic relationships up to the 6th degree.
+
 Then, we randomly assigned sex to each individual and used sex-specific genetic maps to take into account the differences in recombination rates between men and women.
+
 Visualization of structure of simulated pedigree is given below:
 
 <p align="center">
@@ -314,11 +348,17 @@ For each degree i of relationships we computed precision and recall metrics:
 ![\mathrm{Precision}(i) = \frac{\mathrm{TP}(i)}{\mathrm{TP}(i) + \mathrm{FP}(i)}; \quad \mathrm{Recall}(i) = \frac{\mathrm{TP}(i)}{\mathrm{TP}(i) + \mathrm{FN}(i)}](https://latex.codecogs.com/svg.latex?\mathrm{Precision}(i)=\frac{\mathrm{TP}(i)}{\mathrm{TP}(i)+\mathrm{FP}(i)};\quad\mathrm{Recall}(i)=\frac{\mathrm{TP}(i)}{\mathrm{TP}(i)+\mathrm{FN}(i)}.)
 
 Here TP(i), FP(i), FN(i) are the numbers of true positive, false positive, and false negative relationship matches predicted for the degree i.
+
 In our analysis we used non-exact (fuzzy) interval metrics.
+
 For the 1st degree, we require an exact match.
+
 For the 2nd, 3rd, and 4th degrees, we allow a degree interval of ±1.
+
 For example, for the 2nd true degree we consider a predicted 3rd degree as a true positive match.
+
 For the 5th+ degrees, we use the ERSA confidence intervals which are typically 3-4 degrees wide.
+
 For 10th+ degrees, these intervals are 6-7 degrees wide.
 
 <p align="center">
@@ -328,8 +368,11 @@ For 10th+ degrees, these intervals are 6-7 degrees wide.
 ## Known limitations
 
 It is known that for some small isolated populations IBD sharing is very high.
+
 Therefore, our pipeline overestimates the relationship degree for them.
+
 It is not recommended to mix standard populations like CEU and the small populations like isolated native ones.
+
 This problem is discussed in https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0034267.
 
 ## Credits
