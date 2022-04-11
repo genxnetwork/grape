@@ -9,7 +9,7 @@ It requires a single multisamples VCF file as input and has a separate workflow 
 GRAPE incorporates comprehensive data preprocessing, quality control (QC), and several workflows for relatedness inference.
 
 <p align="center">
-    <img src="./scheme.png" alt="drawing" width="50%"/>
+    <img src="img/scheme.png" alt="scheme" width="50%"/>
 </p>
 
 ## Installation
@@ -326,7 +326,7 @@ Then, we randomly assigned sex to each individual and used sex-specific genetic 
 Visualization of structure of simulated pedigree is given below:
 
 <p align="center">
-    <img src="./pedigree.png" alt="drawing" width="60%"/>
+    <img src="img/pedigree.png" alt="pedigree" width="60%"/>
 </p>
 
 ### How to run simulation
@@ -362,7 +362,7 @@ For the 5th+ degrees, we use the ERSA confidence intervals which are typically 3
 For 10th+ degrees, these intervals are 6-7 degrees wide.
 
 <p align="center">
-    <img src="./precision & recall.png" alt="drawing"/>
+    <img src="img/precision & recall.png" alt="precision & recall"/>
 </p>
 
 ## Known limitations
