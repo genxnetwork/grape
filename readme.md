@@ -207,7 +207,42 @@ g1-b1-i1 g3-b1-i1     2           2                 0.2369          0.1163      
     It's calculated using IBIS or GERMLINE IBD data.
     If KING is involved, then for the first 3 degrees it's calculated using KING IBD data.
  * `seg_count` is the total number of all IBD segments found by IBIS / GERMLINE tools.
-    If KING is involved, the total number of found IBD segmets is taken from KING for the first 3 degrees.
+    If KING is involved, the total number of found IBD segments is taken from KING for the first 3 degrees.
+
+## IBD Segments Weighting
+Distribution of IBD segments among non-related (background) individuals within a population may be quite heterogeneous.
+There may exist genome regions with extremely high rates of overall matching, which are not inherited from the recent common ancestors.
+Instead, these regions more likely reflect other demographic factors of the population.
+The implication is that IBD segments detected in such regions are expected to be less useful for estimating recent relationships.
+Moreover, such regions potentially prone to false-positive IBD segments.
+
+GRAPE provides two options to address this issue.
+The <ins>first</ins> one is based on genome regions exclusion mask, wherein some genome regions are completely excluded from the consideration.
+This approach is implemented in ERSA and is used by GRAPE by default.
+The <ins>second</ins> one is based on the IBD segments weighing.
+The key idea is to down-weight IBD segment, i.e. reduce the IBD segment length, if the segment cross regions with high rate of matching.
+Down-weighted segments are then passed to thd ERSA algorithm.
+GRAPE provides an ability to compute the weight mask from the VCF file with presumably unrelated individuals.
+This mask is used during the relatedness detection by specifying the `--weight-mask` flag of the launcher.
+See more information in out [GRAPE preprint](https://www.biorxiv.org/content/10.1101/2022.03.11.483988v1).
+
+### Computation of the IBD segments weighing mask
+```bash
+docker run --rm -it -v /media:/media \
+    genx_relatives:latest launcher.py compute-weight-mask \
+        --directory /media/background --assembly hg37 \
+        --real-run --ibis-seg-len 5 --ibis-min-snp 400
+```
+The resulting files consist of a weight mask file in JSON format and a visualization of the mask stored in `/media/background/weight-mask/` folder.
+
+### Usage of the IBD segments weighing mask
+```bash
+docker run --rm -it -v /media:/media \
+    genx_relatives:latest launcher.py find --flow ibis --ref-directory /media/ref \
+        --weight-mask /media/background/weight-mask/mask.json \
+        --directory /media/data --assembly hg37 \
+        --real-run --ibis-seg-len 5 --ibis-min-snp 400
+```
 
 ## Execution by Scheduler
 The pipeline can be executed using lightweight scheduler [Funnel](https://ohsu-comp-bio.github.io/funnel), which implements [Task Execution Schema](https://github.com/ga4gh/task-execution-schemas) developed by [GA4GH](https://github.com/ga4gh/wiki/wiki).
@@ -295,7 +330,7 @@ Visualization of structure of simulated pedigree is given below:
     <img src="./pedigree.png" alt="drawing" width="60%"/>
 </p>
 
-### How to run simulation
+### How to Run Simulation
 
 Use the `simulate` command of the GRAPE launcher.
 
@@ -325,7 +360,7 @@ For 10th+ degrees, these intervals are 6-7 degrees wide.
     <img src="./precision & recall.png" alt="drawing"/>
 </p>
 
-## Known limitations
+## Known Limitations
 
 It is known that for some small isolated populations IBD sharing is very high.
 Therefore, our pipeline overestimates the relationship degree for them.
