@@ -1,0 +1,6 @@
+name: remove_relatives
+channels:
+    - conda-forge
+dependencies:
+    - networkx==2.5
+    - pandas==1.1.1
