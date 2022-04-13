@@ -235,9 +235,9 @@ if NUM_BATCHES > 1:
         conda:
             '../envs/bcftools.yaml'
         shell:
-            """
+            '''
             bcftools merge --threads {params.num_batches} --merge id {input.batches_vcf} -O z -o {output.vcf}
-            """
+            '''
 
 
     rule merge_bed:
@@ -254,7 +254,7 @@ if NUM_BATCHES > 1:
         conda:
             '../envs/plink.yaml'
         shell:
-            """
+            '''
             for file in $(find preprocessed -name '*_mapped.bim')
             do
                 new=$(echo "$file" | sed "s/_mapped//g")
@@ -268,7 +268,7 @@ if NUM_BATCHES > 1:
 
             plink --merge-list files_list.txt --make-bed --out preprocessed/data
             mv preprocessed/data.bim preprocessed/data_mapped.bim
-            """
+            '''
 
     rule remove_mapping:
         input:
