@@ -106,9 +106,9 @@ Along with some necessary technical procedures, preprocessing includes the follo
 ### Usages
 
 1. Preprocessing for the IBIS + KING relatedness inference workflow.
-Input file is located at `/media/input.vcf.gz`.
-GRAPE working directory is `/media/data`.
-Assembly of the input VCF file is `hg37`.
+    - Input file is located at `/media/input.vcf.gz`.
+    - GRAPE working directory is `/media/data`.
+    - Assembly of the input VCF file is `hg37`.
 
 ```bash
 docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
@@ -117,9 +117,9 @@ docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
 ```
 
 2. Preprocessing for the GERMLINE + KING workflow.
-Assembly of the input VCF file is `hg38`.
-GERMLINE can work with phased data only, so we add phasing procedure to the preprocessing.
-Genotype imputation is also added.
+    - Assembly of the input VCF file is `hg38`.
+    - GERMLINE can work with phased data only, so we add phasing procedure to the preprocessing.
+    - Genotype imputation is also added.
 
 ```bash
 docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
