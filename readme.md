@@ -26,7 +26,6 @@ The pipeline has three main steps:
 The pipeline is implemented with the [Snakemake framework](https://snakemake.github.io/) and can be accessible through the `snakemake` command.
 
 All the pipeline functionality is embedded into the GRAPE launcher: `launcher.py`, that invokes Snakemake under the hood.
-
 By default, all the commands just check the accessibility of the data and build the computational graph.
 
 To actually perform computation one should add `--real-run` flag to all the commands.
@@ -57,8 +56,7 @@ docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
 ```
 
 There are another options to download all required reference data as a single file.
-
-This file is prepared by GenX and preloaded on our side in the cloud.
+This file is prepared by GenX team and preloaded on our side in the cloud.
 
 It can be done by specifying additional flag `--use-bundle` to the `reference` command.
 
@@ -76,7 +74,7 @@ GRAPE have a versatile and configurable preprocessing workflow.
 
 One part of the preprocessing is required and must be performed before the relationship inference workflow.
 
-It is launched by the `preprocess` command of the GRAPE.
+Preprocessing is launched by the `preprocess` command of the GRAPE.
 
 Along with some necessary technical procedures, preprocessing includes the following steps.
 
@@ -112,12 +110,9 @@ Along with some necessary technical procedures, preprocessing includes the follo
 ### Usages
 
 1. Preprocessing for the IBIS + KING relatedness inference workflow.
-
-    Input file is located at `/media/input.vcf.gz`.
-
-    GRAPE working directory is `/media/data`.
-
-    Assembly of the input VCF file is `hg37`.
+Input file is located at `/media/input.vcf.gz`.
+GRAPE working directory is `/media/data`.
+Assembly of the input VCF file is `hg37`.
 
 ```bash
 docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
@@ -126,12 +121,9 @@ docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
 ```
 
 2. Preprocessing for the GERMLINE + KING workflow.
-
-    Assembly of the input VCF file is `hg38`.
-
-    GERMLINE can work with phased data only, so we add phasing procedure to the preprocessing.
-
-    Genotype imputation is also added.
+Assembly of the input VCF file is `hg38`.
+GERMLINE can work with phased data only, so we add phasing procedure to the preprocessing.
+Genotype imputation is also added.
 
 ```bash
 docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
@@ -197,7 +189,6 @@ docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
 ## Description of the Output Relatives File
 
 Output relatives file is in TSV file format.
-
 It contains one line for each detected pair of relatives.
 
 ```text
@@ -224,7 +215,7 @@ g1-b1-i1 g3-b1-i1     2           2                 0.2369          0.1163      
     For 4th+ degrees it is simply half of total length of IBD1 segments.
  * `kinship` is the KING kinship coefficient.
  * `ersa_degree` is the degree estimated from IBD segments by ERSA, it is used for the `final_degree` when `king_degree` does not exist.
- * `ersa_lower_bound` / `ersa_upper_bound` is the lower / upper bound of the degree estimated by the ERSA using confidence interval corresponding to the significance level &alpha; (`--alpha`).  
+ * `ersa_lower_bound` / `ersa_upper_bound` is the lower / upper bound of the degree estimated by the ERSA using confidence interval corresponding to the significance level &alpha; (`--alpha`).
     Accordingly to the ERSA likelihood model, true degree does not belong to this interval with probability equals to &alpha;.
  * `shared_ancestors` is the most likeliest number of shared ancestors.
     If it equals `0`, then one relative is a direct descendant of the other; if equals `1`, then they most probably have one common ancestor and represent half siblings; if equals `2`, then, for examples, individuals may have common mother and father.
@@ -239,19 +230,15 @@ g1-b1-i1 g3-b1-i1     2           2                 0.2369          0.1163      
 ## IBD Segments Weighting
 
 Distribution of IBD segments among non-related (background) individuals within a population may be quite heterogeneous.
-
 There may exist genome regions with extremely high rates of overall matching, which are not inherited from the recent common ancestors.
-
 Instead, these regions more likely reflect other demographic factors of the population.
 
 The implication is that IBD segments detected in such regions are expected to be less useful for estimating recent relationships.
-
 Moreover, such regions potentially prone to false-positive IBD segments.
 
 GRAPE provides two options to address this issue.
 
 The <ins>first</ins> one is based on genome regions exclusion mask, wherein some genome regions are completely excluded from the consideration.
-
 This approach is implemented in ERSA and is used by GRAPE by default.
 
 The <ins>second</ins> one is based on the IBD segments weighing.
@@ -261,7 +248,6 @@ The key idea is to down-weight IBD segment, i.e. reduce the IBD segment length, 
 Down-weighted segments are then passed to the ERSA algorithm.
 
 GRAPE provides an ability to compute the weight mask from the VCF file with presumably unrelated individuals.
-
 This mask is used during the relatedness detection by specifying the `--weight-mask` flag of the launcher.
 
 See more information in out [GRAPE preprint](https://www.biorxiv.org/content/10.1101/2022.03.11.483988v1).
@@ -290,7 +276,6 @@ docker run --rm -it -v /media:/media \
 The pipeline can be executed using lightweight scheduler [Funnel](https://ohsu-comp-bio.github.io/funnel), which implements [Task Execution Schema](https://github.com/ga4gh/task-execution-schemas) developed by [GA4GH](https://github.com/ga4gh/wiki/wiki).
 
 During execution, incoming data for analysis can be obtained in several ways: locally, FTP, HTTPS, S3, Google, etc.
-
 The resulting files can be uploaded in the same ways.
 
 It is possible to add other features such as writing to the database, and sending to the REST service.
@@ -359,9 +344,7 @@ Each pipeline step requires `config.json`.
 Each config has predefined directories and paths, but you can override these paths by changing them in these files.
 
 Also notice that Dockstore saves its runtime in `datastore` directory.
-
 This directory will grow up with each run.
-
 We recommend to clean it up after each step, especially after reference downloading.
 
 ## Evaluation on Simulated Data
@@ -375,7 +358,6 @@ It's accessible by `simulate` command of the pipeline launcher and incorporates 
 3. Comparison between true and estimated degrees.
 
 The source dataset for the simulation is taken from CEU population data of 1000 Genomes Project.
-
 As CEU data consists of trios, we picked no more than one member of each trio as a founder.
 
 We also ran GRAPE on selected individuals to remove all cryptic relationships up to the 6th degree.
@@ -410,15 +392,13 @@ Here TP(i), FP(i), FN(i) are the numbers of true positive, false positive, and f
 
 In our analysis we used non-exact (fuzzy) interval metrics.
 
-For the 1st degree, we require an exact match.
+- For the 1st degree, we require an exact match.
 
-For the 2nd, 3rd, and 4th degrees, we allow a degree interval of ±1.
+- For the 2nd, 3rd, and 4th degrees, we allow a degree interval of ±1. For example, for the 2nd true degree we consider a predicted 3rd degree as a true positive match.
 
-For example, for the 2nd true degree we consider a predicted 3rd degree as a true positive match.
+- For the 5th+ degrees, we use the ERSA confidence intervals which are typically 3-4 degrees wide.
 
-For the 5th+ degrees, we use the ERSA confidence intervals which are typically 3-4 degrees wide.
-
-For 10th+ degrees, these intervals are 6-7 degrees wide.
+- For 10th+ degrees, these intervals are 6-7 degrees wide.
 
 <p align="center">
     <img src="img/precision & recall.png" alt="precision & recall"/>
@@ -427,7 +407,6 @@ For 10th+ degrees, these intervals are 6-7 degrees wide.
 ## Known Limitations
 
 It is known that for some small isolated populations IBD sharing is very high.
-
 Therefore, our pipeline overestimates the relationship degree for them.
 
 It is not recommended to mix standard populations like CEU and the small populations like isolated native ones.
