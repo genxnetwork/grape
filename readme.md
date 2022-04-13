@@ -37,7 +37,6 @@ This step only needs to be done once.
 To download reference dataset one should use `reference` command of the pipeline launcher.
 
 The command below downloads needed references to the directory specified by the flag `--ref-directory`.
-
 After that `--ref-directory` argument should be used in all subsequent commands.
 
 ```bash
@@ -59,7 +58,6 @@ There are another options to download all required reference data as a single fi
 This file is prepared by GenX team and preloaded on our side in the cloud.
 
 It can be done by specifying additional flag `--use-bundle` to the `reference` command.
-
 This way is faster, since all the post-processing procedures have been already performed.
 
 ```bash
