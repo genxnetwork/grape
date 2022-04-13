@@ -147,6 +147,7 @@ else:
                 cp {input.vcf} {output.vcf}
             '''
 
+
 if need_imputation:
     include: '../rules/imputation.smk'
 else:
@@ -269,6 +270,7 @@ if NUM_BATCHES > 1:
             plink --merge-list files_list.txt --make-bed --out preprocessed/data
             mv preprocessed/data.bim preprocessed/data_mapped.bim
             '''
+
 
     rule remove_mapping:
         input:
