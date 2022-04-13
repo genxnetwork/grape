@@ -50,7 +50,7 @@ def get_parser_args():
         "--num-batches",
         default=1,
         type=int,
-        help="Number of batches to split input vcf.gz file into (default is 1)")
+        help="Number of batches to split input vcf.gz file into (default is 1). Splitting can speed up the preprocessing stage for the large datasets.")
 
     parser.add_argument(
         "--memory",
