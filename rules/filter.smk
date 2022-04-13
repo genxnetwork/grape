@@ -59,10 +59,10 @@ rule pre_imputation_check:
     params:
         SITE_1000GENOME
     output:
-        temp('plink/{batch}_merged_filter.bim.chr'),
-        temp('plink/{batch}_merged_filter.bim.pos'),
+        'plink/{batch}_merged_filter.bim.chr',
+        'plink/{batch}_merged_filter.bim.pos',
         'plink/{batch}_merged_filter.bim.force_allele',
-        temp('plink/{batch}_merged_filter.bim.flip')
+        'plink/{batch}_merged_filter.bim.flip'
     log:
         'logs/plink/{batch}_pre_imputation_check.log'
     benchmark:

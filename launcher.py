@@ -47,6 +47,12 @@ def get_parser_args():
         help="Number of CPU cores to use in this pipeline run (default %(default)s)")
 
     parser.add_argument(
+        "--num-batches",
+        default=1,
+        type=int,
+        help="Number of batches to split input vcf.gz file into (default is 1)")
+
+    parser.add_argument(
         "--memory",
         default=max(1, total_memory_gb() - 1),
         type=int,
@@ -256,6 +262,9 @@ def get_parser_args():
     if args.command != 'reference' and args.use_bundle:
         raise ValueError('--bundle option only available for reference downloading')
 
+    if args.num_batches > args.cores:
+        raise ValueError('Number of batches is bigger than number cores, please change --num_batches to be lower, it slows down the pipeline')
+
     return args
 
 
@@ -363,7 +372,7 @@ if __name__ == '__main__':
     config_dict['sim_samples_file'] = args.sim_samples_file
     config_dict['assembly'] = args.assembly
     config_dict['mem_gb'] = args.memory
-    config_dict['num_batches'] = args.cores
+    config_dict['num_batches'] = args.num_batches
     if args.ref_directory != '':
         config_dict['ref_dir'] = args.ref_directory
     if args.chip:
