@@ -71,11 +71,9 @@ docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
 ## Quality Control and Data Preprocessing
 
 GRAPE have a versatile and configurable preprocessing workflow.
-
 One part of the preprocessing is required and must be performed before the relationship inference workflow.
 
 Preprocessing is launched by the `preprocess` command of the GRAPE.
-
 Along with some necessary technical procedures, preprocessing includes the following steps.
 
 * **[Required] SNPs quality control by minor allele frequency (MAF) and the missingness rate**.
