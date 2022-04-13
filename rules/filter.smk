@@ -16,6 +16,7 @@ rule vcf_stats:
             cat {output.stats} | grep '^PSC' > {output.psc}
         '''
 
+
 rule select_bad_samples:
     input:
         psc=rules.vcf_stats.output.psc
@@ -29,6 +30,7 @@ rule select_bad_samples:
         '../envs/evaluation.yaml'
     script:
         '../scripts/select_bad_samples.py'
+
 
 rule plink_filter:
     input:
@@ -53,6 +55,7 @@ rule plink_filter:
         plink --vcf {input.vcf} --remove {input.bad_samples} --make-bed --keep-allele-order --out plink/{params.out} |& tee {log}
         '''
 
+
 rule pre_imputation_check:
     input:
         'plink/{batch}_merged_filter.bim'
@@ -69,6 +72,7 @@ rule pre_imputation_check:
         'benchmarks/plink/{batch}_pre_imputation_check.txt'
     script:
         '../scripts/pre_imputation_check.py'
+
 
 rule plink_clean_up:
     input:
@@ -108,6 +112,7 @@ rule plink_clean_up:
         rm plink/{wildcards.batch}_merged_flipped.*
         rm plink/{wildcards.batch}_merged_chroped.*
         '''
+
 
 rule prepare_vcf:
     input:

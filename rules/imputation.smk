@@ -22,6 +22,7 @@ rule impute:
             --minRatio 0.01 |& tee {log}
         '''
 
+
 rule imputation_filter:
     input: rules.impute.output
     output: temp('imputed/{batch}_chr{chrom}.imputed.dose.pass.vcf.gz')
@@ -111,6 +112,7 @@ rule convert_imputed_to_plink:
         '''
         plink --vcf {input} --make-bed --out {params.out} |& tee {log}
         '''
+
 
 # no need it bc it was done earlier in merge_imputation_filter
 rule merge_convert_imputed_to_plink:

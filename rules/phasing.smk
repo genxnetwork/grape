@@ -20,6 +20,7 @@ rule phase:
             --outPrefix phase/{wildcards.batch}_chr{wildcards.chrom}.phased |& tee {log}
             '''
 
+
 phase = ['chr{i}.phased.vcf.gz'.format(i=chr) for chr in CHROMOSOMES]
 phase_batch = [ 'phase/{batch}_' + line for line in phase]
 rule merge_phased:
