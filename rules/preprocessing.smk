@@ -230,14 +230,14 @@ if NUM_BATCHES > 1:
         output:
             vcf='preprocessed/data.vcf.gz'
         params:
-            num_batches=NUM_BATCHES,
+            num_cores=workflow.cores,
             batches_vcf=expand('batch{s}_data.vcf.gz',s=BATCHES),
             vcf='data.vcf.gz'
         conda:
             '../envs/bcftools.yaml'
         shell:
             '''
-            bcftools merge --threads {params.num_batches} --merge id {input.batches_vcf} -O z -o {output.vcf}
+            bcftools merge --threads {params.num_cores} --merge id {input.batches_vcf} -O z -o {output.vcf}
             '''
 
 
