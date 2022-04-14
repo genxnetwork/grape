@@ -27,7 +27,7 @@
 | 4  | install converter from packed ancestry map format to plink ped with the command <br/>```conda install -c bioconda eigensoft``` |   |   | success  |   |
 | 5  | convert to plink ped format with the command <br/>```convertf -p par.PACKEDANCESTRYMAP.PED```  |   |   | success  |   |
 | 6  | convert to vcf format with the command <br/>```plink --ped v50.0_1240k_public.ped --map v50.0_1240k_public.pedsnp --alleleACGT --recode vcf-iid bgz --out aadr``` |   |   | success  |   |
-| 7  | remove underscores from sample ids<br/>```bcftools query --list-samples aadr.vcf.gz > aadr.samples```<br/>```bcftools reheader aadr.vcf.gz -s aadr.samples | bcftools view -O z -o aadr.reheaded.vcf.gz```  |   |   | success  |   |
+| 7  | remove underscores from sample ids<br/>```bcftools query --list-samples aadr.vcf.gz > aadr.samples```<br/>```bcftools reheader aadr.vcf.gz -s aadr.samples \ bcftools view -O z -o aadr.reheaded.vcf.gz```  |   |   | success  |   |
 | 8  | run preprocessing <br>```docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py preprocess --ref-directory /media/ref --cores 8 --directory /media/data/aadr --vcf-file /media/data/aadr/aadr.reheaded.vcf.gz --assembly hg37 --real-run```  |   |   | success |   |  
 | 9  | run relationship inference <br/> ```docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py find --ref-directory /media/ref --cores 8 --directory /media/runs/aadr --flow ibis --real-run``` | `result.csv` file with no relatives between ancient samples and modern samples. Also, the running time of `preprocess` and `find` command.  |   |  success |   |
 
