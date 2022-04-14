@@ -263,7 +263,7 @@ def get_parser_args():
         raise ValueError('--bundle option only available for reference downloading')
 
     if args.num_batches > args.cores:
-        raise ValueError('Number of batches is bigger than number cores, please change --num_batches to be lower, it slows down the pipeline')
+        raise ValueError('Number of batches is bigger than number cores, please change --num-batches value to be lower or equal --cores')
 
     return args
 
