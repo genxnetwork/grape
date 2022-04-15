@@ -19,8 +19,6 @@
 
 ## Steps
 
-| Step number | Test step | Expected result | Actual result | Status |  Notes|
+| Step number | Test step | Test result | Status |  Notes|
 |:--|:--|:--|:--|:--|:--|
-| 1  | enter command in console <br/>```docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py simulate --ref-directory /media/ref --cores 8 --directory /media/data --flow ibis --assembly hg37 --real-run``` | Recall of almost 100% for the first 3 degrees, around 95% for 4-6 degrees, and better than 0% for 7-9 degrees.  |   | success  |   |
-
-## Post-conditions
+| 1  | enter command in console <br/>```docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py simulate --ref-directory /media/ref --cores 8 --directory /media/data --flow ibis --assembly hg37 --real-run``` | Recall of almost 100% for the first 3 degrees, around 95% for 4-6 degrees, and better than 0% for 7-9 degrees.  |  success |   | 
