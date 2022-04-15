@@ -7,59 +7,69 @@ rule impute:
     input:
         rules.phase.output,
         refHaps=REF_HAPS
-    output: temp("imputed/chr{chrom}.imputed.dose.vcf.gz")
+    output: temp('imputed/{batch}_chr{chrom}.imputed.dose.vcf.gz')
     log:
-        "logs/impute/minimac4-{chrom}.log"
+        'logs/impute/{batch}_minimac4-{chrom}.log'
     benchmark:
-        "benchmarks/impute/minimac4-{chrom}.txt"
+        'benchmarks/impute/{batch}_minimac4-{chrom}.txt'
     shell:
-        """
+        '''
             minimac4 \
             --refHaps {input.refHaps} \
-            --haps phase/chr{wildcards.chrom}.phased.vcf.gz \
+            --haps phase/{wildcards.batch}_chr{wildcards.chrom}.phased.vcf.gz \
             --format GT,GP \
-            --prefix imputed/chr{wildcards.chrom}.imputed \
+            --prefix imputed/{wildcards.batch}_chr{wildcards.chrom}.imputed \
             --minRatio 0.01 |& tee {log}
-        """
+        '''
+
 
 rule imputation_filter:
     input: rules.impute.output
-    output: temp("imputed/chr{chrom}.imputed.dose.pass.vcf.gz")
+    output: temp('imputed/{batch}_chr{chrom}.imputed.dose.pass.vcf.gz')
     # TODO: because "The option is currently used only for the compression of the output stream"
     # threads: workflow.cores
     conda:
-        "../envs/bcftools.yaml"
+        '../envs/bcftools.yaml'
     log:
-        "logs/impute/imputation_filter-{chrom}.log"
+        'logs/impute/{batch}_imputation_filter-{chrom}.log'
     benchmark:
-        "benchmarks/impute/imputation_filter-{chrom}.txt"
+        'benchmarks/impute/{batch}_imputation_filter-{chrom}.txt'
     shell:
-        """
+        '''
         FILTER="'strlen(REF)=1 & strlen(ALT)=1'"
 
-        bcftools view -i 'strlen(REF)=1 & strlen(ALT)=1' imputed/chr{wildcards.chrom}.imputed.dose.vcf.gz -v snps -m 2 -M 2 -O z -o imputed/chr{wildcards.chrom}.imputed.dose.pass.vcf.gz |& tee {log}
-        """
+        bcftools view -i 'strlen(REF)=1 & strlen(ALT)=1' imputed/{wildcards.batch}_chr{wildcards.chrom}.imputed.dose.vcf.gz -v snps -m 2 -M 2 -O z -o imputed/{wildcards.batch}_chr{wildcards.chrom}.imputed.dose.pass.vcf.gz |& tee {log}
+        '''
 
 
+imputed_dose_pass = ['chr{i}.imputed.dose.pass.vcf.gz'.format(i=chr) for chr in CHROMOSOMES]
+if NUM_BATCHES > 1:
+    imputed_dose_pass_batch = ['imputed/{batch}_' + line for line in imputed_dose_pass]
+    data_vcf_gz = ['preprocessed/{batch}_data.vcf.gz']
+    card = '{batch}'
+else:
+    imputed_dose_pass_batch = ['imputed/batch1_' + line for line in imputed_dose_pass]
+    data_vcf_gz = ['preprocessed/data.vcf.gz']
+    card = 'batch1'
 rule merge_imputation_filter:
     input:
-        expand("imputed/chr{i}.imputed.dose.pass.vcf.gz", i=CHROMOSOMES)
-        #expand("phase/chr{chrom}.phased.vcf.gz", chrom=CHROMOSOMES)
+        imputed_dose_pass_batch
         # TODO: wildcard violation
         # rules.imputation_filter.output
     output:
-        "preprocessed/data.vcf.gz"
+        data_vcf_gz
     params:
-        list="vcf/imputed.merge.list",
-        mode=config["mode"]
+        list='vcf/' + card + '_imputed.merge.list',
+        mode=config['mode'],
+        merged_imputed = 'background/' + card + '_merged_imputed.vcf.gz'
     conda:
-        "../envs/bcftools.yaml"
+        '../envs/bcftools.yaml'
     log:
-        "logs/vcf/merge_imputation_filter.log"
+        'logs/vcf/' + card + '_merge_imputation_filter.log'
     benchmark:
-        "benchmarks/vcf/merge_imputation_filter.txt"
+        'benchmarks/vcf/' + card + '_merge_imputation_filter.txt'
     shell:
-        """
+        '''
         # for now just skip empty files
         true > {params.list} && \
         for i in {input}; do
@@ -75,45 +85,55 @@ rule merge_imputation_filter:
         bcftools index -f {output} |& tee -a {log}
 
         # check if there is a background data and merge it
-        if [ -f "background/merged_imputed.vcf.gz" && {params.mode} = "client" ]; then
+        if [ -f "{params.merged_imputed}" && {params.mode} = "client" ]; then
             mv {output} {output}.client
-            bcftools merge --force-samples background/merged_imputed.vcf.gz {output}.client -O z -o {output} |& tee -a {log}
+            bcftools merge --force-samples {params.merged_imputed} {output}.client -O z -o {output} |& tee -a {log}
             bcftools index -f {output} |& tee -a {log}
         fi
-        """
+        '''
+
 
 rule convert_imputed_to_plink:
-    input: rules.merge_imputation_filter.output
-    output: expand("plink/{i}.{ext}", i="merged_imputed", ext=PLINK_FORMATS)
+    input:
+        rules.merge_imputation_filter.output
+    output:
+        'plink/{batch}_merged_imputed.bed',
+        'plink/{batch}_merged_imputed.bim',
+        'plink/{batch}_merged_imputed.fam'
     params:
-        out = "plink/merged_imputed"
+        out = 'plink/{batch}_merged_imputed'
     conda:
-        "../envs/plink.yaml"
+        '../envs/plink.yaml'
     log:
-        "logs/plink/convert_imputed_to_plink.log"
+        'logs/plink/{batch}_convert_imputed_to_plink.log'
     benchmark:
-        "benchmarks/plink/convert_imputed_to_plink.txt"
+        'benchmarks/plink/{batch}_convert_imputed_to_plink.txt'
     shell:
-        """
+        '''
         plink --vcf {input} --make-bed --out {params.out} |& tee {log}
-        """
+        '''
+
 
 # no need it bc it was done earlier in merge_imputation_filter
 rule merge_convert_imputed_to_plink:
-    input: rules.merge_imputation_filter.output
-    output: expand("plink/{i}.{ext}", i="merged_imputed", ext=PLINK_FORMATS)
+    input:
+        rules.merge_imputation_filter.output
+    output:
+        'plink/{batch}_merged_imputed.bed',
+        'plink/{batch}_merged_imputed.bim',
+        'plink/{batch}_merged_imputed.fam'
     params:
-        background  = "background/merged_imputed",
-        out         = "plink/client/merged_imputed"
+        background  = 'background/{batch}_merged_imputed',
+        out         = 'plink/client/{batch}_merged_imputed'
     conda:
-        "../envs/plink.yaml"
+        '../envs/plink.yaml'
     log:
-        "logs/plink/convert_imputed_to_plink.log"
+        'logs/plink/{batch}_convert_imputed_to_plink.log'
     benchmark:
-        "benchmarks/plink/convert_imputed_to_plink.txt"
+        'benchmarks/plink/{batch}_convert_imputed_to_plink.txt'
     shell:
-        """
+        '''
         # please mind a merge step in merge_imputation_filter for germline
         plink --vcf {input} --make-bed --out {params.out} | tee {log}
-        plink --bfile {params.background} --bmerge {params.out} --make-bed --out plink/merged_imputed |& tee {log}
-        """
+        plink --bfile {params.background} --bmerge {params.out} --make-bed --out plink/{batch}_merged_imputed |& tee {log}
+        '''
