@@ -1,7 +1,6 @@
 rule phase:
         input:
             vcf='vcf/{batch}_merged_mapped_sorted.vcf.gz',
-            #idx='vcf/merged_mapped_sorted.vcf.gz.csi'
             vcfRef=REF_VCF
         output: temp('phase/{batch}_chr{chrom}.phased.vcf.gz')
         log:
