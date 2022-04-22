@@ -20,7 +20,7 @@
 ## Steps
 
 | Step number | Test step | Test result |  Status |  Notes|
-|:--|:--|:--|:--|:--|:--|
+|:--|:--|:--|:--|:--|
 | 1  | go to aadr: ```cd /media/data/aadr``` | | success  |   |
 | 2  | download dataset with the command <br/>```wget https://reichdata.hms.harvard.edu/pub/datasets/amh_repo/curated_releases/V50/V50.0/SHARE/public.dir/v50.0_1240K_public.tar``` |  | success  |   |
 | 3  | unpack dataset with the command <br/>```tar -xvf v50.0_1240K_public.tar``` |    | success  |   |
