@@ -141,11 +141,12 @@ rule evaluate_accuracy:
         rel='results/relatives.tsv',
         fam=rules.postprocess.output['fam']
     output:
-        accuracy='results/accuracy.png',
-        pr='results/precision_recall.png',
-        conf_matrix='results/confusion_matrix.png',
-        updated_rel='results/updated_relatives.tsv',
-        pedigree_plot='results/pedigree_plot.png'
+        accuracy = 'results/accuracy.png',
+        pr = 'results/precision_recall.png',
+        conf_matrix = 'results/confusion_matrix.png',
+        updated_rel = 'results/updated_relatives.tsv',
+        pedigree_plot = 'results/pedigree_plot.png',
+        metrics = 'results/metrics.tsv'
     params:
         source='both',
         po_fs_plot='results/po_fs_plot.png' if flow == 'ibis' else None

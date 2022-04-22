@@ -5,7 +5,7 @@ This workflow performs computation of the weight mask based on results of IBD se
 import os
 
 
-configfile: "config.yaml"
+configfile: 'config.yaml'
 
 
 IBIS_OUTPUT_FOLDER = 'ibis'
