@@ -19,12 +19,103 @@
 
 ## Steps
 
-| Step number | Test step | Expected result | Actual result | Status |  Notes|
-|:--|:--|:--|:--|:--|:--|
-| 1  | download data with the command <br/>```wget https://evolbio.ut.ee/khazar/new_data_in_paper.{bed,bim,fam}``` |  |   | success  |   |
-| 2  | replace _ in ids with -, because otherwise plink fails in our preprocessing <br/>```sed -i 's/_/-/g' new_data_in_paper.fam```  |   |   | success  |   |
-| 3  | convert data to vcf.gz <br/>```plink --bfile new_data_in_paper --recode vcf-iid bgz --out /media/data/khazar/khazar314```  |   |   | success  |   |
-| 4  | run preprocessing with the command <br/>```docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py preprocess --ref-directory /media/ref --cores 8 --directory /media/runs/khazar --vcf-file /media/data/khazar/khazar314.vcf.gz --assembly hg37 --real-run```  |   |   | success  |   |
-| 5  | run relationship inference with the command <br/>```docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py find --ref-directory /media/ref --cores 8 --directory /media/runs/khazar --flow ibis --real-run```  | `result.csv` file with approximately 56 relatives.  |   | success  |   |
+
+
+### Test Step № 1
+
+Download data with the command
+
+```bash
+wget https://evolbio.ut.ee/khazar/new_data_in_paper.{bed,bim,fam}
+```
+
+#### Test result
+
+Data is downloaded
+
+#### Status
+
+Success
+
+#### Notes
+
+### Test Step № 2
+
+replace ***_ in*** ids with **-**, because otherwise plink fails ***in*** our preprocessing
+
+```bash
+sed -i 's/_/-/g' new_data_in_paper.fam
+```
+
+#### Test result
+
+
+#### Status
+
+Success
+
+#### Notes
+
+### Test Step № 3
+
+convert data to vcf.gz
+
+```bash
+plink --bfile new_data_in_paper --recode vcf-iid bgz --out /media/data/khazar/khazar314
+```
+
+#### Test result
+
+a file in the `vcf.gz` format appeared in the folder `/media/data/khazar/khazar314`
+
+#### Status
+
+Success
+
+#### Notes
+
+### Test Step № 4
+
+run preprocessing
+
+```bash
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py preprocess --ref-directory /media/ref --cores 8 --directory /media/runs/khazar --vcf-file /media/data/khazar/khazar314.vcf.gz --assembly hg37 --real-run
+```
+
+#### Test result
+
+
+#### Status
+
+Success
+
+#### Notes
+
+### Test Step № 5
+
+run relationship inference
+
+```bash
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py find --ref-directory /media/ref --cores 8 --directory /media/runs/khazar --flow ibis --real-run
+```
+
+#### Test result
+
+
+#### Status
+
+Success
+
+#### Notes
+
+
+
+
+
+
+
+
+
+
 
 ## Post-conditions
