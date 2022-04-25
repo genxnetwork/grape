@@ -101,6 +101,7 @@ docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localti
 
 #### Test result
 
+`result.csv` file with approximately 56 relatives.
 
 #### Status
 
