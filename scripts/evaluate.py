@@ -362,4 +362,3 @@ if __name__ == '__main__':
              source=source,
              pedigree_plot_name=snakemake.output['pedigree_plot'],
              po_fs_plot_name=po_fs_plot_name)
-
