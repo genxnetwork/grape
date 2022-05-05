@@ -9,13 +9,12 @@ rule vcf_stats:
     conda:
         '../envs/bcftools.yaml'
     shell:
-        '''
+        """
             bcftools query --list-samples {input.vcf} > {params.samples}
             bcftools stats -S {params.samples} {input.vcf} > {output.stats}
             # PSC means per-sample counts
             cat {output.stats} | grep '^PSC' > {output.psc}
-        '''
-
+        """
 
 rule select_bad_samples:
     input:
@@ -25,7 +24,10 @@ rule select_bad_samples:
         report='results/{batch}_bad_samples_report.tsv'
     log: 'logs/vcf/{batch}_select_bad_samples.log'
     params:
-        samples='vcf/{batch}_merged_lifted.vcf.samples'
+        samples='vcf/{batch}_merged_lifted.vcf.samples',
+        missing_samples = config['missing_samples'],
+        alt_hom_samples = config['alt_hom_samples'],
+        het_samples = config['het_samples']
     conda:
         '../envs/evaluation.yaml'
     script:
@@ -44,16 +46,14 @@ rule plink_filter:
         '../envs/plink.yaml'
     params:
         input   = '{batch}_merged',
-        out     = '{batch}_merged_filter'
+        out     = '{batch}_merged_filter',
+        batch   = '{batch}'
     log:
         'logs/plink/{batch}_plink_filter.log'
     benchmark:
         'benchmarks/plink/{batch}_plink_filter.txt'
-    shell:
-        '''
-        plink --vcf {input.vcf} --freqx --out plink/{params.out}
-        plink --vcf {input.vcf} --remove {input.bad_samples} --make-bed --keep-allele-order --out plink/{params.out} |& tee {log}
-        '''
+    script:
+        '../scripts/plink_filter.py'
 
 
 rule pre_imputation_check:
@@ -62,17 +62,16 @@ rule pre_imputation_check:
     params:
         SITE_1000GENOME
     output:
-        'plink/{batch}_merged_filter.bim.chr',
-        'plink/{batch}_merged_filter.bim.pos',
+        temp('plink/{batch}_merged_filter.bim.chr'),
+        temp('plink/{batch}_merged_filter.bim.pos'),
         'plink/{batch}_merged_filter.bim.force_allele',
-        'plink/{batch}_merged_filter.bim.flip'
+        temp('plink/{batch}_merged_filter.bim.flip')
     log:
         'logs/plink/{batch}_pre_imputation_check.log'
     benchmark:
         'benchmarks/plink/{batch}_pre_imputation_check.txt'
     script:
         '../scripts/pre_imputation_check.py'
-
 
 rule plink_clean_up:
     input:
@@ -97,7 +96,7 @@ rule plink_clean_up:
     benchmark:
         'benchmarks/plink/{batch}_plink_clean_up.txt'
     shell:
-        '''
+        """
         # remove dublicates
         cut -f 2 {params.input}.bim | sort | uniq -d > plink/{wildcards.batch}_snp.dups
         plink --bfile {params.input}          --exclude       plink/{wildcards.batch}_snp.dups                  --make-bed --out plink/{wildcards.batch}_merged_filter_dub   |& tee -a {log}
@@ -111,8 +110,7 @@ rule plink_clean_up:
         rm plink/{wildcards.batch}_merged_extracted.*
         rm plink/{wildcards.batch}_merged_flipped.*
         rm plink/{wildcards.batch}_merged_chroped.*
-        '''
-
+        """
 
 rule prepare_vcf:
     input:
@@ -137,7 +135,7 @@ rule prepare_vcf:
     benchmark:
         'benchmarks/plink/{batch}_prepare_vcf.txt'
     shell:
-        '''
+        """
         plink --bfile {params.input} --a1-allele plink/{wildcards.batch}_merged_filter.bim.force_allele --make-bed --out plink/{wildcards.batch}_merged_mapped_alleled |& tee -a {log.plink}
         plink --bfile plink/{wildcards.batch}_merged_mapped_alleled --keep-allele-order --output-chr M --export vcf bgz --out vcf/{wildcards.batch}_merged_mapped_clean |& tee -a {log.vcf}
         mkdir vcf/temp_{wildcards.batch}
@@ -147,4 +145,4 @@ rule prepare_vcf:
         bcftools view {output.temp_vcf} --regions 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 -O z -o {output.vcf}
         bcftools norm --check-ref e -f {GRCH37_FASTA} vcf/{wildcards.batch}_merged_mapped_sorted.vcf.gz -O u -o /dev/null |& tee -a {log.vcf}
         bcftools index -f {output.vcf} | tee -a {log.vcf}
-        '''
+        """
