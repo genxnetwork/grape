@@ -253,7 +253,7 @@ def get_parser_args():
         help="Percentage of homozygous alternative SNPs in a sample below or equal which it is filtered out.")
 
     parser.add_argument(
-        "--het-samples",
+        '--het-samples',
         default=5.0,
         type=float,
         help="Percentage of heterozygous SNPs in a sample below or equal which it is filtered out.")
