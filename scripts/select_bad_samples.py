@@ -36,7 +36,7 @@ if __name__ == '__main__':
     psc.loc[:, 'alt_hom_share'] = psc.nNonRefHom / psc.nNonMissing
     psc.loc[:, 'het_samples_share'] = psc.nHets / psc.nNonMissing
 
-    bad_missing_samples_mask = (psc.missing_share >= missing_samples/100) | (psc.nMissing + psc.nNonMissing == 0)
+    bad_missing_samples_mask = (psc.missing_share >= missing_samples / 100) | (psc.nMissing + psc.nNonMissing == 0)
 
     bad_alt_hom_samples_mask = (psc.alt_hom_share <= alt_hom_samples/100) | (psc.nNonMissing == 0)
 
