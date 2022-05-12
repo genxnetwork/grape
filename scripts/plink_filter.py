@@ -3,7 +3,7 @@ import logging
 
 if __name__ == '__main__':
 
-    vcf= snakemake.input['vcf']
+    vcf = snakemake.input['vcf']
     bad_samples = snakemake.input['bad_samples']
     out = snakemake.params['out']
     batch = snakemake.params['batch']
