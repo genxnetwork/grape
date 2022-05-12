@@ -38,9 +38,9 @@ if __name__ == '__main__':
 
     bad_missing_samples_mask = (psc.missing_share >= missing_samples / 100) | (psc.nMissing + psc.nNonMissing == 0)
 
-    bad_alt_hom_samples_mask = (psc.alt_hom_share <= alt_hom_samples/100) | (psc.nNonMissing == 0)
+    bad_alt_hom_samples_mask = (psc.alt_hom_share <= alt_hom_samples / 100) | (psc.nNonMissing == 0)
 
-    bad_het_samples_mask = (psc.het_samples_share <= het_samples/100) | (psc.nNonMissing == 0)
+    bad_het_samples_mask = (psc.het_samples_share <= het_samples / 100) | (psc.nNonMissing == 0)
 
     psc.loc[bad_het_samples_mask, 'exclusion_reason'] = f'Sample has <= {het_samples}% heterozygous SNPs'
     psc.loc[bad_alt_hom_samples_mask, 'exclusion_reason'] = f'Sample has <= {alt_hom_samples}% homozygous alternative SNPs'
