@@ -411,7 +411,8 @@ if __name__ == '__main__':
             until=[args.until] if args.until is not None else [],
             use_conda=True,
             conda_prefix=args.conda_prefix,
-            envvars=['CONDA_ENVS_PATH', 'CONDA_PKGS_DIRS']
+            envvars=['CONDA_ENVS_PATH', 'CONDA_PKGS_DIRS'],
+            keepgoing=True
     ):
         raise ValueError("Pipeline failed see Snakemake error message for details")
 
