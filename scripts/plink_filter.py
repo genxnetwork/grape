@@ -21,7 +21,7 @@ if __name__ == '__main__':
     logging.info(f'{stdout_remove}\n{stdout_freqx}\n{stderr_remove}\n{stderr_freqx}'.decode('utf-8'))
 
     if p_remove.returncode != 0 or p_freqx.returncode != 0:
-        with open("pass_batches.list", "r") as list:
+        with open('pass_batches.list', 'r') as list:
             lines = list.readlines()
         with open("pass_batches.list", "w") as list:
             for line in lines:
