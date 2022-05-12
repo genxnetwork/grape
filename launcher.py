@@ -241,7 +241,7 @@ def get_parser_args():
     )
 
     parser.add_argument(
-        "--missing-samples",
+        '--missing-samples',
         default=15.0,
         type=float,
         help="Percentage of missing SNPs in a sample above or equal which it is filtered out.")
