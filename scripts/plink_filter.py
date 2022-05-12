@@ -34,7 +34,7 @@ if __name__ == '__main__':
             lines = list.readlines()
         with open('pass_batches.list', 'w') as list:
             for line in lines:
-                if line.strip('\n') != f'{batch}':
+                if line.strip('\n') != batch:
                     list.write(line)
                 else:
                     print(f'removed {line}!')
