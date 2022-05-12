@@ -23,7 +23,7 @@ if __name__ == '__main__':
     if p_remove.returncode != 0 or p_freqx.returncode != 0:
         with open('pass_batches.list', 'r') as list:
             lines = list.readlines()
-        with open("pass_batches.list", "w") as list:
+        with open('pass_batches.list', 'w') as list:
             for line in lines:
                 if line.strip("\n") != f"{batch}":
                     list.write(line)
