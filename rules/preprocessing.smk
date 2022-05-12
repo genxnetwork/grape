@@ -2,7 +2,7 @@ NUM_BATCHES = config['num_batches']
 BATCHES = list(range(1,int(NUM_BATCHES) + 1))
 with open('pass_batches.list', 'w') as list:
     for b in BATCHES:
-        list.write(f"batch{b}\n")
+        list.write(f'batch{b}\n')
 
 
 
