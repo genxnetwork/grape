@@ -250,7 +250,7 @@ def get_parser_args():
         '--alt-hom-samples',
         default=1.0,
         type=float,
-        help="Percentage of homozygous alternative SNPs in a sample below or equal which it is filtered out.")
+        help='Lower bound of homozygous alternative SNPs (%). Samples with lower values are removed from the relatedness detection analysis.')
 
     parser.add_argument(
         '--het-samples',
