@@ -247,7 +247,7 @@ def get_parser_args():
         help="Percentage of missing SNPs in a sample above or equal which it is filtered out.")
 
     parser.add_argument(
-        "--alt-hom-samples",
+        '--alt-hom-samples',
         default=1.0,
         type=float,
         help="Percentage of homozygous alternative SNPs in a sample below or equal which it is filtered out.")
