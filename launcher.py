@@ -256,7 +256,7 @@ def get_parser_args():
         '--het-samples',
         default=5.0,
         type=float,
-        help="Percentage of heterozygous SNPs in a sample below or equal which it is filtered out.")
+        help='Lower bound of heterozygous SNPs (%). Samples with lower values are removed from the relatedness detection analysis.')
 
     args = parser.parse_args()
 
