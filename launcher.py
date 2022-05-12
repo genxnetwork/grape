@@ -240,6 +240,24 @@ def get_parser_args():
             'for `ibis` and `ibis-king` flows'
     )
 
+    parser.add_argument(
+        '--missing-samples',
+        default=15.0,
+        type=float,
+        help='Upper bound of missing SNPs (%). Samples with higher values are removed from the relatedness detection analysis.')
+
+    parser.add_argument(
+        '--alt-hom-samples',
+        default=1.0,
+        type=float,
+        help='Lower bound of homozygous alternative SNPs (%). Samples with lower values are removed from the relatedness detection analysis.')
+
+    parser.add_argument(
+        '--het-samples',
+        default=5.0,
+        type=float,
+        help='Lower bound of heterozygous SNPs (%). Samples with lower values are removed from the relatedness detection analysis.')
+
     args = parser.parse_args()
 
     valid_commands = [
@@ -264,6 +282,9 @@ def get_parser_args():
 
     if args.num_batches > args.cores:
         raise ValueError('Number of batches is bigger than number cores, please change --num-batches value to be lower or equal --cores')
+
+    if any((i < 0 or i > 100) for i in (args.het_samples, args.missing_samples, args.alt_hom_samples)):
+        raise ValueError('Percentage cannot be higher than 100 or lower than 0')
 
     return args
 
@@ -390,6 +411,10 @@ if __name__ == '__main__':
     config_dict['alpha'] = args.alpha
     config_dict['ibis_seg_len'] = args.ibis_seg_len
     config_dict['ibis_min_snp'] = args.ibis_min_snp
+
+    config_dict['missing_samples'] = args.missing_samples
+    config_dict['alt_hom_samples'] = args.alt_hom_samples
+    config_dict['het_samples'] = args.het_samples
 
     if args.weight_mask:
         config_dict['weight_mask'] = os.path.join(args.directory, args.weight_mask)

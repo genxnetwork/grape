@@ -25,7 +25,10 @@ rule select_bad_samples:
         report='results/{batch}_bad_samples_report.tsv'
     log: 'logs/vcf/{batch}_select_bad_samples.log'
     params:
-        samples='vcf/{batch}_merged_lifted.vcf.samples'
+        samples='vcf/{batch}_merged_lifted.vcf.samples',
+        missing_samples = config['missing_samples'],
+        alt_hom_samples = config['alt_hom_samples'],
+        het_samples = config['het_samples']
     conda:
         '../envs/evaluation.yaml'
     script:
