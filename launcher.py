@@ -244,7 +244,7 @@ def get_parser_args():
         '--missing-samples',
         default=15.0,
         type=float,
-        help="Percentage of missing SNPs in a sample above or equal which it is filtered out.")
+        help='Upper bound of missing SNPs (%). Samples with higher values are removed from the relatedness detection analysis.')
 
     parser.add_argument(
         '--alt-hom-samples',
