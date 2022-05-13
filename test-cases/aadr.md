@@ -25,17 +25,8 @@
 Go to aadr
 
 ```bash
-c0d /media/data/aadr
+cd /media/data/aadr
 ```
-
-#### Test result
-
-
-#### Status
-
-Success
-
-#### Notes
 
 ### Test Step № 2
 
@@ -45,16 +36,6 @@ Download dataset with the command
 wget https://reichdata.hms.harvard.edu/pub/datasets/amh_repo/curated_releases/V50/V50.0/SHARE/public.dir/v50.0_1240K_public.tar
 ```
 
-#### Test result
-
-Dataset is downloaded.
-
-#### Status
-
-Success
-
-#### Notes
-
 ### Test Step № 3
 
 Unpack dataset with the command
@@ -63,15 +44,6 @@ Unpack dataset with the command
 tar -xvf v50.0_1240K_public.tar
 ```
 
-#### Test result
-
-Dataset is unpacked.
-
-#### Status
-
-Success
-
-#### Notes
 
 ### Test Step № 4
 
@@ -81,17 +53,6 @@ install converter from packed ancestry map format to plink ped with the command
 conda install -c bioconda eigensoft
 ```
 
-#### Test result
-
-Converter installed
-
-<!--уточнить, какой командой проверить установку-->
-
-#### Status
-
-Success
-
-#### Notes
 
 ### Test Step № 5
 
@@ -101,15 +62,6 @@ Convert to plink ped format with the command
 convertf -p par.PACKEDANCESTRYMAP.PED
 ```
 
-#### Test result
-
-
-
-#### Status
-
-Success
-
-#### Notes
 
 
 ### Test Step № 6
@@ -120,15 +72,6 @@ Convert to vcf format with the command
 plink --ped v50.0_1240k_public.ped --map v50.0_1240k_public.pedsnp --alleleACGT --recode vcf-iid bgz --out aadr
 ```
 
-#### Test result
-
-
-#### Status
-
-Success
-
-#### Notes
-
 ### Test Step № 7
 
 Remove underscores from sample `ids`
@@ -138,14 +81,6 @@ bcftools query --list-samples aadr.vcf.gz > aadr.samples
 bcftools reheader aadr.vcf.gz -s aadr.samples | bcftools view -O z -o aadr.reheaded.vcf.gz
 ```
 
-#### Test result
-
-
-#### Status
-
-Success
-
-#### Notes
 
 ### Test Step № 8
 
@@ -155,14 +90,6 @@ Run preprocessing
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py preprocess --ref-directory /media/ref --cores 8 --directory /media/data/aadr --vcf-file /media/data/aadr/aadr.reheaded.vcf.gz --assembly hg37 --real-run
 ```
 
-#### Test result
-
-
-#### Status
-
-Success
-
-#### Notes
 
 ### Test Step № 9
 
