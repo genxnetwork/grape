@@ -42,4 +42,4 @@ if __name__ == '__main__':
                     else:
                         print(f'removed {line}!')
         else:
-            raise Error(f"Rule plink_filter for batch{batch} failed with error! See {log} for details.")
+            raise Error(f'Rule plink_filter for batch{batch} failed with error! See {log} for details.')
