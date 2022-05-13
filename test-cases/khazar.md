@@ -29,15 +29,6 @@ Download data with the command
 wget https://evolbio.ut.ee/khazar/new_data_in_paper.{bed,bim,fam}
 ```
 
-#### Test result
-
-Data is downloaded
-
-#### Status
-
-Success
-
-#### Notes
 
 ### Test Step № 2
 
@@ -47,15 +38,6 @@ replace ***_ in*** ids with **-**, because otherwise plink fails ***in*** our pr
 sed -i 's/_/-/g' new_data_in_paper.fam
 ```
 
-#### Test result
-
-
-#### Status
-
-Success
-
-#### Notes
-
 ### Test Step № 3
 
 convert data to vcf.gz
@@ -64,15 +46,6 @@ convert data to vcf.gz
 plink --bfile new_data_in_paper --recode vcf-iid bgz --out /media/data/khazar/khazar314
 ```
 
-#### Test result
-
-a file in the `vcf.gz` format appeared in the folder `/media/data/khazar/khazar314`
-
-#### Status
-
-Success
-
-#### Notes
 
 ### Test Step № 4
 
@@ -81,15 +54,6 @@ run preprocessing
 ```bash
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py preprocess --ref-directory /media/ref --cores 8 --directory /media/runs/khazar --vcf-file /media/data/khazar/khazar314.vcf.gz --assembly hg37 --real-run
 ```
-
-#### Test result
-
-
-#### Status
-
-Success
-
-#### Notes
 
 ### Test Step № 5
 
