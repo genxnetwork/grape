@@ -7,6 +7,7 @@ if __name__ == '__main__':
     bad_samples = snakemake.input['bad_samples']
     out = snakemake.params['out']
     batch = snakemake.params['batch']
+    log = snakemake.log
 
     logging.basicConfig(filename=snakemake.log[0],
                         level=logging.DEBUG,
@@ -25,16 +26,19 @@ if __name__ == '__main__':
     stderr_freqx = p_freqx.stderr.decode()
     stdout_remove = p_remove.stderr.decode()
     stderr_remove = p_remove.stdout.decode()
+    empty_batch_err = 'Error: No people remaining after --remove.'
 
     logging.info(f'{stdout_remove}\n{stdout_freqx}'
                  f'\n{stderr_remove}\n{stderr_freqx}'.decode('utf-8'))
 
-    if p_remove.returncode != 0 or p_freqx.returncode != 0:
+    if empty_batch_err in stderr_remove:
         with open('pass_batches.list', 'r') as list:
             lines = list.readlines()
         with open('pass_batches.list', 'w') as list:
             for line in lines:
-                if line.strip('\n') != batch:
+                if line.strip('\n') != f'{batch}':
                     list.write(line)
                 else:
-                    print(f'removed {line}!')
+                    print(f'Removed {line}!')
+    else:
+        raise Error(f"Rule plink_filter for batch{batch} failed with error! See {log} for details.")
