@@ -7,9 +7,9 @@ if __name__ == '__main__':
     bad_samples = snakemake.input['bad_samples']
     out = snakemake.params['out']
     batch = snakemake.params['batch']
-    log = snakemake.log
+    log = snakemake.log[0]
 
-    logging.basicConfig(filename=snakemake.log[0],
+    logging.basicConfig(filename=log,
                         level=logging.DEBUG,
                         format='%(levelname)s:%(asctime)s %(message)s')
 
