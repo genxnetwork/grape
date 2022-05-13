@@ -1,5 +1,10 @@
 NUM_BATCHES = config['num_batches']
 BATCHES = list(range(1,int(NUM_BATCHES) + 1))
+with open('pass_batches.list', 'w') as list:
+    for b in BATCHES:
+        list.write(f'batch{b}\n')
+
+
 
 if NUM_BATCHES > 1:
     rule get_lists:
@@ -84,7 +89,6 @@ rule recode_vcf:
         do
             echo "chr$i $i" >> chr_name_conv.txt
         done
-
         bcftools annotate --rename-chrs chr_name_conv.txt {input.vcf} | bcftools view -m2 -M2 -v snps -t "^X,Y,XY,MT" -O z -o {output.vcf}
         '''
 
@@ -158,7 +162,7 @@ else:
         vcf_output = 'preprocessed/data.vcf.gz'
         vcf_input = 'phase/batch1_merged_phased.vcf.gz'
 
-    rule copy_imputation:
+    checkpoint copy_imputation:
         input:
             vcf=vcf_input
         output:
@@ -170,7 +174,7 @@ else:
 
 
 if NUM_BATCHES > 1:
-    rule convert_mapped_to_plink:
+    checkpoint convert_mapped_to_plink:
         input:
             vcf='preprocessed/{batch}_data.vcf.gz'
         output:
@@ -222,11 +226,18 @@ if NUM_BATCHES > 1:
             bcftools index -f {input.batches_vcf}
             '''
 
+    def get_merge_vcf_input(wildcards):
+        with open('pass_batches.list', 'r') as list:
+            batches_left = []
+            for line in list:
+                batches_left.append(line.strip('\n'))
+        index = ['preprocessed/{s}_data.vcf.gz.csi'.format(s=batch) for batch in batches_left]
+        vcf = ['preprocessed/{s}_data.vcf.gz'.format(s=batch) for batch in batches_left]
+        return index + vcf
 
     rule merge_vcf:
         input:
-            batches_vcf_index=expand('preprocessed/batch{s}_data.vcf.gz.csi',s=BATCHES),
-            batches_vcf=expand('preprocessed/batch{s}_data.vcf.gz',s=BATCHES)
+            get_merge_vcf_input
         output:
             vcf='preprocessed/data.vcf.gz'
         threads:
@@ -238,21 +249,38 @@ if NUM_BATCHES > 1:
             '../envs/bcftools.yaml'
         shell:
             '''
-            bcftools merge --threads {threads} --merge id {input.batches_vcf} -O z -o {output.vcf}
+            rm complete_vcf_list.txt || true
+            for FILE in {input}
+            do
+                if [[ $FILE == *.gz ]]
+                then
+                    echo $FILE >> complete_vcf_list.txt
+                fi
+            done
+            bcftools merge --threads {threads} --file-list complete_vcf_list.txt --force-samples -O z -o {output.vcf}
+            rm complete_vcf_list.txt
             '''
 
 
+    def get_merge_bed_input(wildcards):
+        with open('pass_batches.list', 'r') as list:
+            batches_left = []
+            for line in list:
+                batches_left.append(line.strip('\n'))
+        bim = ['preprocessed/{s}_data_mapped.bim'.format(s=batch) for batch in batches_left]
+        bed = ['preprocessed/{s}_data.bed'.format(s=batch) for batch in batches_left]
+        fam = ['preprocessed/{s}_data.fam'.format(s=batch) for batch in batches_left]
+        return bed + bim + fam
+
     rule merge_bed:
         input:
-            batches_bim_mapped=expand('preprocessed/batch{s}_data_mapped.bim',s=BATCHES),
-            batches_bed=expand('preprocessed/batch{s}_data.bed',s=BATCHES),
-            batches_fam=expand('preprocessed/batch{s}_data.fam',s=BATCHES)
+            get_merge_bed_input
         output:
             bed='preprocessed/data.bed',
             fam='preprocessed/data.fam',
             bim_mapped='preprocessed/data_mapped.bim'
-        params:
-            seg=expand('preprocessed/batch{s}_data',s=BATCHES)
+        threads:
+            workflow.cores
         conda:
             '../envs/plink.yaml'
         shell:
@@ -263,13 +291,18 @@ if NUM_BATCHES > 1:
                 mv "$file" "$new"
             done
 
-            for file in {params.seg}
+            rm files_list.txt || true
+            for file in {input}
             do
-                echo "$file.bed $file.bim $file.fam" >> files_list.txt
+                if [[ $file == *.fam ]]
+                then
+                    echo ${{file%.*}} >> files_list.txt
+                fi
             done
 
             plink --merge-list files_list.txt --make-bed --out preprocessed/data
             mv preprocessed/data.bim preprocessed/data_mapped.bim
+            rm files_list.txt
             '''
 
 
