@@ -10,7 +10,7 @@ It takes roughly an hour.
 **Command:**
 
 ```console
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py simulate --ref-directory /media/ref --cores 8 --directory /media/data --flow ibis --assembly hg37 --real-run
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py simulate --ref-directory /media/ref --cores 8 --directory /media/data --flow ibis --assembly hg37 --seed 42 --real-run
 ```
 
 **Desired result:**
@@ -27,7 +27,7 @@ It takes roughly an hour.
 **Command:**
 
 ```console
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py simulate --ref-directory /media/ref --cores 8 --directory /media/data --flow ibis-king --assembly hg37 --real-run
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py simulate --ref-directory /media/ref --cores 8 --directory /media/data --flow ibis-king --assembly hg37 --seed 42 --real-run
 ```
 
 **Desired result:**
@@ -72,6 +72,17 @@ We need to be sure that GRAPE is working well with big datasets. We chose 10K da
 Dataset is taken from Allen Ancient DNA Resource: https://reich.hms.harvard.edu/allen-ancient-dna-resource-aadr-downloadable-genotypes-present-day-and-ancient-dna-data.
 It has 10379 unique individuals (6442 ancient, 3937 present-day) with 1,233,013 SNPs. 
 
+**par.PACKEDANCESTRYMAP.PED:**
+```console
+genotypename:    v50.0_1240k_public.geno
+snpname:         v50.0_1240k_public.snp
+indivname:       v50.0_1240k_public.ind
+outputformat:    PED
+genotypeoutname: v50.0_1240k_public.ped
+snpoutname:      v50.0_1240k_public.pedsnp
+indivoutname:    v50.0_1240k_public.pedind
+```
+
 **Command:**
 
 ```console
@@ -85,6 +96,7 @@ tar -xvf v50.0_1240K_public.tar
 
 # install converter from packed ancestry map format to plink ped
 conda install -c bioconda eigensoft
+#sudo apt install eigensoft
 
 # convert to plink ped format
 convertf -p par.PACKEDANCESTRYMAP.PED
@@ -94,10 +106,11 @@ plink --ped v50.0_1240k_public.ped --map v50.0_1240k_public.pedsnp --alleleACGT 
 
 # remove underscores from sample ids
 bcftools query --list-samples aadr.vcf.gz > aadr.samples
-bcftools reheader aadr.vcf.gz -s aadr.samples | bcftools view -O z -o aadr.reheaded.vcf.gz
+cat aadr.samples | while read line; do echo "${line//_}" >> aadr_clean.samples; done
+bcftools reheader aadr.vcf.gz -s aadr_clean.samples | bcftools view -O z -o aadr.reheaded.vcf.gz
 
 # run preprocessing
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py preprocess --ref-directory /media/ref --cores 8 --directory /media/data/aadr --vcf-file /media/data/aadr/aadr.reheaded.vcf.gz --assembly hg37 --real-run
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py preprocess --ref-directory /media/ref --cores 8 --directory /media/data/aadr --vcf-file /media/data/aadr/aadr.reheaded.vcf.gz --assembly hg37 --het-samples 0.0 --real-run
 
 # run relationship inference
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py find --ref-directory /media/ref --cores 8 --directory /media/runs/aadr --flow ibis --real-run
