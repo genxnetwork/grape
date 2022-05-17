@@ -52,7 +52,10 @@ plink --bfile new_data_in_paper --recode vcf-iid bgz --out /media/data/khazar/kh
 run preprocessing
 
 ```bash
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py preprocess --ref-directory /media/ref --cores 8 --directory /media/runs/khazar --vcf-file /media/data/khazar/khazar314.vcf.gz --assembly hg37 --real-run
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
+    genx_relatives:latest launcher.py preprocess \
+    --ref-directory /media/ref --cores 8 --directory /media/runs/khazar \
+    --vcf-file /media/data/khazar/khazar314.vcf.gz --assembly hg37 --real-run
 ```
 
 ### Test Step № 5
@@ -60,7 +63,10 @@ docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localti
 run relationship inference
 
 ```bash
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py find --ref-directory /media/ref --cores 8 --directory /media/runs/khazar --flow ibis --real-run
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
+    genx_relatives:latest launcher.py find \
+    --ref-directory /media/ref --cores 8 --directory /media/runs/khazar \
+    --flow ibis --real-run
 ```
 
 #### Test result
