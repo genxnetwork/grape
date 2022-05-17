@@ -264,7 +264,7 @@ def get_parser_args():
         '--seed',
         default=randint(0, 10**7),
         type=int,
-        help='Pedsim pedigree structures simulation integer seed. Seed is random by default.')
+        help='Random seed for Ped-sim pedigree simulation. The default value is randomly generated.')
 
     args = parser.parse_args()
 
