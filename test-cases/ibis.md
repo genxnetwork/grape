@@ -24,7 +24,10 @@
 Enter command in console
 
 ```bash
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py simulate --ref-directory /media/ref --cores 8 --directory /media/data --flow ibis --assembly hg37 --real-run
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
+    genx_relatives:latest launcher.py simulate \
+        --ref-directory /media/ref --cores 8 --directory /media/data \
+        --flow ibis --assembly hg37 --seed 42 --real-run
 ```
 
 #### Test result
