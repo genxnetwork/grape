@@ -4,6 +4,8 @@ import psutil
 import argparse
 import shutil
 import os
+from random import randint
+
 
 from inspect import getsourcefile
 from weight.ibd_segments_weigher import IBDSegmentsWeigher
@@ -258,6 +260,12 @@ def get_parser_args():
         type=float,
         help='Lower bound of heterozygous SNPs (%). Samples with lower values are removed from the relatedness detection analysis.')
 
+    parser.add_argument(
+        '--seed',
+        default=randint(0, 10**7),
+        type=int,
+        help='Random seed for Ped-sim pedigree simulation. The default value is randomly generated.')
+
     args = parser.parse_args()
 
     valid_commands = [
@@ -415,6 +423,8 @@ if __name__ == '__main__':
     config_dict['missing_samples'] = args.missing_samples
     config_dict['alt_hom_samples'] = args.alt_hom_samples
     config_dict['het_samples'] = args.het_samples
+
+    config_dict['seed'] = args.seed
 
     if args.weight_mask:
         config_dict['weight_mask'] = os.path.join(args.directory, args.weight_mask)
