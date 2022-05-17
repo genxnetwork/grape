@@ -47,12 +47,15 @@ tar -xvf v50.0_1240K_public.tar
 
 ### Test Step № 4
 
-install converter from packed ancestry map format to plink ped with the command
+Install converter from packed ancestry map format to plink ped with the command
 
 ```bash
 conda install -c bioconda eigensoft
 ```
-
+or
+```bash
+sudo apt install eigensoft
+```
 
 ### Test Step № 5
 
@@ -62,6 +65,17 @@ Convert to plink ped format with the command
 convertf -p par.PACKEDANCESTRYMAP.PED
 ```
 
+par.PACKEDANCESTRYMAP.PED:
+```bash
+genotypename:    v50.0_1240k_public.geno
+snpname:         v50.0_1240k_public.snp
+indivname:       v50.0_1240k_public.ind
+outputformat:    PED
+genotypeoutname: v50.0_1240k_public.ped
+snpoutname:      v50.0_1240k_public.pedsnp
+indivoutname:    v50.0_1240k_public.pedind
+```
+
 
 
 ### Test Step № 6
@@ -69,7 +83,8 @@ convertf -p par.PACKEDANCESTRYMAP.PED
 Convert to vcf format with the command
 
 ```bash
-plink --ped v50.0_1240k_public.ped --map v50.0_1240k_public.pedsnp --alleleACGT --recode vcf-iid bgz --out aadr
+plink --ped v50.0_1240k_public.ped --map v50.0_1240k_public.pedsnp \
+--alleleACGT --recode vcf-iid bgz --out aadr
 ```
 
 ### Test Step № 7
@@ -78,7 +93,8 @@ Remove underscores from sample `ids`
 
 ```bash
 bcftools query --list-samples aadr.vcf.gz > aadr.samples
-bcftools reheader aadr.vcf.gz -s aadr.samples | bcftools view -O z -o aadr.reheaded.vcf.gz
+cat aadr.samples | while read line; do echo "${line//_}" >> aadr_clean.samples; done
+bcftools reheader aadr.vcf.gz -s aadr_clean.samples | bcftools view -O z -o aadr.reheaded.vcf.gz
 ```
 
 
@@ -87,7 +103,11 @@ bcftools reheader aadr.vcf.gz -s aadr.samples | bcftools view -O z -o aadr.rehea
 Run preprocessing
 
 ```bash
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py preprocess --ref-directory /media/ref --cores 8 --directory /media/data/aadr --vcf-file /media/data/aadr/aadr.reheaded.vcf.gz --assembly hg37 --real-run
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
+    genx_relatives:latest launcher.py preprocess \
+        --ref-directory /media/ref --cores 8 --directory /media/data/aadr \
+        --vcf-file /media/data/aadr/aadr.reheaded.vcf.gz --assembly hg37 \
+        --het-samples 0.0 --real-run
 ```
 
 
@@ -96,7 +116,9 @@ docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localti
 Run relationship inference
 
 ```bash
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py find --ref-directory /media/ref --cores 8 --directory /media/runs/aadr --flow ibis --real-run
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
+    genx_relatives:latest launcher.py find --ref-directory /media/ref --cores 8 \
+        --directory /media/runs/aadr --flow ibis --real-run
 ```
 
 #### Test result
