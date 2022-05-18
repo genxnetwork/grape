@@ -21,3 +21,15 @@
 
 - Fix `germline-king` simulation flow.
 - Fix `java command not found` during the `reference` workflow evaluation.
+
+## [v1.5.2] - 2021-12-24
+
+### Added
+
+With `--flow ibis_king` grape now calculates IBD1 and IBD2 shares from KING data for the 0-3 degrees.
+
+### Fixed
+
+- Fixed a bug with parsing ERSA output for large datasets.
+- Fixed a bug with setting every values for some rows in relatives.tsv to 2.
+- Fixed `total_seg_len` and `total_seg_len_ibd2` calculation. Now `total_seg_len` corresponds to only ibd1 segments.
