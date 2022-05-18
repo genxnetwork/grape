@@ -33,3 +33,35 @@ With `--flow ibis_king` grape now calculates IBD1 and IBD2 shares from KING data
 - Fixed a bug with parsing ERSA output for large datasets.
 - Fixed a bug with setting every values for some rows in relatives.tsv to 2.
 - Fixed `total_seg_len` and `total_seg_len_ibd2` calculation. Now `total_seg_len` corresponds to only ibd1 segments.
+
+## [v1.5.1] - 2021-12-13
+
+### Fixed
+
+- Bundle downloading hotfix.
+- File verification hotfix for reference workflow.
+
+## [v1.5] - 2021-12-01
+
+### Changed
+
+- Removed singularity from all workflows.
+- Many intermediate files are now temporary. This significantly reduces working folder size.
+
+### Fixed
+
+- Fixed removal of duplicate SNPs.
+- ERSA-only workflow now correctly detects duplicates or monozygotic twins.
+
+## Dockstore Release - 2021-09-28
+
+### Added
+
+- Dockstore support
+- Small and full bundle reference downloading from azure
+
+### Changed
+
+- ERSA can handle 100k samples.
+- Preprocessing saves phasing information in vcf input.
+- MAF filter is now consistent across different inputs.
