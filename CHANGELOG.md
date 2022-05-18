@@ -20,7 +20,7 @@
 ### Fixed
 
 - Fixed `germline-king` simulation flow.
-- Fix `java command not found` during the `reference` workflow evaluation.
+- Fixed `java command not found` during the `reference` workflow evaluation.
 
 ## [v1.5.2] - 2021-12-24
 
