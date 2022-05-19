@@ -12,7 +12,7 @@
 
 ### Changed
 
-- GRAPE flows were renamed in the pipeline launcnher: `ibis_king` -> `ibis-king`, `germline -> germline-king`.
+- GRAPE flows were renamed in the pipeline launcnher: `ibis_king` -> `ibis-king`, `germline` -> `germline-king`.
 - `readme.md` and the GRAPE scheme were updated and actualized.
 - Singularity support was removed in favour of conda environments.
 - Code refactoring and clean up.
