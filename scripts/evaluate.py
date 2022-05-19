@@ -113,7 +113,7 @@ def draw_pedigree(pedigree: nx.DiGraph, pedigree_plot_name: str):
     plt.close()
 
 
-def interval_precision_recall(kinship, inferred, clients, source, plot_name):
+def get_interval_precision_recall_metrics(kinship, inferred, clients, source):
     iterator = itertools.combinations(clients, 2)
 
     true_positives = {degree: 0 for degree in range(1, 15)}
@@ -167,10 +167,13 @@ def interval_precision_recall(kinship, inferred, clients, source, plot_name):
         data['Precision'].append(precision)
         data['Recall'].append(recall)
 
-    df = pd.DataFrame.from_dict(data)
-    df.set_index('True Degree').plot.bar()
+    return pd.DataFrame.from_dict(data)
+
+
+def plot_interval_precision_recall_metrics(metrics, plot_name):
+    metrics.set_index('True Degree').plot.bar()
     logging.info('Precision-Recall DataFrame:')
-    logging.info(df)
+    logging.info(metrics)
     if not plot_name:
         plt.show()
     else:
@@ -179,9 +182,11 @@ def interval_precision_recall(kinship, inferred, clients, source, plot_name):
         plt.close()
 
 
-def interval_evaluate(result, fam, plot_name, pr_plot_name, conf_matrix_plot_name, output_path,
-                      only_client=False, source='ersa', pedigree_plot_name=None, dist_plot_name=None,
-                      po_fs_plot_name=None):
+def interval_evaluate(
+    result, fam, plot_name, pr_plot_name, conf_matrix_plot_name, output_path, metrics_filename,
+    only_client=False, source='ersa', pedigree_plot_name=None, dist_plot_name=None,
+    po_fs_plot_name=None
+):
     iids, pedigree = read_pedigree(fn=fam)
     if pedigree_plot_name is not None:
         draw_pedigree(pedigree, pedigree_plot_name)
@@ -235,8 +240,13 @@ def interval_evaluate(result, fam, plot_name, pr_plot_name, conf_matrix_plot_nam
     print()
 
     compare(total, correct, plot_name)
-    interval_precision_recall(kinship, inferred, clients, source, pr_plot_name)
+    metrics = get_interval_precision_recall_metrics(kinship, inferred, clients, source)
 
+    # Save Precision / Recall metrics to file
+    metrics.to_csv(metrics_filename, sep='\t', header=True, index=False)
+
+    # Make plots
+    plot_interval_precision_recall_metrics(metrics, pr_plot_name)
     plot_confusion_matrix(confusion_matrix, conf_matrix_plot_name)
 
     kinship_frame = kinship_to_dataframe(kinship)
@@ -347,8 +357,8 @@ if __name__ == '__main__':
              snakemake.output['pr'],
              snakemake.output['conf_matrix'],
              snakemake.output['updated_rel'],
+             snakemake.output['metrics'],
              only_client=True,
              source=source,
              pedigree_plot_name=snakemake.output['pedigree_plot'],
              po_fs_plot_name=po_fs_plot_name)
-

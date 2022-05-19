@@ -4,15 +4,19 @@ import psutil
 import argparse
 import shutil
 import os
+from random import randint
+
 
 from inspect import getsourcefile
 from weight.ibd_segments_weigher import IBDSegmentsWeigher
+
 
 
 # Returns an integer value for total available memory, in GB.
 def total_memory_gb():
     n_bytes = psutil.virtual_memory().total
     return int(n_bytes / (1024 * 1024 * 1024))
+
 
 def get_parser_args():
     parser = argparse.ArgumentParser()
@@ -43,6 +47,12 @@ def get_parser_args():
         default=max(1, psutil.cpu_count() - 1),
         type=int,
         help="Number of CPU cores to use in this pipeline run (default %(default)s)")
+
+    parser.add_argument(
+        "--num-batches",
+        default=1,
+        type=int,
+        help="Number of batches to split input vcf.gz file into (default is 1). Splitting can speed up the preprocessing stage for the large datasets.")
 
     parser.add_argument(
         "--memory",
@@ -221,14 +231,54 @@ def get_parser_args():
     )
 
     parser.add_argument(
+        '--chip',
+        default='background.vcf.gz',
+        help='Path to chip file'
+    )
+
+    parser.add_argument(
         '--weight-mask',
         help='Mask of weights used to re-weight IBD segments length while using ERSA algorithm'
             'for `ibis` and `ibis-king` flows'
     )
 
+    parser.add_argument(
+        '--missing-samples',
+        default=15.0,
+        type=float,
+        help='Upper bound of missing SNPs (%). Samples with higher values are removed from the relatedness detection analysis.')
+
+    parser.add_argument(
+        '--alt-hom-samples',
+        default=1.0,
+        type=float,
+        help='Lower bound of homozygous alternative SNPs (%). Samples with lower values are removed from the relatedness detection analysis.')
+
+    parser.add_argument(
+        '--het-samples',
+        default=5.0,
+        type=float,
+        help='Lower bound of heterozygous SNPs (%). Samples with lower values are removed from the relatedness detection analysis.')
+
+    parser.add_argument(
+        '--seed',
+        default=randint(0, 10**7),
+        type=int,
+        help='Random seed for Ped-sim pedigree simulation. The default value is randomly generated.')
+
     args = parser.parse_args()
 
-    valid_commands = ['preprocess', 'find', 'simulate', 'reference', 'bundle', 'compute-weight-mask']
+    valid_commands = [
+        'preprocess',
+        'find',
+        'simulate',
+        'reference',
+        'bundle',
+        'compute-weight-mask',
+        'simbig',
+        'remove_relatives'
+    ]
+
     if args.command not in valid_commands:
         raise RuntimeError(f'command {args.command} not in list of valid commands: {valid_commands}')
 
@@ -238,11 +288,16 @@ def get_parser_args():
     if args.command != 'reference' and args.use_bundle:
         raise ValueError('--bundle option only available for reference downloading')
 
+    if args.num_batches > args.cores:
+        raise ValueError('Number of batches is bigger than number cores, please change --num-batches value to be lower or equal --cores')
+
+    if any((i < 0 or i > 100) for i in (args.het_samples, args.missing_samples, args.alt_hom_samples)):
+        raise ValueError('Percentage cannot be higher than 100 or lower than 0')
+
     return args
 
 
 def copy_file(working_dir, file_path):
-
     samples_name = os.path.split(file_path)[-1]
     samples_path = os.path.join(working_dir, samples_name)
     if not os.path.exists(samples_path):
@@ -250,7 +305,6 @@ def copy_file(working_dir, file_path):
 
 
 def copy_input(input_dir, working_dir, samples_file):
-
     input_name = os.path.split(input_dir)[-1]
     dest_path = os.path.join(working_dir, input_name)
     if not os.path.exists(dest_path):
@@ -291,10 +345,23 @@ if __name__ == '__main__':
             os.path.join(args.directory, 'config.yaml')
         )
 
+    if args.command == 'simbig':
+        copy_input(
+            os.path.join(current_path, 'workflows/simbig/params'),
+            args.directory, os.path.join(current_path, 'workflows/simbig/', args.sim_samples_file)
+        )
+        # for some reason launching with docker from command line
+        # sets root directory for 'configfile' directive in bundle.Snakefile as snakemake.workdir
+        # therefore config.yaml must be in snakemake.workdir
+        shutil.copy(
+            os.path.join(current_path, 'workflows/simbig/config.yaml'),
+            os.path.join(args.directory, 'config.yaml')
+        )
+
     if args.command == 'preprocess':
         shutil.copy(args.vcf_file, os.path.join(args.directory, 'input.vcf.gz'))
 
-    if args.command in ['preprocess', 'find', 'reference', 'bundle', 'compute-weight-mask']:
+    if args.command in ['preprocess', 'find', 'reference', 'bundle', 'remove_relatives', 'compute-weight-mask']:
         if args.directory != '.':
             shutil.copy(os.path.join(current_path, 'config.yaml'), os.path.join(args.directory, 'config.yaml'))
 
@@ -304,6 +371,8 @@ if __name__ == '__main__':
         'simulate': 'workflows/pedsim/Snakefile',
         'reference': 'workflows/reference/Snakefile',
         'bundle': 'workflows/bundle/Snakefile',
+        'simbig': 'workflows/simbig/Snakefile',
+        'remove_relatives': 'workflows/remove_relatives/Snakefile',
         'compute-weight-mask': 'workflows/weight/Snakefile'
     }
 
@@ -332,12 +401,15 @@ if __name__ == '__main__':
     config_dict['sim_samples_file'] = args.sim_samples_file
     config_dict['assembly'] = args.assembly
     config_dict['mem_gb'] = args.memory
+    config_dict['num_batches'] = args.num_batches
     if args.ref_directory != '':
         config_dict['ref_dir'] = args.ref_directory
+    if args.chip:
+        config_dict['chip'] = args.chip
     if args.flow not in ['ibis', 'ibis-king', 'germline-king']:
         raise ValueError(f'--flow can be one of the ["ibis", "ibis-king", "germline-king"] and not {args.flow}')
     config_dict['flow'] = args.flow
-    if args.command in ['preprocess', 'simulate', 'reference', 'bundle']:
+    if args.command in ['preprocess', 'simulate', 'reference', 'bundle', 'simbig', 'remove_relatives']:
         config_dict['remove_imputation'] = args.remove_imputation
         config_dict['impute'] = args.impute
         config_dict['phase'] = args.phase
@@ -348,6 +420,12 @@ if __name__ == '__main__':
     config_dict['ibis_seg_len'] = args.ibis_seg_len
     config_dict['ibis_min_snp'] = args.ibis_min_snp
 
+    config_dict['missing_samples'] = args.missing_samples
+    config_dict['alt_hom_samples'] = args.alt_hom_samples
+    config_dict['het_samples'] = args.het_samples
+
+    config_dict['seed'] = args.seed
+
     if args.weight_mask:
         config_dict['weight_mask'] = os.path.join(args.directory, args.weight_mask)
         config_dict['ersa_r'] = IBDSegmentsWeigher.from_json_mask_file(config_dict['weight_mask']) \
@@ -357,7 +435,7 @@ if __name__ == '__main__':
             snakefile=snakefile,
             configfiles=[args.configfile or 'config.yaml'],
             config=config_dict,
-            workdir=args.directory,
+            workdir=args.directory if args.command != 'reference' else args.ref_directory,
             cores=args.cores,
             unlock=args.unlock,
             printshellcmds=True,
@@ -368,7 +446,8 @@ if __name__ == '__main__':
             until=[args.until] if args.until is not None else [],
             use_conda=True,
             conda_prefix=args.conda_prefix,
-            envvars=['CONDA_ENVS_PATH', 'CONDA_PKGS_DIRS']
+            envvars=['CONDA_ENVS_PATH', 'CONDA_PKGS_DIRS'],
+            keepgoing=True
     ):
         raise ValueError("Pipeline failed see Snakemake error message for details")
 

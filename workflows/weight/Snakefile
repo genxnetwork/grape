@@ -1,11 +1,9 @@
-"""
-This workflow performs computation of the weight mask based on results of IBD segments detection with IBIS.
-"""
+# This workflow performs computation of the weight mask based on results of IBD segments detection with IBIS.
 
 import os
 
 
-configfile: "config.yaml"
+configfile: 'config.yaml'
 
 
 IBIS_OUTPUT_FOLDER = 'ibis'
@@ -39,11 +37,11 @@ rule ibis_ibd_segment_detection:
         mL = config['ibis_seg_len'],
         mT = config['ibis_min_snp']
     shell:
-        """
+        '''
         ibis {input.bed} {input.bim} {input.fam} \
              -t {threads} -mt {params.mT} -mL {params.mL} -ibd2 -mL2 3 -hbd \
              -f {IBIS_OUTPUT_PREFIX} |& tee -a {log}
-        """
+        '''
 
 SNAKEFILE_FOLDER = os.path.dirname(workflow.snakefile)
 
@@ -57,9 +55,9 @@ rule compute_weight_mask:
         mask = os.path.join(WEIGHT_MASK_FOLDER, 'mask.json'),
         plot = os.path.join(WEIGHT_MASK_FOLDER, 'mask.png')
     shell:
-        """
+        '''
         python {input.script} \
             --ibd-segments-file {input.ibd} \
             --output-mask-file {output.mask} \
             --output-mask-plot {output.plot}
-        """
+        '''

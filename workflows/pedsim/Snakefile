@@ -1,20 +1,20 @@
 from os.path import join
 
-flow            = config["flow"]
+flow            = config['flow']
 is_client       = False
-use_simulated_ibd = config["use_simulated_ibd"] if "use_simulated_ibd" in config else False
+use_simulated_ibd = config['use_simulated_ibd'] if 'use_simulated_ibd' in config else False
 
-REF_DIR            = config["ref_dir"]
-GRCH37_FASTA       = join(REF_DIR, config["reference"]["GRCh37_fasta"]["file"])
-GENETIC_MAP        = join(REF_DIR, config["reference"]["GENETIC_MAP"]["file"])
-GENETIC_MAP_GRCH37 = join(REF_DIR, config["reference"]["genetic_map_GRCh37"]["file"])
-REF_VCF            = join(REF_DIR, config["reference"]["vcfRef"]["file"])
-REF_HAPS           = join(REF_DIR, config["reference"]["refHaps"]["file"])
-LIFT_CHAIN         = join(REF_DIR, config["reference"]["lift_chain"]["file"])
-CMMAP              = join(REF_DIR, config["reference"]["cmmap"]["file"])
-SITE_1000GENOME    = join(REF_DIR, config["reference"]["SITE_1000GENOME"]["file"])
-AFFYMETRIX_CHIP    = join(REF_DIR, config["reference"]["affymetrix_chip"]["file"])
-PEDSIM_MAP         = join(REF_DIR, config["reference"]["pedsim_map"]["file"])
+REF_DIR            = config['ref_dir']
+GRCH37_FASTA       = join(REF_DIR, config['reference']['GRCh37_fasta']['file'])
+GENETIC_MAP        = join(REF_DIR, config['reference']['GENETIC_MAP']['file'])
+GENETIC_MAP_GRCH37 = join(REF_DIR, config['reference']['genetic_map_GRCh37']['file'])
+REF_VCF            = join(REF_DIR, config['reference']['vcfRef']['file'])
+REF_HAPS           = join(REF_DIR, config['reference']['refHaps']['file'])
+LIFT_CHAIN         = join(REF_DIR, config['reference']['lift_chain']['file'])
+CMMAP              = join(REF_DIR, config['reference']['cmmap']['file'])
+SITE_1000GENOME    = join(REF_DIR, config['reference']['SITE_1000GENOME']['file'])
+AFFYMETRIX_CHIP    = join(REF_DIR, config['reference']['affymetrix_chip']['file'])
+PEDSIM_MAP         = join(REF_DIR, config['reference']['pedsim_map']['file'])
 
 
 SAMPLES = [str(s) for s in range(10)]
@@ -26,12 +26,13 @@ assembly = config['assembly']
 need_phase = config['phase']
 need_imputation = config['impute']
 need_remove_imputation = config['remove_imputation']
+simulation_seed = config['seed']
 
 _IDEAL_LARGE_MEM_GB = 20
 
 # if available, return the ideal pretty-large amount for most jobs (20GB)
 def _mem_gb_for_ram_hungry_jobs():
-  return min(_IDEAL_LARGE_MEM_GB, config["mem_gb"])
+  return min(_IDEAL_LARGE_MEM_GB, config['mem_gb'])
 
 
 #CHIP_DATA_LINK = 'ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/supporting/hd_genotype_chip/ALL.chip.omni_broad_sanger_combined.20140818.snps.genotypes.vcf.gz'
@@ -39,32 +40,33 @@ def _mem_gb_for_ram_hungry_jobs():
 
 rule all:
     input:
-        "results/relatives.tsv",
-        "results/accuracy.png"
+        'results/relatives.tsv',
+        'results/accuracy.png'
 
 
 rule intersect:
     input:
         hd_genotype_chip=AFFYMETRIX_CHIP,
         vcfRef=REF_VCF
-    output: "pedsim/phased/chr{chrom}.phased.vcf.gz"
-    conda: "../../envs/bcftools.yaml"
+    output: 'pedsim/phased/chr{chrom}.phased.vcf.gz'
+    conda: '../../envs/bcftools.yaml'
     shell:
         """
-            bcftools isec -n=2 -w1 -r {wildcards.chrom} -O z -o {output} {input.vcfRef} {input.hd_genotype_chip}
+            bcftools isec -n=2 -w1 -r {wildcards.chrom} \
+             -O z -o {output} {input.vcfRef} {input.hd_genotype_chip}
         """
 
 
 rule merge_background:
     input:
-        data=expand("pedsim/phased/chr{chrom}.phased.vcf.gz", chrom=CHROMOSOMES),
+        data=expand('pedsim/phased/chr{chrom}.phased.vcf.gz', chrom=CHROMOSOMES),
         eu=config['sim_samples_file']
     output:
-        "pedsim/phased/background.vcf.gz"
+        'pedsim/phased/background.vcf.gz'
     params:
-        list="pedsim/phased/phased.merge.list"
+        list='pedsim/phased/phased.merge.list'
     conda:
-        "../../envs/bcftools.yaml"
+        '../../envs/bcftools.yaml'
     shell:
         """
             # for now just skip empty files
@@ -77,7 +79,8 @@ rule merge_background:
                     continue
                 fi
             done
-            bcftools concat -f {params.list} | bcftools view --force-samples --samples-file {input.eu} -O z -o {output}
+            bcftools concat -f {params.list} | \
+            bcftools view --force-samples --samples-file {input.eu} -O z -o {output}
         """
 
 
@@ -92,27 +95,31 @@ rule simulate:
         seg='pedsim/simulated/data.seg',
         fam='pedsim/simulated/data-everyone.fam'
     params:
-        prefix='pedsim/simulated/data'
+        prefix='pedsim/simulated/data',
+        seed=simulation_seed
     conda:
-        "../../envs/ped-sim.yaml"
+        '../../envs/ped-sim.yaml'
     shell:
         """
-            pedsim -d {input._def} -m {input._map} -i {input.bg} -o {params.prefix} --intf {input.intf} --fam
+            pedsim -d {input._def} -m {input._map} -i {input.bg} \
+            -o {params.prefix} --intf {input.intf} --fam --seed {params.seed}
         """
+
 
 rule shuffle_phase:
         input: vcf=rules.simulate.output.vcf
-        output: vcf="pedsim/simulated/data_shuffled.vcf.gz",
-                plink=temp(expand("plink/data_shuffled.{ext}", ext=PLINK_FORMATS))
+        output: vcf='pedsim/simulated/data_shuffled.vcf.gz',
+                plink=temp(expand('plink/data_shuffled.{ext}', ext=PLINK_FORMATS))
         params:
-            plink="plink/data_shuffled",
-            vcf="pedsim/simulated/data_shuffled"
-        conda: "../../envs/plink.yaml"
+            plink='plink/data_shuffled',
+            vcf='pedsim/simulated/data_shuffled'
+        conda: '../../envs/plink.yaml'
         shell:
             """
                 plink --vcf {input.vcf} --make-bed --out {params.plink}
                 plink --bfile {params.plink} --export vcf bgz --out {params.vcf}
             """
+
 
 rule postprocess:
     input:
@@ -123,35 +130,37 @@ rule postprocess:
         vcf='input.vcf.gz',
         fam='pedsim/simulated/reheaded_data.fam'
     conda:
-        "../../envs/postprocess.yaml"
+        '../../envs/postprocess.yaml'
     script:
-        "../../scripts/postprocess.py"
+        '../../scripts/postprocess.py'
 
-include: "../../rules/preprocessing.smk"
+include: '../../rules/preprocessing.smk'
 
 if flow == 'ibis':
-    include: "../../rules/relatives_ibis.smk"
+    include: '../../rules/relatives_ibis.smk'
 elif flow == 'ibis-king':
-    include: "../../rules/relatives_ibis_king.smk"
+    include: '../../rules/relatives_ibis_king.smk'
 elif flow == 'germline-king':
-    include: "../../rules/relatives.smk"
+    include: '../../rules/relatives.smk'
+
 
 rule evaluate_accuracy:
     input:
         rel='results/relatives.tsv',
         fam=rules.postprocess.output['fam']
     output:
-        accuracy='results/accuracy.png',
-        pr='results/precision_recall.png',
-        conf_matrix='results/confusion_matrix.png',
-        updated_rel='results/updated_relatives.tsv',
-        pedigree_plot='results/pedigree_plot.png'
+        accuracy = 'results/accuracy.png',
+        pr = 'results/precision_recall.png',
+        conf_matrix = 'results/confusion_matrix.png',
+        updated_rel = 'results/updated_relatives.tsv',
+        pedigree_plot = 'results/pedigree_plot.png',
+        metrics = 'results/metrics.tsv'
     params:
         source='both',
         po_fs_plot='results/po_fs_plot.png' if flow == 'ibis' else None
     log:
-        "logs/evaluation/accuracy.log"
+        'logs/evaluation/accuracy.log'
     conda:
-        "../../envs/evaluation.yaml"
+        '../../envs/evaluation.yaml'
     script:
          '../../scripts/evaluate.py'

@@ -1,0 +1,12 @@
+{
+  "reference": {
+    "class": "Directory",
+    "basename": "ref",
+    "path": "/media/ref"
+  },
+  "simulation_result": {
+    "class": "Directory",
+    "basename": "simulation_result",
+    "path": "/media/simulation_results"
+  }
+}

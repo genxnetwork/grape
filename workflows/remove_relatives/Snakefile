@@ -1,0 +1,118 @@
+from os.path import join
+
+CHROMOSOMES     = [str(i) for i in range(1, 23)]
+PLINK_FORMATS   = ['bed', 'bim', 'fam']
+PLINK_FORMATS_EXT   = ['bed', 'bim', 'fam', 'nosex']
+
+REF_DIR            = config["ref_dir"]
+AFFYMETRIX_CHIP    = join(REF_DIR, config["reference"]["affymetrix_chip"]["file"])
+LIFT_CHAIN         = join(REF_DIR, config["reference"]["lift_chain"]["file"])
+GRCH37_FASTA       = join(REF_DIR, config["reference"]["GRCh37_fasta"]["file"])
+IS_CLIENT          = config["mode"] == "client"
+USE_SIMULATED_IBD  = config["use_simulated_ibd"] if "use_simulated_ibd" in config else False
+GENETIC_MAP        = join(REF_DIR, config["reference"]["GENETIC_MAP"]["file"])
+GENETIC_MAP_GRCH37 =join(REF_DIR, config["reference"]["genetic_map_GRCh37"]["file"])
+REF_VCF = join(REF_DIR, config["reference"]["vcfRef"]["file"])
+REF_HAPS = join(REF_DIR, config["reference"]["refHaps"]["file"])
+CMMAP = join(REF_DIR, config["reference"]["cmmap"]["file"])
+SITE_1000GENOME = join(REF_DIR, config["reference"]["SITE_1000GENOME"]["file"])
+flow               = config["flow"]
+is_client          = config["mode"] == "client"
+use_simulated_ibd  = config["use_simulated_ibd"] if "use_simulated_ibd" in config else False
+HAPMAP_PED         = join(REF_DIR, config["reference"]["hapmap_ped"]["file"])
+HAPMAP_MP          = join(REF_DIR, config["reference"]["hapmap_mp"]["file"])
+HAPMAP_FAM         = join(REF_DIR, config["reference"]["hapmap_fam"]["file"])
+PEDSIM_MAP         = join(REF_DIR, config["reference"]["pedsim_map"]["file"])
+
+print('execution mode is: ' + config["mode"])
+
+
+assembly = config['assembly']
+need_remove_imputation = config['remove_imputation']
+# WARNING: if need_imputation=True, then need_phase should also be true
+need_phase = config['phase']
+need_imputation = config['impute']
+
+_IDEAL_LARGE_MEM_GB = 20
+
+
+# if available, return the ideal pretty-large amount for most jobs (20GB)
+def _mem_gb_for_ram_hungry_jobs():
+    return min(_IDEAL_LARGE_MEM_GB, config["mem_gb"])
+
+
+rule all:
+    input:
+        data="background.vcf.gz",
+        list="list.samples"
+
+rule intersect:
+    input:
+        hd_genotype_chip=AFFYMETRIX_CHIP,
+        vcfRef=REF_VCF
+    output: "phased/chr{chrom}.phased.vcf.gz"
+    conda: "../../envs/bcftools.yaml"
+    shell:
+        """
+            bcftools isec -n=2 -w1 -r {wildcards.chrom} -O z -o {output} {input.vcfRef} {input.hd_genotype_chip}
+        """
+
+
+rule merge_background:
+    input:
+        data=expand("phased/chr{chrom}.phased.vcf.gz", chrom=CHROMOSOMES)
+    output:
+        "input.vcf.gz"
+    params:
+        list="phased/phased.merge.list"
+    conda:
+        "../../envs/bcftools.yaml"
+    shell:
+        """
+            # for now just skip empty files
+            true > {params.list} && \
+            for i in {input.data}; do
+                if [ -s $i ]
+                then
+                    echo $i >> {params.list}
+                else
+                    continue
+                fi
+            done
+            bcftools concat -f {params.list} -O z -o {output}
+        """
+
+include: "../../rules/preprocessing.smk"
+if flow == 'ibis':
+    include: "../../rules/relatives_ibis.smk"
+elif flow == 'germline':
+    include: "../../rules/relatives.smk"
+elif flow == 'ibis_king':
+    include: "../../rules/relatives_ibis_king.smk"
+
+rule clean_relatives:
+    input:
+        relatives = "results/relatives.tsv"
+    output:
+        remove_list = temp("remove_list.txt")
+    conda:
+        "../../envs/remove_relatives.yaml"
+    script:
+        "../../scripts/remove_relatives.py"
+
+rule create_chip:
+    input:
+        remove_list = "remove_list.txt",
+        background = "input.vcf.gz"
+    output:
+        back = "background.vcf.gz",
+        list_samples = "list.samples"
+    params:
+        list="pedsim/phased/phased.merge.list"
+    conda:
+        "../../envs/bcftools.yaml"
+    shell:
+        """
+            bcftools view {input.background} --force-samples --samples-file {input.remove_list} -O z -o {output.back}
+            bcftools query --list-samples {output.back} > list.samples
+        """

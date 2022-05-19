@@ -1,14 +1,20 @@
-mode: all
 flow: ibis
 ibis_seg_len: 7.0
 ibis_min_snp: 500
 zero_seg_count: 0.5
 zero_seg_len: 5.0
 alpha: 0.01
-num_batches: 1
+assembly: hg37
+phase: False
+impute: False
+remove_imputation: False
+sim_samples_file: ceph_unrelated_all.tsv
+sim_params_file: params/Relatives.def
+chip: background.vcf.gz
 samples_file: samples.tsv
-vcf_file: vcf/merged.vcf.gz
-use_simulated_ibd: False
+vcf_file: pedsim/simulated/reheaded_data.vcf.gz
+use_simulated_ibd: True
+use_rapid: False
 use_ibis: False
 ref_dir: /media/ref
 azure_public_key: "?sv=2020-08-04&ss=f&srt=sco&sp=r&se=2022-08-08T14:35:53Z&st=2021-08-27T06:35:53Z&spr=https&sig=SjxrSn2KBuQYjYgT2ZZTHQ6IOhA%2BRUSvLIgog%2FH2Tnk%3D"
@@ -80,10 +86,19 @@ reference:
     filesize: 50554370
     md5: 8d7d0bf2bfd13a39cad0e8d5012666a2
   SITE_1000GENOME:
-    file: 1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.only_rs.biallelic.tab
+    file: 1000genome/allele_info/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5c.20130502.sites.vcf.gz
     url: https://dataset1000genomes.blob.core.windows.net/dataset/release/20130502/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5c.20130502.sites.vcf.gz
     filesize: 1458224240
     md5: d9c22df30ea810d5c7d98391e482d1a3
+  hapmap_ped:
+    file: hapmap/ceu.ped
+  hapmap_mp:
+    file: hapmap/ceu.map
+  hapmap_fam:
+    file: hapmap/relations.txt
+    url: https://ftp-trace.ncbi.nih.gov/hapmap/phase_3/relationships_w_pops_121708.txt
+    filesize: 36765
+    md5: a70333f0e0bd9d5a72a3a253895228b1
   affymetrix_chip:
     file: 1000genome/affymetrix_chip/all.vcf.gz
     url: https://dataset1000genomes.blob.core.windows.net/dataset/release/20130502/supporting/hd_genotype_chip/ALL.wgs.nhgri_coriell_affy_6.20140825.genotypes_has_ped.vcf.gz
@@ -97,13 +112,8 @@ reference:
   bundle:
     file: ref.tar.gz
     url: https://bioinformatics.file.core.windows.net/bundles/ref.tar.gz
-    filesize: 18582485368
-    md5: 67278f83139f375e22bd56544d523fa3
-  bundle_min:
-    file: ref_min.tar.gz
-    url: https://bioinformatics.file.core.windows.net/bundles/ref_min.tar.gz
-    filesize: 3074816502
-    md5: 15002b7eb18e3b991c16ef1131c4cc42
+    filesize: 3799046878
+    md5: 1863f8d20c3cf281b2d87c7fe817bae6
   picard:
     file: picard.jar
     url: https://github.com/broadinstitute/picard/releases/download/2.26.2/picard.jar
