@@ -52,7 +52,7 @@ def split_by_id(input_ibd: str, samples_count: int, dest_dir: str):
             process_chunk_with_hash(chunk, denominator, dest_dir)
             logging.info(f'Chunk {i} of size {chunksize} was written to {output_ibd}')
         else:
-            logging.info('Empty chunk')
+            logging.info(f'Empty chunk {i}')
 
 
 if __name__ == '__main__':
