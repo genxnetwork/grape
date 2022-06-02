@@ -2,7 +2,9 @@ import os
 import pytest
 import docker
 import csv
+import shutil
 
+from datetime import datetime
 from reference_directory import ReferenceDirectory
 
 
@@ -18,15 +20,13 @@ METRICS_FILEPATH = 'results/metrics.tsv'
 
 
 def _get_download_reference_command(reference_directory):
-    REFERENCE_COMMAND = 'launcher.py reference --use-bundle --ref-directory %s ' \
-                        '--phase --impute --real-run'
-    return REFERENCE_COMMAND % reference_directory
+    return f'launcher.py reference --use-bundle --ref-directory {reference_directory} ' \
+            '--phase --impute --real-run'
 
 
 def _get_simulate_command(reference_directory, working_directory):
-    SIMULATE_COMMAND = 'launcher.py simulate --ref-directory %s --cores 8 ' \
-                       '--directory %s --flow ibis --assembly hg37 --seed 42 --real-run'
-    return SIMULATE_COMMAND % (reference_directory, working_directory)
+    return f'launcher.py simulate --ref-directory {reference_directory} --cores 8 ' \
+           f'--directory {working_directory} --flow ibis --assembly hg37 --seed 42 --real-run'
 
 
 def _read_metrics_file(filepath):
@@ -81,15 +81,31 @@ def reference_directory(docker_client, grape_image) -> ReferenceDirectory:
     return reference_directory
 
 
-def test_simulation(docker_client, grape_image, reference_directory):
+@pytest.fixture
+def working_directory():
+    utc_timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S-utc")
+    working_directory_name = '-'.join('simultation-ibis', utc_timestamp)
+    working_directory_path = os.path.join(HOME_DIRECTORY, working_directory_name)
+
+    yield working_directory_path
+
+    # Fixture teardown to remove working directory
+    shutil.rmtree(working_directory_path)
+
+
+@pytest.fixture
+def simulate_command():
+    return _get_simulate_command(CONTAINER_REFERENCE_DIRECTORY, CONTAINER_WORKING_DIRECTORY);
+
+
+def test_simulation(docker_client, grape_image, reference_directory, working_directory, simulate_command):
     working_directory = os.path.join(HOME_DIRECTORY, 'simulation-ibis')
-    command = _get_simulate_command(CONTAINER_REFERENCE_DIRECTORY, CONTAINER_WORKING_DIRECTORY)
     volumes = {
         reference_directory.path: {'bind': CONTAINER_REFERENCE_DIRECTORY, 'mode': 'ro'},
         working_directory: {'bind': CONTAINER_WORKING_DIRECTORY, 'mode': 'rw'}
     }
 
-    docker_client.containers.run(GRAPE_IMAGE_TAG, remove=True, command=command, volumes=volumes)
+    docker_client.containers.run(GRAPE_IMAGE_TAG, remove=True, command=simulate_command, volumes=volumes)
 
     # Read file result with simulation metrics
     metrics = _read_metrics_file(os.path.join(working_directory, METRICS_FILEPATH))
