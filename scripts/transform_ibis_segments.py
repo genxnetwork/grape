@@ -26,7 +26,7 @@ def process_chunk_with_hash(data: pandas.DataFrame, denominator: int, dest_dir: 
         dest_file = os.path.join(dest_dir, f'{bucket_id}.tsv')
         group.drop('bucket_id', inplace=True, axis='columns')
         group.to_csv(dest_file, index=False, header=None, sep='\t', mode='a')
-    
+
 
 def split_by_id(input_ibd: str, samples_count: int, dest_dir: str):
     names = [
@@ -43,13 +43,16 @@ def split_by_id(input_ibd: str, samples_count: int, dest_dir: str):
         'error_count',
         'error_density'
     ]
-    read_chunksize = int(1e+6) 
+    read_chunksize = int(1e+6)
     samples_chunksize = 2000
     denominator = samples_count // samples_chunksize + 1
-    
+
     for i, chunk in enumerate(pandas.read_csv(input_ibd, header=None, names=names, sep='\t', chunksize=read_chunksize)):
-        process_chunk_with_hash(chunk, denominator, dest_dir)
-        logging.info(f'Chunk {i} of size {read_chunksize} was written to {dest_dir} and split into {denominator} buckets')
+        if not chunk.empty:
+            process_chunk_with_hash(chunk, denominator, dest_dir)
+            logging.info(f'Chunk {i} of size {chunksize} was written to {output_ibd}')
+        else:
+            logging.info('Empty chunk')
 
 
 if __name__ == '__main__':
