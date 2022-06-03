@@ -92,8 +92,8 @@ if __name__ == '__main__':
 
     if ibd.empty or ersa.empty:
         logging.error("ersa postprocess input is empty")
-        with open(output_path, "w"):  # create empty output to avoid error
-            quit()
+        open(output_path, "w").close()  # create empty output to avoid error
+        quit()
 
     logging.info(f'ibd shape: {ibd.shape[0]}, ersa shape: {ersa.shape[0]}')
 
