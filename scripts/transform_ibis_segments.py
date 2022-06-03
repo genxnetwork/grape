@@ -50,9 +50,9 @@ def split_by_id(input_ibd: str, samples_count: int, dest_dir: str):
     for i, chunk in enumerate(pandas.read_csv(input_ibd, header=None, names=names, sep='\t', chunksize=read_chunksize)):
         if not chunk.empty:
             process_chunk_with_hash(chunk, denominator, dest_dir)
-            logging.info(f'Chunk {i} of size {chunksize} was written to {output_ibd}')
+            logging.info(f'Chunk {i} of size {read_chunksize} was written to {dest_dir} and split into {denominator} buckets')
         else:
-            logging.info(f'Empty chunk {i}')
+            logging.info(f'Empty chunk was written to {output_ibd}')
 
 
 if __name__ == '__main__':
