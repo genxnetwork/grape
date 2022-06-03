@@ -226,6 +226,7 @@ def get_parser_args():
 
     parser.add_argument(
         '--use-bundle',
+        action='store_true',
         default=False,
         help='Download all references as single file'
     )
@@ -286,7 +287,7 @@ def get_parser_args():
         raise ValueError('If --impute is present, then --phase must also be present')
 
     if args.command != 'reference' and args.use_bundle:
-        raise ValueError('--bundle option only available for reference downloading')
+        raise ValueError('--use-bundle option only available for reference downloading')
 
     if args.num_batches > args.cores:
         raise ValueError('Number of batches is bigger than number cores, please change --num-batches value to be lower or equal --cores')
