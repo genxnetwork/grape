@@ -90,6 +90,11 @@ if __name__ == '__main__':
     ibd = read_ibis(ibd_path)
     ersa = read_ersa(ersa_path)
 
+    if ibd.empty or ersa.empty:
+        logging.error("ersa postprocess input is empty")
+        open(output_path, "w").close()  # create empty output to avoid error
+        quit()
+
     logging.info(f'ibd shape: {ibd.shape[0]}, ersa shape: {ersa.shape[0]}')
 
     relatives = ibd.merge(ersa, how='outer', left_index=True, right_index=True)

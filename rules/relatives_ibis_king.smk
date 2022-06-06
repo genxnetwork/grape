@@ -131,6 +131,7 @@ rule ersa:
         r = '--nomask ' + '-r ' + str(config['ersa_r']) if config.get('weight_mask') else ''
     shell:
         """
+        touch {output}
         FILES="{input.ibd}"
         TEMPFILE=ersa/temp_relatives.tsv
         rm -f $TEMPFILE
