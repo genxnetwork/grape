@@ -52,7 +52,7 @@ def split_by_id(input_ibd: str, samples_count: int, dest_dir: str):
             process_chunk_with_hash(chunk, denominator, dest_dir)
             logging.info(f'Chunk {i} of size {read_chunksize} was written to {dest_dir} and split into {denominator} buckets')
         else:
-            logging.info(f'Empty chunk was written to {output_ibd}')
+            logging.info(f'No IBD segments were found in {input_ibd}. Nothing was written to {dest_dir}')
 
 
 if __name__ == '__main__':
