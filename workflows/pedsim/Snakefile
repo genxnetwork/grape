@@ -6,6 +6,7 @@ use_simulated_ibd = config['use_simulated_ibd'] if 'use_simulated_ibd' in config
 
 REF_DIR            = config['ref_dir']
 GRCH37_FASTA       = join(REF_DIR, config['reference']['GRCh37_fasta']['file'])
+PHASED_VCF         = join(REF_DIR, config['reference']['phased_ref']['file'])
 GENETIC_MAP        = join(REF_DIR, config['reference']['GENETIC_MAP']['file'])
 GENETIC_MAP_GRCH37 = join(REF_DIR, config['reference']['genetic_map_GRCh37']['file'])
 REF_VCF            = join(REF_DIR, config['reference']['vcfRef']['file'])
@@ -44,22 +45,9 @@ rule all:
         'results/accuracy.png'
 
 
-rule intersect:
-    input:
-        hd_genotype_chip=AFFYMETRIX_CHIP,
-        vcfRef=REF_VCF
-    output: 'pedsim/phased/chr{chrom}.phased.vcf.gz'
-    conda: '../../envs/bcftools.yaml'
-    shell:
-        """
-            bcftools isec -n=2 -w1 -r {wildcards.chrom} \
-             -O z -o {output} {input.vcfRef} {input.hd_genotype_chip}
-        """
-
-
 rule merge_background:
     input:
-        data=expand('pedsim/phased/chr{chrom}.phased.vcf.gz', chrom=CHROMOSOMES),
+        data=expand(PHASED_VCF, chrom=CHROMOSOMES),
         eu=config['sim_samples_file']
     output:
         'pedsim/phased/background.vcf.gz'
