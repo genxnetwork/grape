@@ -16,6 +16,8 @@ CMMAP              = join(REF_DIR, config["reference"]["cmmap"]["file"])
 SITE_1000GENOME    = join(REF_DIR, config["reference"]["SITE_1000GENOME"]["file"])
 AFFYMETRIX_CHIP    = join(REF_DIR, config["reference"]["affymetrix_chip"]["file"])
 PEDSIM_MAP         = join(REF_DIR, config["reference"]["pedsim_map"]["file"])
+REF_VCF            = join(REF_DIR, config['reference']['vcfRef']['file'])
+PHASED_VCF         = join(REF_DIR, config['reference']['phased_ref']['file'])
 
 GRCH37_FASTA_url            = config["reference"]["GRCh37_fasta"]["url"]
 GRCH37_FASTA_md5            = config["reference"]["GRCh37_fasta"]["md5"]
@@ -75,7 +77,8 @@ if need_phase or need_imputation:
             pedsim_map = PEDSIM_MAP,
             affymetrix_chip = AFFYMETRIX_CHIP,
             vcfRef = expand(REF_VCF, chrom=CHROMOSOMES),
-            refHaps = expand(REF_HAPS, chrom=CHROMOSOMES)
+            refHaps = expand(REF_HAPS, chrom=CHROMOSOMES),
+            phased_vcf = expand(PHASED_VCF, chrom=CHROMOSOMES)
 else:
     rule all:
         input:
@@ -325,6 +328,18 @@ rule download_affymetrix_chip:
             wget "{AFFYMETRIX_CHIP_url}.tbi{DATASET_KEY}" -O {AFFYMETRIX_CHIP}.tbi --tries 50 -c  |& tee -a {log}
         """
 
+rule intersect:
+    input:
+        hd_genotype_chip=AFFYMETRIX_CHIP,
+        vcfRef=REF_VCF
+    output: PHASED_VCF
+    conda: '../../envs/bcftools.yaml'
+    shell:
+        """
+            bcftools isec -n=2 -w1 -r {wildcards.chrom} \
+             -O z -o {output} {input.vcfRef} {input.hd_genotype_chip}
+        """
+
 
 rule download_pedsim_map:
     output:
@@ -350,4 +365,3 @@ rule download_pedsim_map:
             done
             rm -f {REF_DIR}/{PEDSIM_MAP_basename} |& tee -a {log}
         """
-        
