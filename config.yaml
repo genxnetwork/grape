@@ -36,6 +36,8 @@ reference:
     url: https://ftp-trace.ncbi.nih.gov/hapmap/recombination/2011-01_phaseII_B37/genetic_map_HapMapII_GRCh37.tar.gz
     filesize: 37730100
     md5: 1bc10a34d985e68e1f38ceb137b87929
+  phased_ref:
+    file: 1000genome/phased/chr{chrom}.phased.vcf.gz
   vcfRef:
     file: 1000genome/bcf/1000genome_chr{chrom}.bcf
     url: https://dataset1000genomes.blob.core.windows.net/dataset/release/20130502/supporting/bcf_files/ALL.chr$chrom.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.bcf
@@ -107,3 +109,4 @@ reference:
   picard:
     file: picard.jar
     url: https://github.com/broadinstitute/picard/releases/download/2.26.2/picard.jar
+
