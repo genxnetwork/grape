@@ -62,7 +62,7 @@ This way is faster, since all the post-processing procedures have been already p
 
 ```bash
 docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
-    genx_relatives:latest launcher.py reference --use-bundle \
+    genx_relatives:latest launcher.py reference --use-bundle True\
         --ref-directory /media/ref --phase --impute --real-run
 ```
 
