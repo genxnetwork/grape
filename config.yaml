@@ -98,9 +98,9 @@ reference:
     md5: 39e6e8620d616362875f2538eae2f279
   bundle:
     file: ref.tar.gz
-    url: https://bioinformatics.file.core.windows.net/bundles/ref.tar.gz
-    filesize: 18582485368
-    md5: 67278f83139f375e22bd56544d523fa3
+    url: https://bioinformatics.file.core.windows.net/bundles/ref_v2.tar.gz
+    filesize: 19411373184
+    md5: 8043d70ff7dbdc35e67c7d3728bb7ad8
   bundle_min:
     file: ref_min.tar.gz
     url: https://bioinformatics.file.core.windows.net/bundles/ref_min.tar.gz
@@ -109,4 +109,3 @@ reference:
   picard:
     file: picard.jar
     url: https://github.com/broadinstitute/picard/releases/download/2.26.2/picard.jar
-
