@@ -2,8 +2,8 @@ name: Run Python Tests
 
 on:
   pull_request:
-    branches:
-      - master
+    branches: [ master ]
+    types: [ opened ]
 
   workflow_dispatch:
 
@@ -11,6 +11,9 @@ jobs:
   test:
     # Self-hosted runner
     runs-on: self-hosted
+    if: |
+      !github.event.pull_request.head.repo.fork &&
+      github.head_ref == 'develop'
 
     steps:
       - uses: actions/checkout@v3
