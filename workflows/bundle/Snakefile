@@ -50,9 +50,6 @@ if full:
                     exit 1
                 fi
                 tar -xzvf {REF_DIR}/{BUNDLE_basename} -C {REF_DIR} |& tee -a {log}
-                mv -bfv ref_test/* {REF_DIR}
-                rm -rf ref_test
-                find -name "*~" -delete
                 rm -f {REF_DIR}/{BUNDLE_basename} |& tee -a {log}
             """
 else:
