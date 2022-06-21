@@ -12,6 +12,7 @@ CMMAP              = join(REF_DIR, config["reference"]["cmmap"]["file"])
 SITE_1000GENOME    = join(REF_DIR, config["reference"]["SITE_1000GENOME"]["file"])
 AFFYMETRIX_CHIP    = join(REF_DIR, config["reference"]["affymetrix_chip"]["file"])
 PEDSIM_MAP         = join(REF_DIR, config["reference"]["pedsim_map"]["file"])
+PHASED_VCF         = join(REF_DIR, config['reference']['phased_ref']['file'])
 
 full = config['phase'] or config['impute']
 
@@ -34,7 +35,8 @@ if full:
             pedsim_map = PEDSIM_MAP,
             affymetrix_chip = AFFYMETRIX_CHIP,
             vcfRef = expand(REF_VCF, chrom=CHROMOSOMES),
-            refHaps = expand(REF_HAPS, chrom=CHROMOSOMES)
+            refHaps = expand(REF_HAPS, chrom=CHROMOSOMES),
+            phased_vcf = expand(PHASED_VCF, chrom=CHROMOSOMES)
         conda:
             "../../envs/download.yaml"
         log:

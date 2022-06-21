@@ -36,6 +36,8 @@ reference:
     url: https://ftp-trace.ncbi.nih.gov/hapmap/recombination/2011-01_phaseII_B37/genetic_map_HapMapII_GRCh37.tar.gz
     filesize: 37730100
     md5: 1bc10a34d985e68e1f38ceb137b87929
+  phased_ref:
+    file: 1000genome/phased/chr{chrom}.phased.vcf.gz
   vcfRef:
     file: 1000genome/bcf/1000genome_chr{chrom}.bcf
     url: https://dataset1000genomes.blob.core.windows.net/dataset/release/20130502/supporting/bcf_files/ALL.chr$chrom.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.bcf
@@ -96,9 +98,9 @@ reference:
     md5: 39e6e8620d616362875f2538eae2f279
   bundle:
     file: ref.tar.gz
-    url: https://bioinformatics.file.core.windows.net/bundles/ref.tar.gz
-    filesize: 18582485368
-    md5: 67278f83139f375e22bd56544d523fa3
+    url: https://bioinformatics.file.core.windows.net/bundles/ref_v2.tar.gz
+    filesize: 19411359855
+    md5: 300fa3e768b677958a2b8e270115c6d9
   bundle_min:
     file: ref_min.tar.gz
     url: https://bioinformatics.file.core.windows.net/bundles/ref_min.tar.gz
