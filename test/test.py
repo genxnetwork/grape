@@ -8,12 +8,12 @@ from datetime import datetime
 from reference_directory import ReferenceDirectory
 
 
-HOME_DIRECTORY = os.path.expanduser('/media/')
+HOME_DIRECTORY = os.path.expanduser('~')
 
 GRAPE_DOCKERFILE = 'containers/snakemake/Dockerfile'
 GRAPE_IMAGE_TAG = 'genx_relatives:latest'
 
-REFERENCE_DIRECTORY = os.path.join(HOME_DIRECTORY, 'ref_test')
+REFERENCE_DIRECTORY = os.path.join(HOME_DIRECTORY, 'ref')
 CONTAINER_REFERENCE_DIRECTORY = '/media/ref'
 CONTAINER_WORKING_DIRECTORY = '/media/data'
 TESTING_REAL_DATA_DIRECTORY = '/media/test_data'
