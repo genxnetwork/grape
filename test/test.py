@@ -63,8 +63,8 @@ def _read_samples_file(filepath):
     with open(filepath, 'r') as samples_file:
         reader = csv.DictReader(samples_file)
         for row in reader:
-            sample = row['id']
-            samples[sample] = row['date']
+            sample_id = row['id']
+            samples[sample_id] = row['date']
 
     return samples
 
@@ -74,8 +74,8 @@ def _read_relatives_file(filepath):
     with open(filepath, 'r') as relatives_file:
         reader = csv.DictReader(relatives_file, delimiter="\t")
         for row in reader:
-            relative = (row['id1'], row['id2'])
-            relatives.append(relative)
+            relationship = (row['id1'], row['id2'])
+            relatives.append(relationship)
 
     return relatives
 
@@ -154,8 +154,8 @@ simulation_list = [('ibis', 'simulation-ibis'),
                    ('germline-king --assembly hg38 --phase --impute',  # germline needs extra flags to work
                     'simulation-germline-king')]
 
-real_data_list = [('simulation-khazar', KHAZAR_VCF),
-                  ('simulation-aadr', f'{AADR_VCF} --het-samples 0.0')]  # ancient samples have zero heterozygosity
+real_data_list = [('realdata-khazar', KHAZAR_VCF),
+                  ('realdata-aadr', f'{AADR_VCF} --het-samples 0.0')]  # ancient samples have zero heterozygosity
 
 
 @pytest.mark.parametrize('simulate_command,working_directory', simulation_list, indirect=True)
@@ -206,5 +206,5 @@ def test_real_data(docker_client, grape_image, reference_directory,
         assert 55 >= num_of_relatives >= 57
     elif current_data == 'aadr':
         aadr_samples = _read_samples_file(AADR_SAMPLES_FILEPATH)
-        for relative in relatives.iterrows():
-            assert aadr_samples[relative[0]] == aadr_samples[relative[1]]
+        for relationship in relatives.iterrows():
+            assert aadr_samples[relationship[0]] == aadr_samples[relationship[1]]
