@@ -3,10 +3,15 @@ import pytest
 import docker
 import csv
 import shutil
+import json
+import hashlib
 
 from datetime import datetime
 from reference_directory import ReferenceDirectory
 
+
+with open('../test_data.json') as config:
+    TEST_DATA_CONFIG = json.load(config)
 
 HOME_DIRECTORY = os.path.expanduser('~')
 
@@ -24,24 +29,22 @@ RELATIVES_FILEPATH = 'results/relatives.tsv'
 AADR_SAMPLES_FILEPATH = os.path.join(TESTING_REAL_DATA_DIRECTORY, 'aadr_samples.csv')
 
 
-def _get_download_reference_command(reference_directory):
-    return f'launcher.py reference --use-bundle --ref-directory {reference_directory} ' \
-            '--phase --impute --real-run'
 
+def _download_test_data(test_data_directory):
+    url = TEST_DATA_CONFIG['download']['url']
+    key = TEST_DATA_CONFIG['download']['azure_public_key']
+    file = TEST_DATA_CONFIG['download']['file']
+    md5_sum = TEST_DATA_CONFIG['download']['md5']
 
-def _get_simulate_command(reference_directory, working_directory, flow):
-    return f'launcher.py simulate --ref-directory {reference_directory} --cores 8 ' \
-           f'--directory {working_directory} --flow {flow} --assembly hg37 --seed 42 --real-run'
+    os.system(f'wget "{url}/{key}" -O {test_data_directory}/{file} --tries 50')
+    with open(os.path.join(test_data_directory, file), 'rb') as test_data_tar:
+        data = test_data_tar.read()
+        md5_returned = hashlib.md5(data).hexdigest()
+        if md5_returned != md5_sum:
+            return True
+        else:
+            return False
 
-
-def _get_preprocess_command(reference_directory, working_directory, input_file):
-    return f'launcher.py preprocess --ref-directory {reference_directory} --cores 8 ' \
-           f'--directory {working_directory} --vcf-file {input_file} --assembly hg37 --real-run'
-
-
-def _get_find_command(reference_directory, working_directory):
-    return f'launcher.py find --ref-directory {reference_directory} --cores 8 ' \
-           f'--directory {working_directory} --flow ibis --real-run'
 
 
 def _read_metrics_file(filepath):
@@ -63,8 +66,8 @@ def _read_samples_file(filepath):
     with open(filepath, 'r') as samples_file:
         reader = csv.DictReader(samples_file)
         for row in reader:
-            sample_id = row['id']
-            samples[sample_id] = row['date']
+            sample = row['id']
+            samples[sample] = row['date']
 
     return samples
 
@@ -74,8 +77,8 @@ def _read_relatives_file(filepath):
     with open(filepath, 'r') as relatives_file:
         reader = csv.DictReader(relatives_file, delimiter="\t")
         for row in reader:
-            relationship = (row['id1'], row['id2'])
-            relatives.append(relationship)
+            relative = (row['id1'], row['id2'])
+            relatives.append(relative)
 
     return relatives
 
@@ -103,11 +106,36 @@ def grape_image(docker_client):
 
 
 @pytest.fixture
+def test_data_directory():
+    content = TEST_DATA_CONFIG['content']
+    actual_content = {}
+
+    if not os.path.exists(TESTING_REAL_DATA_DIRECTORY):
+        print('No test data found, new test data archive will be downloaded!')
+        if not _download_test_data(TESTING_REAL_DATA_DIRECTORY):
+            raise Exception('Test data archive download failed!')
+
+    for root, _, filenames in os.walk(TESTING_REAL_DATA_DIRECTORY):
+        for filename in filenames:
+            filepath = os.path.join(root, filename)
+            relative_path = os.path.relpath(filepath, reference_directory_path)
+            actual_content[relative_path] = os.path.getsize(filepath)
+
+    if actual_content != content:
+        print('Current test data files seem not match "test_data.json", new test data archive will be downloaded!')
+        if not _download_test_data(TESTING_REAL_DATA_DIRECTORY):
+            raise Exception('Test data archive download failed!')
+
+    return TESTING_REAL_DATA_DIRECTORY
+
+
+@pytest.fixture
 def reference_directory(docker_client, grape_image) -> ReferenceDirectory:
     reference_directory = ReferenceDirectory(REFERENCE_DIRECTORY)
 
     if not reference_directory.is_valid():
-        command = _get_download_reference_command(CONTAINER_REFERENCE_DIRECTORY)
+        command = f'launcher.py reference --use-bundle --ref-directory {CONTAINER_REFERENCE_DIRECTORY} ' \
+            '--phase --impute --real-run'
         volumes = {
             reference_directory.path: {'bind': CONTAINER_REFERENCE_DIRECTORY, 'mode': 'rw'}
         }
@@ -115,11 +143,6 @@ def reference_directory(docker_client, grape_image) -> ReferenceDirectory:
         docker_client.containers.run(GRAPE_IMAGE_TAG, remove=True, command=command, volumes=volumes)
 
     return reference_directory
-
-
-@pytest.fixture
-def test_data_directory():
-    return TESTING_REAL_DATA_DIRECTORY
 
 
 @pytest.fixture(scope="function")
@@ -136,29 +159,32 @@ def working_directory(request):
 
 @pytest.fixture(scope="function")
 def simulate_command(request):
-    return _get_simulate_command(CONTAINER_REFERENCE_DIRECTORY, CONTAINER_WORKING_DIRECTORY, request.param);
+    return f'launcher.py simulate --ref-directory {CONTAINER_REFERENCE_DIRECTORY} --cores 8 ' \
+           f'--directory {CONTAINER_WORKING_DIRECTORY} --flow {request.param} --assembly hg37 --seed 42 --real-run';
 
 
 @pytest.fixture()
 def find_command():
-    return _get_find_command(CONTAINER_REFERENCE_DIRECTORY, CONTAINER_WORKING_DIRECTORY);
+    return f'launcher.py find --ref-directory {CONTAINER_REFERENCE_DIRECTORY} --cores 8 ' \
+           f'--directory {CONTAINER_WORKING_DIRECTORY} --flow ibis --real-run';
 
 
 @pytest.fixture(scope="function")
 def preprocess_command(request):
-    return _get_preprocess_command(CONTAINER_REFERENCE_DIRECTORY, CONTAINER_WORKING_DIRECTORY, request.param);
+    return f'launcher.py preprocess --ref-directory {CONTAINER_REFERENCE_DIRECTORY} --cores 8 ' \
+           f'--directory {CONTAINER_WORKING_DIRECTORY} --vcf-file {request.param} --assembly hg37 --real-run';
 
 
-simulation_list = [('ibis', 'simulation-ibis'),
-                   ('ibis-king', 'simulation-ibis-king'),
+simulation_list = [('ibis', 'simulation-ibis', 'ibis'),
+                   ('ibis-king', 'simulation-ibis-king', 'ibis-king'),
                    ('germline-king --assembly hg38 --phase --impute',  # germline needs extra flags to work
-                    'simulation-germline-king')]
+                    'simulation-germline-king', 'germline-king')]
 
-real_data_list = [('realdata-khazar', KHAZAR_VCF),
-                  ('realdata-aadr', f'{AADR_VCF} --het-samples 0.0')]  # ancient samples have zero heterozygosity
+real_data_list = [('real-khazar', KHAZAR_VCF, 'khazar'),
+                  ('real-aadr', f'{AADR_VCF} --het-samples 0.0', 'aadr')]  # ancient samples have zero heterozygosity
 
 
-@pytest.mark.parametrize('simulate_command,working_directory', simulation_list, indirect=True)
+@pytest.mark.parametrize('simulate_command,working_directory,test_name', simulation_list, indirect=True)
 def test_simulation(docker_client, grape_image, reference_directory, working_directory, simulate_command):
     volumes = {
         reference_directory.path: {'bind': CONTAINER_REFERENCE_DIRECTORY, 'mode': 'ro'},
@@ -184,7 +210,7 @@ def test_simulation(docker_client, grape_image, reference_directory, working_dir
     assert metrics['9']['Recall'] > 0 and metrics['1']['Precision'] > 0.9
 
 
-@pytest.mark.parametrize('working_directory,preprocess_command', real_data_list, indirect=True)
+@pytest.mark.parametrize('working_directory,preprocess_command,test_name', real_data_list, indirect=True)
 def test_real_data(docker_client, grape_image, reference_directory,
                    working_directory, test_data_directory, find_command, preprocess_command):
     volumes = {
