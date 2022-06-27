@@ -1,0 +1,14 @@
+{
+   "download": {
+      "file": "test_data.tar.gz",
+      "url": "https://bioinformatics.file.core.windows.net/test/test_data.tar.gz",
+      "filesize": 3462612,
+      "md5": "c497d0e9840d847c9d8d1b050b4e2427",
+      "azure_public_key": "?sv=2020-08-04&ss=f&srt=sco&sp=r&se=2022-08-08T14:35:53Z&st=2021-08-27T06:35:53Z&spr=https&sig=SjxrSn2KBuQYjYgT2ZZTHQ6IOhA%2BRUSvLIgog%2FH2Tnk%3D"
+   },
+   "content": {
+      "aadr.reheaded.vcf.gz": 3556010338,
+      "aadr_samples.csv": 283133,
+      "khazar314.vcf.gz": 31235749
+   }
+}
