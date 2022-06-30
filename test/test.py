@@ -270,7 +270,7 @@ def test_khazar(docker_client, grape_image, reference_directory, working_directo
 
     # Validate relatives
     num_of_relatives = len(list(relatives))
-    assert 55 >= num_of_relatives >= 57
+    assert 56 <= num_of_relatives >= 58
 
 
 @pytest.mark.parametrize('working_directory', ['aadr'], indirect=True)
@@ -296,5 +296,5 @@ def test_aadr(docker_client, grape_image, reference_directory, working_directory
 
     # Validate relatives
     aadr_samples = _read_samples_file(AADR_SAMPLES_FILEPATH)
-    for relationship in relatives.iterrows():
+    for relationship in relatives:
         assert aadr_samples[relationship[0]] == aadr_samples[relationship[1]]
