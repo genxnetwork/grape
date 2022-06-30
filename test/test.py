@@ -9,16 +9,16 @@ import hashlib
 from datetime import datetime
 from reference_directory import ReferenceDirectory
 
-
-with open('../test_data.json') as config:
+dirname = os.path.dirname(__file__)
+with open(os.path.join(dirname, 'test_data.json')) as config:
     TEST_DATA_CONFIG = json.load(config)
 
-HOME_DIRECTORY = os.path.expanduser('~')
+HOME_DIRECTORY = os.path.expanduser('/media')
 
 GRAPE_DOCKERFILE = 'containers/snakemake/Dockerfile'
 GRAPE_IMAGE_TAG = 'genx_relatives:latest'
 
-REFERENCE_DIRECTORY = os.path.join(HOME_DIRECTORY, 'ref')
+REFERENCE_DIRECTORY = os.path.join(HOME_DIRECTORY, 'ref_test')
 CONTAINER_REFERENCE_DIRECTORY = '/media/ref'
 CONTAINER_WORKING_DIRECTORY = '/media/data'
 TESTING_REAL_DATA_DIRECTORY = '/media/test_data'
@@ -27,7 +27,6 @@ AADR_VCF = os.path.join(TESTING_REAL_DATA_DIRECTORY, 'aadr.reheaded.vcf.gz')
 METRICS_FILEPATH = 'results/metrics.tsv'
 RELATIVES_FILEPATH = 'results/relatives.tsv'
 AADR_SAMPLES_FILEPATH = os.path.join(TESTING_REAL_DATA_DIRECTORY, 'aadr_samples.csv')
-
 
 
 def _download_test_data(test_data_directory):
@@ -44,7 +43,6 @@ def _download_test_data(test_data_directory):
             return True
         else:
             return False
-
 
 
 def _read_metrics_file(filepath):
@@ -98,11 +96,12 @@ def grape_image(docker_client):
         path='.', dockerfile=GRAPE_DOCKERFILE, tag=GRAPE_IMAGE_TAG,
         rm=True, container_limits={'memory': 8 * 1024 * 1024 * 1024}
     )
-
+    print(f'\nCreated docker image with tag {GRAPE_IMAGE_TAG}')
     yield docker_client.images.get(GRAPE_IMAGE_TAG)
 
     # Fixture teardown to remove GRAPE Docker image
     docker_client.images.remove(GRAPE_IMAGE_TAG, force=True, noprune=False)
+    print(f'\nRemoved docker image with tag {GRAPE_IMAGE_TAG}')
 
 
 @pytest.fixture
@@ -111,18 +110,18 @@ def test_data_directory():
     actual_content = {}
 
     if not os.path.exists(TESTING_REAL_DATA_DIRECTORY):
-        print('No test data found, new test data archive will be downloaded!')
+        print('\nNo test data found, new test data archive will be downloaded!')
         if not _download_test_data(TESTING_REAL_DATA_DIRECTORY):
             raise Exception('Test data archive download failed!')
 
     for root, _, filenames in os.walk(TESTING_REAL_DATA_DIRECTORY):
         for filename in filenames:
             filepath = os.path.join(root, filename)
-            relative_path = os.path.relpath(filepath, reference_directory_path)
+            relative_path = os.path.relpath(filepath, TESTING_REAL_DATA_DIRECTORY)
             actual_content[relative_path] = os.path.getsize(filepath)
 
     if actual_content != content:
-        print('Current test data files seem not match "test_data.json", new test data archive will be downloaded!')
+        print('\nCurrent test data files seem not match "test_data.json", new test data archive will be downloaded!')
         if not _download_test_data(TESTING_REAL_DATA_DIRECTORY):
             raise Exception('Test data archive download failed!')
 
@@ -134,6 +133,8 @@ def reference_directory(docker_client, grape_image) -> ReferenceDirectory:
     reference_directory = ReferenceDirectory(REFERENCE_DIRECTORY)
 
     if not reference_directory.is_valid():
+        print('\nCurrrent reference data files seem not match '
+              '"reference_directory_content.json", new reference data archive will be downloaded!')
         command = f'launcher.py reference --use-bundle --ref-directory {CONTAINER_REFERENCE_DIRECTORY} ' \
             '--phase --impute --real-run'
         volumes = {
@@ -157,39 +158,45 @@ def working_directory(request):
     shutil.rmtree(working_directory_path)
 
 
-@pytest.fixture(scope="function")
-def simulate_command(request):
-    return f'launcher.py simulate --ref-directory {CONTAINER_REFERENCE_DIRECTORY} --cores 8 ' \
-           f'--directory {CONTAINER_WORKING_DIRECTORY} --flow {request.param} --assembly hg37 --seed 42 --real-run';
-
-
-@pytest.fixture()
-def find_command():
-    return f'launcher.py find --ref-directory {CONTAINER_REFERENCE_DIRECTORY} --cores 8 ' \
-           f'--directory {CONTAINER_WORKING_DIRECTORY} --flow ibis --real-run';
-
-
-@pytest.fixture(scope="function")
-def preprocess_command(request):
-    return f'launcher.py preprocess --ref-directory {CONTAINER_REFERENCE_DIRECTORY} --cores 8 ' \
-           f'--directory {CONTAINER_WORKING_DIRECTORY} --vcf-file {request.param} --assembly hg37 --real-run';
-
-
-simulation_list = [('ibis', 'simulation-ibis', 'ibis'),
-                   ('ibis-king', 'simulation-ibis-king', 'ibis-king'),
-                   ('germline-king --assembly hg38 --phase --impute',  # germline needs extra flags to work
-                    'simulation-germline-king', 'germline-king')]
-
-real_data_list = [('real-khazar', KHAZAR_VCF, 'khazar'),
-                  ('real-aadr', f'{AADR_VCF} --het-samples 0.0', 'aadr')]  # ancient samples have zero heterozygosity
-
-
-@pytest.mark.parametrize('simulate_command,working_directory,test_name', simulation_list, indirect=True)
-def test_simulation(docker_client, grape_image, reference_directory, working_directory, simulate_command):
+@pytest.mark.parametrize('working_directory', ['ibis'], indirect=True)
+def test_simulation_ibis(docker_client, grape_image, reference_directory, working_directory):
     volumes = {
         reference_directory.path: {'bind': CONTAINER_REFERENCE_DIRECTORY, 'mode': 'ro'},
         working_directory: {'bind': CONTAINER_WORKING_DIRECTORY, 'mode': 'rw'}
     }
+
+    simulate_command = f'launcher.py simulate --ref-directory {CONTAINER_REFERENCE_DIRECTORY} --cores 8 '\
+                       f'--directory {CONTAINER_WORKING_DIRECTORY} --flow ibis --assembly hg37 --seed 42 --real-run'
+
+    docker_client.containers.run(GRAPE_IMAGE_TAG, remove=True, command=simulate_command, volumes=volumes)
+
+    # Read file result with simulation metrics
+    metrics = _read_metrics_file(os.path.join(working_directory, METRICS_FILEPATH))
+
+    # Validate simultation metrics
+    assert metrics['1']['Recall'] > 0.99 and metrics['1']['Precision'] > 0.99
+    assert metrics['2']['Recall'] > 0.99 and metrics['2']['Precision'] > 0.99
+    assert metrics['3']['Recall'] > 0.99 and metrics['3']['Precision'] > 0.99
+
+    assert metrics['4']['Recall'] > 0.90 and metrics['4']['Precision'] > 0.95
+    assert metrics['5']['Recall'] > 0.90 and metrics['5']['Precision'] > 0.95
+    assert metrics['6']['Recall'] > 0.80 and metrics['6']['Precision'] > 0.90
+
+    assert metrics['7']['Recall'] > 0 and metrics['1']['Precision'] > 0.9
+    assert metrics['8']['Recall'] > 0 and metrics['1']['Precision'] > 0.9
+    assert metrics['9']['Recall'] > 0 and metrics['1']['Precision'] > 0.9
+
+
+@pytest.mark.parametrize('working_directory', ['ibis-king'], indirect=True)
+def test_simulation_king(docker_client, grape_image, reference_directory, working_directory):
+    volumes = {
+        reference_directory.path: {'bind': CONTAINER_REFERENCE_DIRECTORY, 'mode': 'ro'},
+        working_directory: {'bind': CONTAINER_WORKING_DIRECTORY, 'mode': 'rw'}
+    }
+
+    simulate_command = f'launcher.py simulate --ref-directory {CONTAINER_REFERENCE_DIRECTORY} --cores 8 ' \
+                       f'--directory {CONTAINER_WORKING_DIRECTORY} --flow ibis-king --assembly hg37 ' \
+                       f'--seed 42 --real-run'
 
     docker_client.containers.run(GRAPE_IMAGE_TAG, remove=True, command=simulate_command, volumes=volumes)
 
@@ -210,14 +217,50 @@ def test_simulation(docker_client, grape_image, reference_directory, working_dir
     assert metrics['9']['Recall'] > 0 and metrics['1']['Precision'] > 0.9
 
 
-@pytest.mark.parametrize('working_directory,preprocess_command,test_name', real_data_list, indirect=True)
-def test_real_data(docker_client, grape_image, reference_directory,
-                   working_directory, test_data_directory, find_command, preprocess_command):
+@pytest.mark.parametrize('working_directory', ['germline-king'], indirect=True)
+def test_simulation_germline_king(docker_client, grape_image, reference_directory, working_directory):
+    volumes = {
+        reference_directory.path: {'bind': CONTAINER_REFERENCE_DIRECTORY, 'mode': 'ro'},
+        working_directory: {'bind': CONTAINER_WORKING_DIRECTORY, 'mode': 'rw'}
+    }
+
+    simulate_command = f'launcher.py simulate --ref-directory {CONTAINER_REFERENCE_DIRECTORY} --cores 8 ' \
+                       f'--directory {CONTAINER_WORKING_DIRECTORY} --flow germline-king --assembly hg38 ' \
+                       f'--phase --impute --seed 42 --real-run'
+
+    docker_client.containers.run(GRAPE_IMAGE_TAG, remove=True, command=simulate_command, volumes=volumes)
+
+    # Read file result with simulation metrics
+    metrics = _read_metrics_file(os.path.join(working_directory, METRICS_FILEPATH))
+
+    # Validate simultation metrics
+    assert metrics['1']['Recall'] > 0.99 and metrics['1']['Precision'] > 0.99
+    assert metrics['2']['Recall'] > 0.99 and metrics['2']['Precision'] > 0.99
+    assert metrics['3']['Recall'] > 0.99 and metrics['3']['Precision'] > 0.99
+
+    assert metrics['4']['Recall'] > 0.90 and metrics['4']['Precision'] > 0.95
+    assert metrics['5']['Recall'] > 0.90 and metrics['5']['Precision'] > 0.95
+    assert metrics['6']['Recall'] > 0.80 and metrics['6']['Precision'] > 0.90
+
+    assert metrics['7']['Recall'] > 0 and metrics['1']['Precision'] > 0.9
+    assert metrics['8']['Recall'] > 0 and metrics['1']['Precision'] > 0.9
+    assert metrics['9']['Recall'] > 0 and metrics['1']['Precision'] > 0.9
+
+
+@pytest.mark.parametrize('working_directory', ['khazar'], indirect=True)
+def test_khazar(docker_client, grape_image, reference_directory, working_directory, test_data_directory):
     volumes = {
         reference_directory.path: {'bind': CONTAINER_REFERENCE_DIRECTORY, 'mode': 'ro'},
         working_directory: {'bind': CONTAINER_WORKING_DIRECTORY, 'mode': 'rw'},
         test_data_directory: {'bind': TESTING_REAL_DATA_DIRECTORY, 'mode': 'ro'}
     }
+
+    preprocess_command = f'launcher.py preprocess --ref-directory {CONTAINER_REFERENCE_DIRECTORY} --cores 8 ' \
+                         f'--directory {CONTAINER_WORKING_DIRECTORY} --vcf-file {KHAZAR_VCF} ' \
+                         f'--assembly hg37 --real-run'
+
+    find_command = f'launcher.py find --ref-directory {CONTAINER_REFERENCE_DIRECTORY} --cores 8 ' \
+                   f'--directory {CONTAINER_WORKING_DIRECTORY} --flow ibis --real-run'
 
     docker_client.containers.run(GRAPE_IMAGE_TAG, remove=True, command=preprocess_command, volumes=volumes)
     docker_client.containers.run(GRAPE_IMAGE_TAG, remove=True, command=find_command, volumes=volumes)
@@ -226,11 +269,32 @@ def test_real_data(docker_client, grape_image, reference_directory,
     relatives = _read_relatives_file(os.path.join(working_directory, RELATIVES_FILEPATH))
 
     # Validate relatives
-    current_data = working_directory.split('-')[0]
-    if current_data == 'khazar':
-        num_of_relatives = len(list(relatives))
-        assert 55 >= num_of_relatives >= 57
-    elif current_data == 'aadr':
-        aadr_samples = _read_samples_file(AADR_SAMPLES_FILEPATH)
-        for relationship in relatives.iterrows():
-            assert aadr_samples[relationship[0]] == aadr_samples[relationship[1]]
+    num_of_relatives = len(list(relatives))
+    assert 55 >= num_of_relatives >= 57
+
+
+@pytest.mark.parametrize('working_directory', ['aadr'], indirect=True)
+def test_aadr(docker_client, grape_image, reference_directory, working_directory, test_data_directory):
+    volumes = {
+        reference_directory.path: {'bind': CONTAINER_REFERENCE_DIRECTORY, 'mode': 'ro'},
+        working_directory: {'bind': CONTAINER_WORKING_DIRECTORY, 'mode': 'rw'},
+        test_data_directory: {'bind': TESTING_REAL_DATA_DIRECTORY, 'mode': 'ro'}
+    }
+
+    preprocess_command = f'launcher.py preprocess --ref-directory {CONTAINER_REFERENCE_DIRECTORY} --cores 8 ' \
+                         f'--directory {CONTAINER_WORKING_DIRECTORY} --vcf-file {KHAZAR_VCF} --het-samples 0.0 ' \
+                         f'--assembly hg37 --real-run'
+
+    find_command = f'launcher.py find --ref-directory {CONTAINER_REFERENCE_DIRECTORY} --cores 8 ' \
+                   f'--directory {CONTAINER_WORKING_DIRECTORY} --flow ibis --real-run'
+
+    docker_client.containers.run(GRAPE_IMAGE_TAG, remove=True, command=preprocess_command, volumes=volumes)
+    docker_client.containers.run(GRAPE_IMAGE_TAG, remove=True, command=find_command, volumes=volumes)
+
+    # Read file result with relatives
+    relatives = _read_relatives_file(os.path.join(working_directory, RELATIVES_FILEPATH))
+
+    # Validate relatives
+    aadr_samples = _read_samples_file(AADR_SAMPLES_FILEPATH)
+    for relationship in relatives.iterrows():
+        assert aadr_samples[relationship[0]] == aadr_samples[relationship[1]]
