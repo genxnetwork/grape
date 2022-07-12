@@ -214,7 +214,7 @@ def test_simulation_king(docker_client, grape_image, reference_directory, workin
     # Validate simultation metrics
     assert metrics['1']['Recall'] > 0.99 and metrics['1']['Precision'] > 0.99
     assert metrics['2']['Recall'] > 0.99 and metrics['2']['Precision'] > 0.99
-    assert metrics['3']['Recall'] > 0.99 and metrics['3']['Precision'] > 0.98
+    assert metrics['3']['Recall'] > 0.99 and metrics['3']['Precision'] > 0.97
 
     assert metrics['4']['Recall'] > 0.90 and metrics['4']['Precision'] > 0.95
     assert metrics['5']['Recall'] > 0.90 and metrics['5']['Precision'] > 0.95
