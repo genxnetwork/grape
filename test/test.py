@@ -21,7 +21,8 @@ GRAPE_IMAGE_TAG = 'genx_relatives:latest'
 REFERENCE_DIRECTORY = os.path.join(HOME_DIRECTORY, 'ref_test')
 CONTAINER_REFERENCE_DIRECTORY = '/media/ref'
 CONTAINER_WORKING_DIRECTORY = '/media/data'
-TESTING_REAL_DATA_DIRECTORY = '/media/test_data'
+TESTING_REAL_DATA_DIRECTORY = os.path.join(HOME_DIRECTORY, 'test_data')
+CONTAINER_TESTING_REAL_DATA_DIRECTORY = '/media/test_data'
 KHAZAR_VCF = os.path.join(TESTING_REAL_DATA_DIRECTORY, 'khazar314.vcf.gz')
 AADR_VCF = os.path.join(TESTING_REAL_DATA_DIRECTORY, 'aadr.reheaded.vcf.gz')
 METRICS_FILEPATH = 'results/metrics.tsv'
@@ -259,7 +260,7 @@ def test_khazar(docker_client, grape_image, reference_directory, working_directo
     volumes = {
         reference_directory.path: {'bind': CONTAINER_REFERENCE_DIRECTORY, 'mode': 'ro'},
         working_directory: {'bind': CONTAINER_WORKING_DIRECTORY, 'mode': 'rw'},
-        test_data_directory: {'bind': TESTING_REAL_DATA_DIRECTORY, 'mode': 'ro'}
+        test_data_directory: {'bind': CONTAINER_TESTING_REAL_DATA_DIRECTORY, 'mode': 'ro'}
     }
 
     preprocess_command = f'launcher.py preprocess --ref-directory {CONTAINER_REFERENCE_DIRECTORY} --cores 8 ' \
@@ -285,7 +286,7 @@ def test_aadr(docker_client, grape_image, reference_directory, working_directory
     volumes = {
         reference_directory.path: {'bind': CONTAINER_REFERENCE_DIRECTORY, 'mode': 'ro'},
         working_directory: {'bind': CONTAINER_WORKING_DIRECTORY, 'mode': 'rw'},
-        test_data_directory: {'bind': TESTING_REAL_DATA_DIRECTORY, 'mode': 'ro'}
+        test_data_directory: {'bind': CONTAINER_TESTING_REAL_DATA_DIRECTORY, 'mode': 'ro'}
     }
 
     preprocess_command = f'launcher.py preprocess --ref-directory {CONTAINER_REFERENCE_DIRECTORY} --cores 8 ' \
