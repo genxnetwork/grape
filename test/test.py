@@ -23,11 +23,11 @@ CONTAINER_REFERENCE_DIRECTORY = '/media/ref'
 CONTAINER_WORKING_DIRECTORY = '/media/data'
 TESTING_REAL_DATA_DIRECTORY = os.path.join(HOME_DIRECTORY, 'test_data')
 CONTAINER_TESTING_REAL_DATA_DIRECTORY = '/media/test_data'
-KHAZAR_VCF = os.path.join(TESTING_REAL_DATA_DIRECTORY, 'khazar314.vcf.gz')
-AADR_VCF = os.path.join(TESTING_REAL_DATA_DIRECTORY, 'aadr.reheaded.vcf.gz')
+KHAZAR_VCF = os.path.join(CONTAINER_TESTING_REAL_DATA_DIRECTORY, 'khazar314.vcf.gz')
+AADR_VCF = os.path.join(CONTAINER_TESTING_REAL_DATA_DIRECTORY, 'aadr.reheaded.vcf.gz')
 METRICS_FILEPATH = 'results/metrics.tsv'
 RELATIVES_FILEPATH = 'results/relatives.tsv'
-AADR_SAMPLES_FILEPATH = os.path.join(TESTING_REAL_DATA_DIRECTORY, 'aadr_samples.csv')
+AADR_SAMPLES_FILEPATH = os.path.join(CONTAINER_TESTING_REAL_DATA_DIRECTORY, 'aadr_samples.csv')
 
 
 def _download_test_data(test_data_directory):
@@ -204,7 +204,7 @@ def test_simulation_king(docker_client, grape_image, reference_directory, workin
 
     simulate_command = f'launcher.py simulate --ref-directory {CONTAINER_REFERENCE_DIRECTORY} --cores 8 ' \
                        f'--directory {CONTAINER_WORKING_DIRECTORY} --flow ibis-king --assembly hg37 ' \
-                       f'--sim-params-file params/relatives_big.def --sim-samples-file all.tsv --seed 42 --real-run'
+                       f'--seed 42 --real-run'
 
     docker_client.containers.run(GRAPE_IMAGE_TAG, remove=True, command=simulate_command, volumes=volumes)
 
