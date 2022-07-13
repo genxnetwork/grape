@@ -25,7 +25,7 @@ rule ibis_ibd_segment_detection:
         fam = 'preprocessed/data.fam',
         bim = 'preprocessed/data_mapped.bim'
     conda:
-        '../../envs/ibis.yaml'
+        'ibis'
     output:
         ibd = IBIS_OUTPUT_PREFIX + '.seg'
     log:
@@ -50,7 +50,7 @@ rule compute_weight_mask:
         ibd = rules.ibis_ibd_segment_detection.output.ibd,
         script = os.path.join(SNAKEFILE_FOLDER, '../../weight/compute_weight_mask.py')
     conda:
-        '../../envs/weight-mask.yaml'
+        'weight-mask'
     output:
         mask = os.path.join(WEIGHT_MASK_FOLDER, 'mask.json'),
         plot = os.path.join(WEIGHT_MASK_FOLDER, 'mask.png')

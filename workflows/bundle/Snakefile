@@ -38,7 +38,7 @@ if full:
             refHaps = expand(REF_HAPS, chrom=CHROMOSOMES),
             phased_vcf = expand(PHASED_VCF, chrom=CHROMOSOMES)
         conda:
-            "../../envs/download.yaml"
+            "download"
         log:
             "logs/ref/download_bundle.log"
         shell:
@@ -65,7 +65,7 @@ else:
             pedsim_map = PEDSIM_MAP,
             affymetrix_chip = AFFYMETRIX_CHIP
         conda:
-            "../../envs/download.yaml"
+            "download"
         log:
             "logs/ref/download_bundle.log"
         shell:

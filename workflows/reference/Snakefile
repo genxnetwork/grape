@@ -99,7 +99,7 @@ rule download_GRCh37_fasta:
         GRCh37_fasta = GRCH37_FASTA,
         GRCh37_fasta_fai = GRCH37_FASTA_FAI
     conda:
-        "../../envs/download.yaml"
+        "download"
     log:
         "logs/ref/download_GRCh37_fasta.log"
     shell:
@@ -133,7 +133,7 @@ rule create_fasta_dict:
     log:
         "logs/ref/create_fasta_dict.log"
     conda:
-        "../../envs/java.yaml"
+        "java"
     shell:
         """
             wget {PICARD_url} --tries 50 -c |& tee -a {log}
@@ -145,7 +145,7 @@ rule download_GENETIC_MAP:
     output:
         GENETIC_MAP = GENETIC_MAP
     conda:
-        "../../envs/download.yaml"
+        "download"
     log:
         "logs/ref/download_GENETIC_MAP.log"
     shell:
@@ -165,7 +165,7 @@ rule download_genetic_map_GRCh37:
     output:
         genetic_map_GRCh37 = expand(GENETIC_MAP_GRCH37, chrom=CHROMOSOMES)
     conda:
-        "../../envs/download.yaml"
+        "download"
     log:
         "logs/ref/download_genetic_map_GRCh37.log"
     shell:
@@ -191,7 +191,7 @@ rule download_vcfRef:
     wildcard_constraints:
         chrom="((2[0-2])|(1[0-9])|([1-9]))" # all numbers from 1 to 22
     conda:
-        "../../envs/download.yaml"
+        "download"
     threads:
         workflow.cores
     log:
@@ -222,7 +222,7 @@ rule make_refHaps:
     wildcard_constraints:
         chrom="((2[0-2])|(1[0-9])|([1-9]))" # all numbers from 1 to 22
     conda:
-        "../../envs/download.yaml"
+        "download"
     log:
         "logs/ref/make_refHaps{chrom}.log"
     threads:
@@ -241,7 +241,7 @@ rule download_lift_chain:
     output:
         lift_chain = LIFT_CHAIN
     conda:
-        "../../envs/download.yaml"
+        "download"
     log:
         "logs/ref/download_lift_chain.log"
     shell:
@@ -265,7 +265,7 @@ rule download_cmmap:
     output:
         cmmap = expand(CMMAP, chrom=CHROMOSOMES)
     conda:
-        "../../envs/download.yaml"
+        "download"
     log:
         "logs/ref/download_cmmap.log"
     shell:
@@ -289,7 +289,7 @@ rule download_SITE_1000GENOME:
     output:
         SITE_1000GENOME=SITE_1000GENOME
     conda:
-        "../../envs/download.yaml"
+        "download"
     log:
         "logs/ref/download_SITE_1000GENOME.log"
     shell:
@@ -313,7 +313,7 @@ rule download_affymetrix_chip:
     output:
         affymetrix_chip=AFFYMETRIX_CHIP
     conda:
-        "../../envs/download.yaml"
+        "download"
     log:
         "logs/ref/download_affymetrix_chip.log"
     shell:
@@ -333,7 +333,7 @@ rule intersect:
         hd_genotype_chip=AFFYMETRIX_CHIP,
         vcfRef=REF_VCF
     output: PHASED_VCF
-    conda: '../../envs/bcftools.yaml'
+    conda: 'bcftools'
     shell:
         """
             bcftools isec -n=2 -w1 -r {wildcards.chrom} \
@@ -345,7 +345,7 @@ rule download_pedsim_map:
     output:
         pedsim_map=PEDSIM_MAP
     conda:
-        "../../envs/download.yaml"
+        "download"
     log:
         "logs/ref/download_pedsim_map.log"
     shell:

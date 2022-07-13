@@ -7,7 +7,7 @@ rule vcf_stats:
     params:
         samples='vcf/{batch}_merged_lifted.vcf.samples'
     conda:
-        '../envs/bcftools.yaml'
+        'bcftools'
     shell:
         """
             bcftools query --list-samples {input.vcf} > {params.samples}
@@ -29,7 +29,7 @@ rule select_bad_samples:
         alt_hom_samples = config['alt_hom_samples'],
         het_samples = config['het_samples']
     conda:
-        '../envs/evaluation.yaml'
+        'evaluation'
     script:
         '../scripts/select_bad_samples.py'
 
@@ -43,7 +43,7 @@ rule plink_filter:
         bim = temp('plink/{batch}_merged_filter.bim'),
         fam = temp('plink/{batch}_merged_filter.fam')
     conda:
-        '../envs/plink.yaml'
+        'plink'
     params:
         input   = '{batch}_merged',
         out     = '{batch}_merged_filter',
@@ -90,7 +90,7 @@ rule plink_clean_up:
         input = 'plink/{batch}_merged_filter',
         out = 'plink/{batch}_merged_mapped'
     conda:
-        '../envs/plink.yaml'
+        'plink'
     log:
         'logs/plink/{batch}_plink_clean_up.log'
     benchmark:
@@ -128,7 +128,7 @@ rule prepare_vcf:
         input   = 'plink/{batch}_merged_mapped',
         vcf     = 'vcf/{batch}_merged_mapped_sorted.vcf.gz'
     conda:
-         '../envs/bcf_plink.yaml'
+         'bcf_plink'
     log:
         plink='logs/plink/{batch}_prepare_vcf.log',
         vcf='logs/vcf/{batch}_prepare_vcf.log'
