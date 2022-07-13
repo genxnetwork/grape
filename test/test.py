@@ -27,7 +27,7 @@ KHAZAR_VCF = os.path.join(CONTAINER_TESTING_REAL_DATA_DIRECTORY, 'khazar314.vcf.
 AADR_VCF = os.path.join(CONTAINER_TESTING_REAL_DATA_DIRECTORY, 'aadr.reheaded.vcf.gz')
 METRICS_FILEPATH = 'results/metrics.tsv'
 RELATIVES_FILEPATH = 'results/relatives.tsv'
-AADR_SAMPLES_FILEPATH = os.path.join(CONTAINER_TESTING_REAL_DATA_DIRECTORY, 'aadr_samples.csv')
+AADR_SAMPLES_FILEPATH = os.path.join(TESTING_REAL_DATA_DIRECTORY, 'aadr_samples.csv')
 
 
 def _download_test_data(test_data_directory):
@@ -129,7 +129,7 @@ def test_data_directory():
             actual_content[relative_path] = os.path.getsize(filepath)
 
     if actual_content != content:
-        print('\nCurrent test data files seem not match "test_data.json", new test data archive will be downloaded!')
+        print('\nCurrent test data files does not match "test_data.json", new test data archive will be downloaded!')
         if not _download_test_data(TESTING_REAL_DATA_DIRECTORY):
             raise Exception('Test data archive download failed!')
 
