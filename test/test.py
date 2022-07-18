@@ -80,7 +80,7 @@ def _read_samples_file(filepath):
 def _read_relatives_file(filepath):
     relatives = []
     with open(filepath, 'r') as relatives_file:
-        reader = csv.DictReader(relatives_file, delimiter="\t")
+        reader = csv.DictReader(relatives_file, delimiter='\t')
         for row in reader:
             relative = (row['id1'], row['id2'])
             relatives.append(relative)
@@ -141,7 +141,7 @@ def reference_directory(docker_client, grape_image) -> ReferenceDirectory:
     reference_directory = ReferenceDirectory(REFERENCE_DIRECTORY)
 
     if not reference_directory.is_valid():
-        print('\nCurrrent reference data files seem not match '
+        print('\nCurrrent reference data seem not to match '
               '"reference_directory_content.json", new reference data archive will be downloaded!')
         command = f'launcher.py reference --use-bundle --ref-directory {CONTAINER_REFERENCE_DIRECTORY} ' \
             '--phase --impute --real-run'
@@ -154,7 +154,7 @@ def reference_directory(docker_client, grape_image) -> ReferenceDirectory:
     return reference_directory
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope='function')
 def working_directory(request):
     utc_timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S-utc")
     working_directory_name = '-'.join([request.param, utc_timestamp])
@@ -163,7 +163,7 @@ def working_directory(request):
     yield working_directory_path
 
     # Fixture teardown to remove working directory
-    #shutil.rmtree(working_directory_path)
+    shutil.rmtree(working_directory_path)
 
 
 @pytest.mark.parametrize('working_directory', ['ibis'], indirect=True)
@@ -196,7 +196,7 @@ def test_simulation_ibis(docker_client, grape_image, reference_directory, workin
 
 
 @pytest.mark.parametrize('working_directory', ['ibis-king'], indirect=True)
-def test_simulation_king(docker_client, grape_image, reference_directory, working_directory):
+def test_simulation_ibis_king(docker_client, grape_image, reference_directory, working_directory):
     volumes = {
         reference_directory.path: {'bind': CONTAINER_REFERENCE_DIRECTORY, 'mode': 'ro'},
         working_directory: {'bind': CONTAINER_WORKING_DIRECTORY, 'mode': 'rw'}
@@ -309,3 +309,4 @@ def test_aadr(docker_client, grape_image, reference_directory, working_directory
         if aadr_samples[relationship[0]] != aadr_samples[relationship[1]]:
             failed_relations += 1
     assert failed_relations < 2
+    
