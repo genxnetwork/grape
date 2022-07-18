@@ -7,17 +7,14 @@ on:
 
   workflow_dispatch:
 
-  push:
-
 jobs:
   test:
     # Self-hosted runner
     runs-on: self-hosted
     timeout-minutes: 1000
-    # if: |
-    #   !github.event.pull_request.head.repo.fork &&
-    #   github.head_ref == 'develop'
-
+    if: |
+      !github.event.pull_request.head.repo.fork &&
+      github.head_ref == 'develop'
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
@@ -28,3 +25,4 @@ jobs:
           pip install -r test/requirements.txt
       - run: |
           pytest test/test.py
+          
