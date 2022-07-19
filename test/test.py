@@ -5,6 +5,7 @@ import csv
 import json
 import hashlib
 import tarfile
+import shutil
 
 from datetime import datetime
 from reference_directory import ReferenceDirectory
