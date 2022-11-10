@@ -17,7 +17,7 @@ use_simulated_ibd: True
 use_rapid: False
 use_ibis: False
 ref_dir: /media/ref
-azure_public_key: "?sv=2020-08-04&ss=f&srt=sco&sp=r&se=2022-08-08T14:35:53Z&st=2021-08-27T06:35:53Z&spr=https&sig=SjxrSn2KBuQYjYgT2ZZTHQ6IOhA%2BRUSvLIgog%2FH2Tnk%3D"
+azure_public_key: "?sv=2021-06-08&ss=f&srt=o&sp=r&se=2023-10-24T18:24:45Z&st=2022-10-24T10:24:45Z&spr=https&sig=xcNx9PyZpj5aF2Xi9573oQ5qYq7VqCIlZdayVtq5NOk%3D"
 1000g_public_key: "?sv=2019-10-10&si=prod&sr=c&sig=9nzcxaQn0NprMPlSh4RhFQHcXedLQIcFgbERiooHEqM%3D"
 reference:
   GRCh37_fasta:
