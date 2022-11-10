@@ -1,0 +1,28 @@
+name: Run Python Tests
+
+on:
+  pull_request:
+    branches: [ master ]
+    types: [ opened ]
+
+  workflow_dispatch:
+
+jobs:
+  test:
+    # Self-hosted runner
+    runs-on: self-hosted
+    timeout-minutes: 1000
+    if: |
+      !github.event.pull_request.head.repo.fork &&
+      github.head_ref == 'develop'
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+        with:
+          python-version: 3.9
+      - run: |
+          python -m pip install --upgrade pip
+          pip install -r test/requirements.txt
+      - run: |
+          pytest test/test.py
+          

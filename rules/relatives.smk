@@ -106,6 +106,7 @@ rule germline:
         "benchmarks/germline/germline-{chrom}.txt"
     shell:
         """
+        touch {output}
         germline -input ped/imputed_chr{wildcards.chrom}.ped cm/chr{wildcards.chrom}.cm.map -min_m 2.5 -err_hom 2 -err_het 1 -output germline/chr{wildcards.chrom}.germline |& tee {log}
         # TODO: germline returns some length in BP instead of cM - clean up is needed
         set +e
@@ -153,6 +154,7 @@ rule ersa:
         ersa_t = config['ibis_seg_len']    # min length of segment to be considered in segment aggregation
     shell:
         """
+        touch {output}
         ersa --avuncular-adj -ci --alpha {params.alpha} --dmax 14 -t {params.ersa_t} -l {params.ersa_l} -th {params.ersa_th} {input.ibd} -o {output} |& tee {log}
         """
 
