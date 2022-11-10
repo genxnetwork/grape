@@ -226,6 +226,7 @@ def get_parser_args():
 
     parser.add_argument(
         '--use-bundle',
+        action='store_true',
         default=False,
         help='Download all references as single file'
     )
