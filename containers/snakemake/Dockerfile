@@ -20,7 +20,7 @@ RUN apt-get install -y wget bzip2 gnupg2 git libgomp1 && \
     conda clean --all -y
 
 # Intall Minimac3
-RUN wget "https://bioinformatics.file.core.windows.net/bundles/Minimac3Executable.tar.gz?sv=2020-08-04&ss=f&srt=sco&sp=r&se=2022-08-08T14:35:53Z&st=2021-08-27T06:35:53Z&spr=https&sig=SjxrSn2KBuQYjYgT2ZZTHQ6IOhA%2BRUSvLIgog%2FH2Tnk%3D" -O /opt/Minimac3Executable.tar.gz
+RUN wget "https://bioinformatics.file.core.windows.net/bundles/Minimac3Executable.tar.gz?sv=2021-06-08&ss=f&srt=o&sp=r&se=2023-10-24T18:24:45Z&st=2022-10-24T10:24:45Z&spr=https&sig=xcNx9PyZpj5aF2Xi9573oQ5qYq7VqCIlZdayVtq5NOk%3D" -O /opt/Minimac3Executable.tar.gz
 RUN tar -xzvf /opt/Minimac3Executable.tar.gz -C /opt/
 RUN rm /opt/Minimac3Executable.tar.gz
 ENV PATH "$PATH:/opt/Minimac3Executable/bin"
