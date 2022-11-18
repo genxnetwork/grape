@@ -54,7 +54,7 @@ rule merge_background:
     params:
         list='pedsim/phased/phased.merge.list'
     conda:
-        '../../envs/bcftools.yaml'
+        'bcftools'
     shell:
         """
             # for now just skip empty files
@@ -86,7 +86,7 @@ rule simulate:
         prefix='pedsim/simulated/data',
         seed=simulation_seed
     conda:
-        '../../envs/ped-sim.yaml'
+        'ped-sim'
     shell:
         """
             pedsim -d {input._def} -m {input._map} -i {input.bg} \
@@ -101,7 +101,7 @@ rule shuffle_phase:
         params:
             plink='plink/data_shuffled',
             vcf='pedsim/simulated/data_shuffled'
-        conda: '../../envs/plink.yaml'
+        conda: 'plink'
         shell:
             """
                 plink --vcf {input.vcf} --make-bed --out {params.plink}
@@ -118,7 +118,7 @@ rule postprocess:
         vcf='input.vcf.gz',
         fam='pedsim/simulated/reheaded_data.fam'
     conda:
-        '../../envs/postprocess.yaml'
+        'postprocess'
     script:
         '../../scripts/postprocess.py'
 
@@ -149,6 +149,6 @@ rule evaluate_accuracy:
     log:
         'logs/evaluation/accuracy.log'
     conda:
-        '../../envs/evaluation.yaml'
+        'evaluation'
     script:
          '../../scripts/evaluate.py'

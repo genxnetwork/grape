@@ -6,7 +6,6 @@ channels:
   - defaults
 dependencies:
   - python>=3.5
-  - snakemake==7.15.2
   - matplotlib==3.3.1
   - pandas==1.1.1
   - numpy==1.19.1
@@ -15,3 +14,8 @@ dependencies:
   - scikit-bio==0.5.6
   - docutils==0.16
   - mmh3==3.0.0
+  - pip:
+    - "--editable=git+https://github.com/Jahysama/snakemake.git#egg=snakemake"
+    #Fork of a snakemake is used here because of not working conda envs inside python scripts
+    #Please check out https://github.com/snakemake/snakemake/pull/1812 for more info
+

@@ -73,7 +73,7 @@ rule intersect:
     output:
         temp("pedsim/phased/chr{chrom}.phased.vcf.gz")
     conda:
-        "../../envs/bcftools.yaml"
+        "bcftools"
     shell:
         """
             bcftools isec -n=2 -w1 -r {wildcards.chrom} -O z -o {output} {input.vcfRef} {input.hd_genotype_chip}
@@ -88,7 +88,7 @@ rule merge_background:
     params:
         list="pedsim/phased/phased.merge.list"
     conda:
-        "../../envs/bcftools.yaml"
+        "bcftools"
     shell:
         """
             # for now just skip empty files
@@ -116,7 +116,7 @@ rule split_chip:
     output:
         expand("background/segment{runs}.vcf.gz", runs = list(range(NUM_RUNS)))
     conda:
-        "../../envs/bcftools.yaml"
+        "bcftools"
     script:
         "../../scripts/split_chip.py"
 
@@ -129,7 +129,7 @@ rule simulate:
         temp('gen{runs}/data{runs}.vcf.gz'),
         temp('gen{runs}/data{runs}.seg')
     conda:
-        "../../envs/ped-sim.yaml"
+        "ped-sim"
     shell:
         """
             pedsim -d gen{wildcards.runs}/params/relatives_big.def -m {input._map} -i segment{wildcards.runs}.vcf.gz -o gen{wildcards.runs}/data{wildcards.runs} --intf {input.intf} --fam
@@ -141,7 +141,7 @@ rule convert:
     output:
         temp("gen{runs}/data4merge{runs}.vcf.gz")
     conda:
-        "../../envs/bcftools.yaml"
+        "bcftools"
     shell:
         """
             bcftools convert gen{wildcards.runs}/data{wildcards.runs}.vcf.gz -O z -o  gen{wildcards.runs}/data4merge{wildcards.runs}.vcf.gz
@@ -153,7 +153,7 @@ rule index:
     output:
         temp("gen{runs}/data4merge{runs}.vcf.gz.csi")
     conda:
-        "../../envs/bcftools.yaml"
+        "bcftools"
     shell:
         """
             bcftools index -f gen{wildcards.runs}/data4merge{wildcards.runs}.vcf.gz
@@ -167,7 +167,7 @@ rule merge:
         "generated.vcf.gz",
         "generated.vcf.gz.csi"
     conda:
-        "../../envs/bcftools.yaml"
+        "bcftools"
     shell:
         """  
             bcftools merge --merge id {input.samples} -O z -o generated.vcf.gz

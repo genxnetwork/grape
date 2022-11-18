@@ -15,7 +15,7 @@ if NUM_BATCHES > 1:
         params:
             num_batches=NUM_BATCHES
         conda:
-            '../envs/bcftools.yaml'
+            'bcftools'
         shell:
             '''
             bcftools query --list-samples input.vcf.gz >> vcf/samples.txt
@@ -38,7 +38,7 @@ if NUM_BATCHES > 1:
         output:
             vcf='vcf/{batch}.vcf.gz'
         conda:
-            '../envs/bcftools.yaml'
+            'bcftools'
         shell:
             '''
             bcftools view -S {input.samples} {input.vcf} -O z -o {output.vcf} --force-samples
@@ -81,7 +81,7 @@ rule recode_vcf:
     output:
         vcf=temp('vcf/{batch}_merged_recoded.vcf.gz')
     conda:
-        '../envs/bcftools.yaml'
+        'bcftools'
     shell:
         '''
         rm -f chr_name_conv.txt
@@ -100,7 +100,7 @@ if assembly == 'hg38':
         output:
             vcf=temp('vcf/{batch}_merged_lifted.vcf.gz')
         conda:
-            '../envs/liftover.yaml'
+            'liftover'
         log:
             'logs/liftover/liftover{batch}.log'
         params:
@@ -129,7 +129,7 @@ rule recode_snp_ids:
     output:
         vcf=temp('vcf/{batch}_merged_lifted_id.vcf.gz')
     conda:
-        '../envs/bcftools.yaml'
+        'bcftools'
     shell:
         '''
             bcftools annotate --set-id "%CHROM:%POS:%REF:%FIRST_ALT" {input.vcf} -O z -o {output.vcf}
@@ -184,7 +184,7 @@ if NUM_BATCHES > 1:
         params:
             out='preprocessed/{batch}_data'
         conda:
-            '../envs/plink.yaml'
+            'plink'
         log:
             'logs/plink/convert_mapped_to_plink{batch}.log'
         benchmark:
@@ -215,7 +215,7 @@ if NUM_BATCHES > 1:
         threads:
             workflow.cores
         conda:
-            '../envs/plink.yaml'
+            'plink'
         shell:
             '''
             rm files_list.txt || true
@@ -238,7 +238,7 @@ if NUM_BATCHES > 1:
         output:
             batches_vcf_index=temp('preprocessed/{batch}_data.vcf.gz.csi')
         conda:
-            '../envs/bcftools.yaml'
+            'bcftools'
         shell:
             '''
             bcftools index -f {input.batches_vcf}
@@ -264,7 +264,7 @@ if NUM_BATCHES > 1:
             batches_vcf=expand('batch{s}_data.vcf.gz',s=BATCHES),
             vcf='data.vcf.gz'
         conda:
-            '../envs/bcftools.yaml'
+            'bcftools'
         shell:
             '''
             rm complete_vcf_list.txt || true
@@ -290,7 +290,7 @@ else:
         params:
             out='preprocessed/data'
         conda:
-            '../envs/plink.yaml'
+            'plink'
         log:
             'logs/plink/convert_mapped_to_plink_batch1.log'
         benchmark:
@@ -307,7 +307,7 @@ rule ibis_mapping:
     params:
         genetic_map_GRCh37=expand(GENETIC_MAP_GRCH37,chrom=CHROMOSOMES)
     conda:
-        '../envs/ibis.yaml'
+        'ibis'
     output:
         'preprocessed/data_mapped.bim'
     log:

@@ -1,3 +1,4 @@
+name: interpolation
 channels:
     - bioconda
     - conda-forge

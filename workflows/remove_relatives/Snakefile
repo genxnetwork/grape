@@ -51,7 +51,7 @@ rule intersect:
         hd_genotype_chip=AFFYMETRIX_CHIP,
         vcfRef=REF_VCF
     output: "phased/chr{chrom}.phased.vcf.gz"
-    conda: "../../envs/bcftools.yaml"
+    conda: "bcftools"
     shell:
         """
             bcftools isec -n=2 -w1 -r {wildcards.chrom} -O z -o {output} {input.vcfRef} {input.hd_genotype_chip}
@@ -66,7 +66,7 @@ rule merge_background:
     params:
         list="phased/phased.merge.list"
     conda:
-        "../../envs/bcftools.yaml"
+        "bcftools"
     shell:
         """
             # for now just skip empty files
@@ -96,7 +96,7 @@ rule clean_relatives:
     output:
         remove_list = temp("remove_list.txt")
     conda:
-        "../../envs/remove_relatives.yaml"
+        "remove_relatives"
     script:
         "../../scripts/remove_relatives.py"
 
@@ -110,7 +110,7 @@ rule create_chip:
     params:
         list="pedsim/phased/phased.merge.list"
     conda:
-        "../../envs/bcftools.yaml"
+        "bcftools"
     shell:
         """
             bcftools view {input.background} --force-samples --samples-file {input.remove_list} -O z -o {output.back}
