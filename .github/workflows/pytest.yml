@@ -13,8 +13,7 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 1000
     if: |
-      !github.event.pull_request.head.repo.fork &&
-      github.head_ref == 'develop'
+      !github.event.pull_request.head.repo.fork
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
