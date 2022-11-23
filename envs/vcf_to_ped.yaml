@@ -1,4 +1,4 @@
-name: vcf_to_ped2
+name: vcf_to_ped
 channels:
     - conda-forge
     - defaults
