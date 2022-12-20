@@ -1,5 +1,20 @@
 # Changelog
 
+## [v1.7] - 2022-12-20
+
+### Added
+
+- All conda environments are now built in Dockerfile and Snakemake doesn't need to create them for every workflow run from `.yaml` files.
+- Multiple tests were added, covering all GRAPE flows. Test cases are stored at `grape/test-cases`.
+
+### Changed
+
+- Phased affymetrix chip is now stored within the bundle to speed up the simulation flow, because of this `intersect` rule in `pedsim` simulation workflow was moved to 'reference' downloading workflow.
+
+### Fixed
+
+- Fixed 'ibis' detecting empty IBD segments causing pipeline teardown.
+
 ## [v1.6] - 2022-05-20
 
 ### Added
