@@ -109,7 +109,7 @@ if assembly == 'hg38':
             mem_mb=_mem_gb_for_ram_hungry_jobs() * 1024
         shell:
             '''
-               picard -Xmx{params.mem_gb}g LiftoverVcf -WARN_ON_MISSING_CONTIG true -MAX_RECORDS_IN_RAM 5000 -I {input.vcf} -O {output.vcf} -CHAIN {LIFT_CHAIN} -REJECT vcf/chr{wildcards.batch}_rejected.vcf.gz -R {GRCH37_FASTA} |& tee -a {log}
+               java -Xmx{params.mem_gb}g -jar /picard/picard.jar LiftoverVcf WARN_ON_MISSING_CONTIG=true MAX_RECORDS_IN_RAM=5000 I={input.vcf} O={output.vcf} CHAIN={LIFT_CHAIN} REJECT=vcf/chr{wildcards.batch}_rejected.vcf.gz R={GRCH37_FASTA} |& tee -a {log}
             '''
 else:
     rule copy_liftover:
