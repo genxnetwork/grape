@@ -3,7 +3,7 @@ name: Run Python Tests
 on:
   pull_request:
     branches: [ master ]
-    types: [ opened ]
+    types: [ opened, reopened ]
 
   workflow_dispatch:
 
