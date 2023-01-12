@@ -135,5 +135,5 @@ rule merge_convert_imputed_to_plink:
         '''
         # please mind a merge step in merge_imputation_filter for germline
         plink --vcf {input} --make-bed --out {params.out} | tee {log}
-        plink --bfile {params.background} --bmerge {params.out} --make-bed --out plink/{batch}_merged_imputed |& tee {log}
+        plink --bfile {params.background} --bmerge {params.out} --make-bed --out plink/{wildcards.batch}_merged_imputed |& tee {log}
         '''
