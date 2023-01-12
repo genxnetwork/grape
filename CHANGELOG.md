@@ -1,6 +1,6 @@
 # Changelog
 
-## [v1.7] - 2022-12-20
+## [v1.7] - 2023-01-12
 
 ### Added
 
@@ -9,11 +9,11 @@
 
 ### Changed
 
-- Phased affymetrix chip is now stored within the bundle to speed up the simulation flow, because of this `intersect` rule in `pedsim` simulation workflow was moved to 'reference' downloading workflow.
+- Phased affymetrix chip is now stored within the bundle to speed up the simulation flow, because of this `intersect` rule in `pedsim` simulation workflow was moved to `reference` downloading workflow.
 
 ### Fixed
 
-- Fixed 'ibis' detecting empty IBD segments causing pipeline teardown.
+- Fixed `ibis` detecting empty IBD segments causing pipeline teardown.
 
 ## [v1.6] - 2022-05-20
 
