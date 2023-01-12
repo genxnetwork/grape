@@ -8,3 +8,4 @@ dependencies:
     - pandas==1.1.1
     - pydot==1.4.2
     - mmh3==3.0.0
+    - numpy==1.20
