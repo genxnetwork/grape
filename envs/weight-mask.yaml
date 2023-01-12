@@ -2,6 +2,6 @@ name: weight-mask
 channels:
   - conda-forge
 dependencies:
-  - numpy
+  - numpy==1.20
   - scikit-learn
   - matplotlib
