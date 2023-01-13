@@ -31,7 +31,7 @@ rule merge_phased:
         list='vcf/{batch}_phased.merge.list',
         mode=config['mode']
     conda:
-        '../envs/bcftools.yaml'
+        'bcftools'
     log:
         'logs/vcf/{batch}_merged_phased.log'
     benchmark:

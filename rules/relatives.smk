@@ -11,7 +11,7 @@ rule run_king:
         kin = "king/data"
     threads: workflow.cores
     conda:
-        "../envs/king.yaml"
+        "king"
     log:
         "logs/king/run_king.log"
     benchmark:
@@ -41,7 +41,7 @@ rule run_king:
 rule index_input:
     input: "preprocessed/data.vcf.gz"
     output: "preprocessed/data.vcf.gz.csi"
-    conda: "../envs/bcftools.yaml"
+    conda: "bcftools"
     shell: "bcftools index -f {input}"
 
 rule index_and_split:
@@ -50,7 +50,7 @@ rule index_and_split:
         index="preprocessed/data.vcf.gz.csi"
     output: "vcf/imputed_chr{chrom}.vcf.gz"
     conda:
-        "../envs/bcftools.yaml"
+        "bcftools"
     # TODO: because "The option is currently used only for the compression of the output stream"
     log:
         "logs/vcf/index_and_split-{chrom}.log"
@@ -72,7 +72,7 @@ rule vcf_to_ped:
     params:
         zarr="zarr/imputed_chr{chrom}.zarr"
     conda:
-        "../envs/vcf_to_ped.yaml"
+        "vcf_to_ped"
     log:
         "logs/ped/vcf_to_ped-{chrom}.log"
     benchmark:
@@ -87,7 +87,7 @@ rule interpolate:
         cmmap=CMMAP
     output: "cm/chr{chrom}.cm.map"
     conda:
-        "../envs/plink.yaml"
+        "plink"
     log:
         "logs/cm/interpolate-{chrom}.log"
     benchmark:
@@ -106,6 +106,7 @@ rule germline:
         "benchmarks/germline/germline-{chrom}.txt"
     shell:
         """
+        touch {output}
         germline -input ped/imputed_chr{wildcards.chrom}.ped cm/chr{wildcards.chrom}.cm.map -min_m 2.5 -err_hom 2 -err_het 1 -output germline/chr{wildcards.chrom}.germline |& tee {log}
         # TODO: germline returns some length in BP instead of cM - clean up is needed
         set +e
@@ -131,7 +132,7 @@ rule merge_ibd_segments:
         true_ibd='pedsim/simulated/data.seg' # it is in the params because in the case of true data we do not have this information
     output:
         ibd='ibd/merged_ibd.tsv'
-    conda: "../envs/evaluation.yaml"
+    conda: "evaluation"
     script:
         '../scripts/merge_ibd.py'
 
@@ -141,7 +142,7 @@ rule ersa:
     output:
         "ersa/relatives.tsv"
     conda:
-        "../envs/ersa.yaml"
+        "ersa"
     log:
         "logs/ersa/ersa.log"
     benchmark:
@@ -153,6 +154,7 @@ rule ersa:
         ersa_t = config['ibis_seg_len']    # min length of segment to be considered in segment aggregation
     shell:
         """
+        touch {output}
         ersa --avuncular-adj -ci --alpha {params.alpha} --dmax 14 -t {params.ersa_t} -l {params.ersa_l} -th {params.ersa_th} {input.ibd} -o {output} |& tee {log}
         """
 
@@ -168,6 +170,6 @@ rule merge_king_ersa:
     params:
         cm_dir='cm'
     output: "results/relatives.tsv"
-    conda: "../envs/evaluation.yaml"
+    conda: "evaluation"
     log: "logs/merge/merge-king-ersa.log"
     script: "../scripts/merge_king_ersa.py"

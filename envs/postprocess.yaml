@@ -1,3 +1,4 @@
+name: postprocess
 channels:
     - bioconda
     - conda-forge

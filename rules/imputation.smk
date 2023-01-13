@@ -29,7 +29,7 @@ rule imputation_filter:
     # TODO: because "The option is currently used only for the compression of the output stream"
     # threads: workflow.cores
     conda:
-        '../envs/bcftools.yaml'
+        'bcftools'
     log:
         'logs/impute/{batch}_imputation_filter-{chrom}.log'
     benchmark:
@@ -63,7 +63,7 @@ rule merge_imputation_filter:
         mode=config['mode'],
         merged_imputed = 'background/' + card + '_merged_imputed.vcf.gz'
     conda:
-        '../envs/bcftools.yaml'
+        'bcftools'
     log:
         'logs/vcf/' + card + '_merge_imputation_filter.log'
     benchmark:
@@ -103,7 +103,7 @@ rule convert_imputed_to_plink:
     params:
         out = 'plink/{batch}_merged_imputed'
     conda:
-        '../envs/plink.yaml'
+        'plink'
     log:
         'logs/plink/{batch}_convert_imputed_to_plink.log'
     benchmark:
@@ -126,7 +126,7 @@ rule merge_convert_imputed_to_plink:
         background  = 'background/{batch}_merged_imputed',
         out         = 'plink/client/{batch}_merged_imputed'
     conda:
-        '../envs/plink.yaml'
+        'plink'
     log:
         'logs/plink/{batch}_convert_imputed_to_plink.log'
     benchmark:

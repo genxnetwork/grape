@@ -8,7 +8,7 @@ rule ibis:
         fam = "preprocessed/data.fam",
         bim = "preprocessed/data_mapped.bim"
     conda:
-        "../envs/ibis.yaml"
+        "ibis"
     output:
         ibd = "ibis/merged_ibis.seg"
     log:
@@ -35,7 +35,7 @@ if config.get('weight_mask'):
             ibd = rules.ibis.output.ibd,
             script = os.path.join(SNAKEFILE_FOLDER, '../weight/apply_weight_mask.py')
         conda:
-            '../envs/weight-mask.yaml'
+            'weight-mask'
         output:
             ibd = os.path.join(WEIGHTED_IBD_SEGMENTS_FOLDER, 'ibis_weighted.seg'),
         params:
@@ -61,7 +61,7 @@ checkpoint transform_ibis_segments:
     log:
         "logs/ibis/transform_ibis_segments.log"
     conda:
-        "../envs/evaluation.yaml"
+        "evaluation"
     script:
         "../scripts/transform_ibis_segments.py"
 
@@ -78,7 +78,7 @@ rule ersa:
     output:
         "ersa/relatives.tsv"
     conda:
-        "../envs/ersa.yaml"
+        "ersa"
     log:
         "logs/ersa/ersa.log"
     benchmark:
@@ -91,6 +91,7 @@ rule ersa:
         r = '--nomask ' + '-r ' + str(config['ersa_r']) if config.get('weight_mask') else ''
     shell:
         """
+        touch {output}
         FILES="{input.ibd}"
         TEMPFILE=ersa/temp_relatives.tsv
         rm -f $TEMPFILE
@@ -114,6 +115,6 @@ rule postprocess_ersa:
         ibd=rules.ibis.output['ibd'],
         ersa=rules.ersa.output[0]
     output: "results/relatives.tsv"
-    conda: "../envs/evaluation.yaml"
+    conda: "evaluation"
     log: "logs/merge/postprocess-ersa.log"
     script: "../scripts/postprocess_ersa.py"

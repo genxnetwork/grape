@@ -1,6 +1,7 @@
-name: vcf_to_ped2
+name: vcf_to_ped
 channels:
     - conda-forge
     - defaults
 dependencies:
     - scikit-allel==1.3.2
+    - numpy==1.20
