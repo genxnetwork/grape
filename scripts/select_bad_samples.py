@@ -1,18 +1,40 @@
 import pandas
 import logging
+from utils.bcftools import bcftools_stats
+from utils.bcftools import bcftools_query
+from utils.bcftools import bcftools_view
+from io import StringIO
 
 
-if __name__ == '__main__':
+def find_outliers(psc: pandas.DataFrame, outliers_file_path: str, keep_samples_file_path: str):
 
-    psc_path = snakemake.input['psc']
-    bad_samples_path = snakemake.output['bad_samples']
-    report_path = snakemake.output['report']
-    missing_samples = float(snakemake.params['missing_samples'])
-    alt_hom_samples = float(snakemake.params['alt_hom_samples'])
-    het_samples = float(snakemake.params['het_samples'])
+    q1 = psc.nNonMissing.quantile(0.25)
+    q3 = psc.nNonMissing.quantile(0.75)
+    iqr = q3-q1
+    lower_bound_mask = psc.nNonMissing < (q1 - 1.5*iqr)
+    upper_bound_mask = psc.nNonMissing > (q3 + 1.5*iqr)
+    outliers = psc[lower_bound_mask | upper_bound_mask]
+    outliers.loc[lower_bound_mask, 'exclusion_reason'] = f'Sample was below 0.25 quantile by Missing Samples'
+    outliers.loc[upper_bound_mask, 'exclusion_reason'] = f'Sample was above 0.75 quantile by Missing Samples'
+    keep_samples = psc - outliers
 
-    logging.basicConfig(filename=snakemake.log[0], level=logging.DEBUG, format='%(levelname)s:%(asctime)s %(message)s')
+    outliers_list = list(outliers.sample_id)
+    with open(outliers_file_path, 'w') as outliers_file:
+        for outlier in outliers_list:
+            outliers_file.write(outlier)
 
+    keep_samples_list = list(keep_samples.sample_id)
+    with open(keep_samples_file_path, 'w') as keep_samples_file:
+        for sample in keep_samples_list:
+            keep_samples_file.write(sample)
+
+    return outliers
+
+
+def get_stats(vcf_input, samples_path, psc_path=False, stats_path=''):
+
+    bcftools_query(vcf_input, '--list-samples', save_output=samples_path)
+    raw_table = bcftools_stats(vcf_input, samples_path, save_output=psc_path, save_stats=stats_path)
     names = [
         'PSC',
         'id',
@@ -29,12 +51,46 @@ if __name__ == '__main__':
         'nHapAlt',
         'nMissing'
     ]
-    psc = pandas.read_table(psc_path, header=None, names=names)
+    psc = pandas.read_table(StringIO(raw_table), header=None, names=names)
 
     psc.loc[:, 'nNonMissing'] = psc.nRefHom + psc.nNonRefHom + psc.nHets
     psc.loc[:, 'missing_share'] = psc.nMissing / (psc.nMissing + psc.nNonMissing)
     psc.loc[:, 'alt_hom_share'] = psc.nNonRefHom / psc.nNonMissing
     psc.loc[:, 'het_samples_share'] = psc.nHets / psc.nNonMissing
+
+    return psc
+
+
+
+if __name__ == '__main__':
+
+    input_vcf = snakemake.input['vcf']
+    stats_file = snakemake.params['stats']
+    samples = snakemake.params['samples']
+    psc_path = snakemake.params['psc']
+    keep_samples = snakemake.params['keep_samples']
+    bad_samples_path = snakemake.output['bad_samples']
+    report_path = snakemake.output['report']
+    outliers = snakemake.output['outliers']
+    no_outliers_vcf = snakemake.output['no_outliers_vcf']
+    missing_samples = float(snakemake.params['missing_samples'])
+    alt_hom_samples = float(snakemake.params['alt_hom_samples'])
+    het_samples = float(snakemake.params['het_samples'])
+
+    logging.basicConfig(filename=snakemake.log[0], level=logging.DEBUG, format='%(levelname)s:%(asctime)s %(message)s')
+
+    # get initial stats, that we do not save
+    psc = get_stats(vcf_input=input_vcf,
+                    samples_path=samples)
+    # filter outliers
+    outliers = find_outliers(psc, outliers_file_path=outliers, keep_samples_file_path=keep_samples)
+    bcftools_view(input_vcf, no_outliers_vcf, keep_samples)
+
+    # get final stats without outliers
+    psc = get_stats(vcf_input=no_outliers_vcf,
+                    samples_path=samples,
+                    psc_path=psc_path,
+                    stats_path=stats_file)
 
     bad_missing_samples_mask = (psc.missing_share >= missing_samples / 100) | (psc.nMissing + psc.nNonMissing == 0)
 
@@ -47,6 +103,7 @@ if __name__ == '__main__':
     psc.loc[bad_missing_samples_mask, 'exclusion_reason'] = f'Sample has >= {missing_samples}% missing SNPs'
     bad_samples = psc.loc[(bad_alt_hom_samples_mask | bad_het_samples_mask | bad_missing_samples_mask),
                           ['sample_id', 'missing_share', 'alt_hom_share', 'het_samples_share', 'exclusion_reason']]
+    psc = psc.append(outliers[['sample_id', 'missing_share', 'alt_hom_share', 'het_samples_share', 'exclusion_reason']], ignore_index=True)
 
     samples_only = bad_samples.loc[:, ['sample_id']].copy()
     # if input vcf file has iids in form fid_iid we split it, else we just assign fid equal to iid
