@@ -14,6 +14,8 @@ def find_outliers(psc: pandas.DataFrame, outliers_file_path: str, keep_samples_f
     lower_bound_mask = psc.nNonMissing < (q1 - 1.5*iqr)
     upper_bound_mask = psc.nNonMissing > (q3 + 1.5*iqr)
     outliers = psc[lower_bound_mask | upper_bound_mask]
+    if outliers.empty:
+        return outliers
     outliers.loc[lower_bound_mask, 'exclusion_reason'] = f'Sample was below 0.25 quantile by Missing Samples'
     outliers.loc[upper_bound_mask, 'exclusion_reason'] = f'Sample was above 0.75 quantile by Missing Samples'
     keep_samples = psc - outliers
@@ -33,7 +35,7 @@ def find_outliers(psc: pandas.DataFrame, outliers_file_path: str, keep_samples_f
 
 def get_stats(vcf_input, samples_path, psc_path=False, stats_path=''):
 
-    bcftools_query(vcf_input, '--list-samples', save_output=samples_path)
+    bcftools_query(vcf_input, list_samples=True, save_output=samples_path)
     raw_table = bcftools_stats(vcf_input, samples_path, save_output=psc_path, save_stats=stats_path)
     names = [
         'PSC',
@@ -52,6 +54,7 @@ def get_stats(vcf_input, samples_path, psc_path=False, stats_path=''):
         'nMissing'
     ]
     psc = pandas.read_table(StringIO(raw_table), header=None, names=names)
+    psc[4:] = psc[4:].apply(pandas.to_numeric)
 
     psc.loc[:, 'nNonMissing'] = psc.nRefHom + psc.nNonRefHom + psc.nHets
     psc.loc[:, 'missing_share'] = psc.nMissing / (psc.nMissing + psc.nNonMissing)
@@ -65,7 +68,7 @@ def get_stats(vcf_input, samples_path, psc_path=False, stats_path=''):
 if __name__ == '__main__':
 
     input_vcf = snakemake.input['vcf']
-    stats_file = snakemake.params['stats']
+    stats_file = snakemake.output['stats']
     samples = snakemake.params['samples']
     psc_path = snakemake.params['psc']
     keep_samples = snakemake.params['keep_samples']
@@ -80,13 +83,21 @@ if __name__ == '__main__':
     logging.basicConfig(filename=snakemake.log[0], level=logging.DEBUG, format='%(levelname)s:%(asctime)s %(message)s')
 
     # get initial stats, that we do not save
+    logging.info("Getting initial vcf stats...")
     psc = get_stats(vcf_input=input_vcf,
-                    samples_path=samples)
+                    samples_path=samples,
+                    psc_path=psc_path,
+                    stats_path=stats_file)
     # filter outliers
     outliers = find_outliers(psc, outliers_file_path=outliers, keep_samples_file_path=keep_samples)
-    bcftools_view(input_vcf, no_outliers_vcf, keep_samples)
+    logging.info(f"Found {len(outliers)} outliers!")
+    if not outliers.empty:
+        bcftools_view(input_vcf, no_outliers_vcf, keep_samples)
+    else:
+        no_outliers_vcf = input_vcf
 
     # get final stats without outliers
+    logging.info("Getting final vcf stats...")
     psc = get_stats(vcf_input=no_outliers_vcf,
                     samples_path=samples,
                     psc_path=psc_path,

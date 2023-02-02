@@ -5,6 +5,7 @@ rule select_bad_samples:
         bad_samples='vcf/{batch}_lifted_vcf.badsamples',
         report='results/{batch}_bad_samples_report.tsv',
         outliers='results/{batch}_outliers.list',
+        stats='stats/{batch}_lifted_vcf.txt',
         no_outliers_vcf=temp('vcf/{batch}_no_outliers.vcf.gz')
     log: 'logs/vcf/{batch}_select_bad_samples.log'
     params:
@@ -12,7 +13,6 @@ rule select_bad_samples:
         missing_samples = config['missing_samples'],
         alt_hom_samples = config['alt_hom_samples'],
         het_samples = config['het_samples'],
-        stats='stats/{batch}_lifted_vcf.txt',
         psc='stats/{batch}_lifted_vcf.psc',
         keep_samples='stats/{batch}_keep_samples.list',
 
