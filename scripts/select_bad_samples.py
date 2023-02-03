@@ -15,10 +15,11 @@ def find_outliers(psc: pandas.DataFrame, outliers_file_path: str, keep_samples_f
     upper_bound_mask = psc.nNonMissing > (q3 + 1.5*iqr)
     outliers = psc[lower_bound_mask | upper_bound_mask]
     if outliers.empty:
-        return outliers
-    outliers.loc[lower_bound_mask, 'exclusion_reason'] = f'Sample was below 0.25 quantile by Missing Samples'
-    outliers.loc[upper_bound_mask, 'exclusion_reason'] = f'Sample was above 0.75 quantile by Missing Samples'
-    keep_samples = psc - outliers
+        outliers['exclusion_reason'] = []
+    else:
+        outliers.loc[lower_bound_mask, 'exclusion_reason'] = f'Sample was below 0.25 quantile by Missing Samples'
+        outliers.loc[upper_bound_mask, 'exclusion_reason'] = f'Sample was above 0.75 quantile by Missing Samples'
+    keep_samples = pandas.concat([psc, outliers, outliers]).drop_duplicates(keep=False)
 
     outliers_list = list(outliers.sample_id)
     with open(outliers_file_path, 'w') as outliers_file:
@@ -54,7 +55,6 @@ def get_stats(vcf_input, samples_path, psc_path=False, stats_path=''):
         'nMissing'
     ]
     psc = pandas.read_table(StringIO(raw_table), header=None, names=names)
-    psc[4:] = psc[4:].apply(pandas.to_numeric)
 
     psc.loc[:, 'nNonMissing'] = psc.nRefHom + psc.nNonRefHom + psc.nHets
     psc.loc[:, 'missing_share'] = psc.nMissing / (psc.nMissing + psc.nNonMissing)
@@ -94,6 +94,8 @@ if __name__ == '__main__':
     if not outliers.empty:
         bcftools_view(input_vcf, no_outliers_vcf, keep_samples)
     else:
+        with open(no_outliers_vcf, 'w') as dummy_no_outliers_vcf:
+            dummy_no_outliers_vcf.write('')
         no_outliers_vcf = input_vcf
 
     # get final stats without outliers

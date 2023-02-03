@@ -59,7 +59,7 @@ def bcftools_stats(infile, samples, save_output=False, save_stats=''):
     if not os.path.exists(infile + '.csi'):
         bcftools_index(infile)
     args = f"bcftools stats -S {samples} {infile}"\
-            f"| tee  {save_stats} |"\
+            f"| tee  {save_stats}"\
             f"| grep '^PSC'"
     pipes = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     std_out, std_err = pipes.communicate()
