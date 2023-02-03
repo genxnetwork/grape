@@ -6,19 +6,19 @@ from utils.bcftools import bcftools_view
 from io import StringIO
 
 
-def find_outliers(psc: pandas.DataFrame, outliers_file_path: str, keep_samples_file_path: str):
+def find_outliers(psc: pandas.DataFrame, outliers_file_path: str, keep_samples_file_path: str, alpha: float):
 
     q1 = psc.nNonMissing.quantile(0.25)
     q3 = psc.nNonMissing.quantile(0.75)
     iqr = q3-q1
-    lower_bound_mask = psc.nNonMissing < (q1 - 1.5*iqr)
-    upper_bound_mask = psc.nNonMissing > (q3 + 1.5*iqr)
+    lower_bound_mask = psc.nNonMissing < (q1 - alpha*iqr)
+    upper_bound_mask = psc.nNonMissing > (q3 + alpha*iqr)
     outliers = psc[lower_bound_mask | upper_bound_mask]
     if outliers.empty:
         outliers['exclusion_reason'] = []
     else:
-        outliers.loc[lower_bound_mask, 'exclusion_reason'] = f'Sample was below 0.25 quantile by Missing Samples'
-        outliers.loc[upper_bound_mask, 'exclusion_reason'] = f'Sample was above 0.75 quantile by Missing Samples'
+        outliers.loc[lower_bound_mask, 'exclusion_reason'] = f'Sample was below 1st quantile - IQR*{alpha} ({q1 - alpha*iqr}) by Missing Samples'
+        outliers.loc[upper_bound_mask, 'exclusion_reason'] = f'Sample was above 3rd quantile + IQR*{alpha} ({q3 + alpha*iqr}) by Missing Samples'
     keep_samples = pandas.concat([psc, outliers, outliers]).drop_duplicates(keep=False)
 
     outliers_list = list(outliers.sample_id)
@@ -79,6 +79,7 @@ if __name__ == '__main__':
     missing_samples = float(snakemake.params['missing_samples'])
     alt_hom_samples = float(snakemake.params['alt_hom_samples'])
     het_samples = float(snakemake.params['het_samples'])
+    alpha = float(snakemake.params['iqr_alpha'])
 
     logging.basicConfig(filename=snakemake.log[0], level=logging.DEBUG, format='%(levelname)s:%(asctime)s %(message)s')
 
@@ -89,7 +90,7 @@ if __name__ == '__main__':
                     psc_path=psc_path,
                     stats_path=stats_file)
     # filter outliers
-    outliers = find_outliers(psc, outliers_file_path=outliers, keep_samples_file_path=keep_samples)
+    outliers = find_outliers(psc, outliers_file_path=outliers, keep_samples_file_path=keep_samples, alpha=alpha)
     logging.info(f"Found {len(outliers)} outliers!")
     if not outliers.empty:
         bcftools_view(input_vcf, no_outliers_vcf, keep_samples)
@@ -129,7 +130,8 @@ if __name__ == '__main__':
     log = f'We have total of {psc.shape[0]} samples\n' \
           f'{bad_missing_samples_mask.sum()} samples have >= {missing_samples}% missing share\n' \
           f'{bad_alt_hom_samples_mask.sum()} samples have <= {alt_hom_samples}% homozygous alternative variants\n' \
-          f'{bad_het_samples_mask.sum()} samples have <= {het_samples}% heterozygous variants'
+          f'{bad_het_samples_mask.sum()} samples have <= {het_samples}% heterozygous variants\n' \
+          f'{len(outliers)} samples detected as outliers\n'
 
     logging.info(log)
     print(log)

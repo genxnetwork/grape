@@ -262,6 +262,12 @@ def get_parser_args():
         help='Lower bound of heterozygous SNPs (%). Samples with lower values are removed from the relatedness detection analysis.')
 
     parser.add_argument(
+        '--iqr-alpha',
+        default=float("inf"),
+        type=float,
+        help='IQR multiplier for outliers detection by amount of missing samples. Samples below 1st quantile - IQR*alpha and above 3rd quantile + IQR*alpha are removed from the relatedness detection analysis.')
+
+    parser.add_argument(
         '--seed',
         default=randint(0, 10**7),
         type=int,
@@ -424,6 +430,7 @@ if __name__ == '__main__':
     config_dict['missing_samples'] = args.missing_samples
     config_dict['alt_hom_samples'] = args.alt_hom_samples
     config_dict['het_samples'] = args.het_samples
+    config_dict['iqr_alpha'] = args.iqr_alpha
 
     config_dict['seed'] = args.seed
 

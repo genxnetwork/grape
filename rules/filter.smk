@@ -13,6 +13,7 @@ rule select_bad_samples:
         missing_samples = config['missing_samples'],
         alt_hom_samples = config['alt_hom_samples'],
         het_samples = config['het_samples'],
+        iqr_alpha = config['iqr_alpha'],
         psc='stats/{batch}_lifted_vcf.psc',
         keep_samples='stats/{batch}_keep_samples.list',
 
