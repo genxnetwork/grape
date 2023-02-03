@@ -24,12 +24,12 @@ def find_outliers(psc: pandas.DataFrame, outliers_file_path: str, keep_samples_f
     outliers_list = list(outliers.sample_id)
     with open(outliers_file_path, 'w') as outliers_file:
         for outlier in outliers_list:
-            outliers_file.write(outlier)
+            outliers_file.write(outlier + '\n')
 
     keep_samples_list = list(keep_samples.sample_id)
     with open(keep_samples_file_path, 'w') as keep_samples_file:
         for sample in keep_samples_list:
-            keep_samples_file.write(sample)
+            keep_samples_file.write(sample + '\n')
 
     return outliers
 
