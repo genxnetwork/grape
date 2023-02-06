@@ -1,0 +1,5 @@
+name: rapid
+channels:
+    - alex_genxt
+dependencies:
+    - rapid-ibd==1.7
