@@ -163,12 +163,12 @@ if __name__ == '__main__':
         test_dir = 'test_data/rapid'
         Snakemake = namedtuple('Snakemake', ['input', 'output', 'params', 'log'])
         snakemake = Snakemake(
-            input={'vcf': f'workdir/ref/1000genome/affymetrix_chip/all.vcf.gz',
-                   'num_haplotypes': f'{3450*2}'},
+            input={'vcf': f'test_data/rapid/phased/chr1.phased.vcf.gz',
+                   'num_haplotypes': f'{2504*2}'},
 
             output=[f'{test_dir}/rapid_params'],
             params={'error_rate': '0.0025',
-                    'min_snps': '12000',
+                    'min_snps': '600',
                     'num_runs': '10',
                     'num_success': '2'},
             log=[f'{test_dir}/estimate_rapid_params.log']

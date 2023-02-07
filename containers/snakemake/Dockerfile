@@ -12,11 +12,12 @@ ENV LANG C.UTF-8
 ENV SHELL /bin/bash
 
 RUN apt-get update && apt-get install -y wget bzip2 gnupg2 git libgomp1 && \
-    wget -nv https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
+    wget -nv https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
     bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda && \
     rm Miniconda3-latest-Linux-x86_64.sh && \
-    conda install -c conda-forge mamba && \
-    for e in envs/*; do mamba env create -f $e ; done && \
+    conda install -c conda-forge mamba
+    
+RUN for e in envs/*; do mamba env create -f $e ; done && \
     conda clean --all -y
 
 # Intall Minimac3

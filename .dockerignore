@@ -18,3 +18,4 @@ vcf
 test_data
 .snakemake
 datastore
+workdir
