@@ -6,9 +6,9 @@ rule index_and_split:
     input: 
         vcf = "preprocessed/data.vcf.gz"
     output: 
-        "vcf/for_rapid_{chrom}.vcf.gz"
+        vcf = "vcf/for_rapid_{chrom}.vcf.gz"
     conda:
-        "../envs/bcftools.yaml"
+        "bcftools"
     log:
         "logs/vcf/index_and_split-{chrom}.log"
     benchmark:
@@ -25,7 +25,7 @@ rule estimate_rapid_params:
     conda:
         "rapid_params"
     log:
-        "logs/rapid/estimate_rapid_params.log"
+        "logs/rapid/estimate_rapid_params-{chrom}.log"
     output:
         rapid_params = "rapid/params_{chrom}"
     params:
@@ -40,10 +40,10 @@ rule estimate_rapid_params:
 rule interpolate:
     input:
         vcf = rules.index_and_split.output['vcf'],
-        cmmap=cmmap
+        cmmap=CMMAP
     output: "cm/chr{chrom}.cm.g"
     conda:
-        "../envs/interpolation.yaml"
+        "interpolation"
     log:
         "logs/cm/interpolate-{chrom}.log"
     script:
@@ -58,7 +58,7 @@ rule erase_dosages:
     params:
         vcf='vcf/erased_chr{chrom}'
     conda:
-        '../envs/bcftools.yaml'
+        'bcftools'
     shell:
         "bcftools annotate -x 'fmt' {input.vcf} -O z -o {output.vcf}"
 '''
@@ -74,50 +74,32 @@ rule rapid:
         window_size=3,
         output_folder='rapid'
     output:
-        "rapid/results_{chrom}.max.gz"
+        seg = "rapid/results_{chrom}.max.gz"
+    conda:
+        "rapid"
     shell:
         """
-            rapid -i {input.vcf} -g {input.g} -d {params.min_cm_len} -o {params.output_folder} \
-            -w {params.window_size} -r {params.num_runs} -s {params.num_success}"
+            rapidibd -i {input.vcf} -g {input.g} -d {params.min_cm_len} -o {params.output_folder}/chr{wildcards.chrom} \
+            -w {params.window_size} -r {params.num_runs} -s {params.num_success}
         """
 
 
 rule merge_rapid_segments:
     input:
-        seg = expand('rapid/results_{chrom}.max.gz', chrom=CHROMOSOMES)
+        seg = expand('rapid/chr{chrom}/results.max.gz', chrom=CHROMOSOMES)
     output:
         seg = "rapid/results.max"
     shell:
         """
             for file in {input}
             do
-                cat ${{file}} >> {output}
+                zcat ${{file}} >> {output}
             done
         """
 
-checkpoint transform_ibis_segments:
-    input:
-        ibd = rules.merge_rapid_segments.output.seg,
-        fam = "preprocessed/data.fam"
-    output:
-        bucket_dir = directory("ibd")
-    log:
-        "logs/ibis/transform_ibis_segments.log"
-    conda:
-        "evaluation"
-    script:
-        "../scripts/transform_ibis_segments.py"
-
-
-def aggregate_input(wildcards):
-    checkpoints.transform_ibis_segments.get()
-    ids = glob_wildcards(f"ibd/{{id}}.tsv").id
-    return expand(f"ibd/{{id}}.tsv", id=ids)
-
-
 rule ersa:
     input:
-        ibd = aggregate_input
+        ibd = rules.merge_rapid_segments.output['seg']
     output:
         "ersa/relatives.tsv"
     conda:
@@ -155,8 +137,8 @@ rule ersa:
 
 rule postprocess_ersa:
     input:
-        ibd=rules.ibis.output['ibd'],
-        ersa=rules.ersa.output[0]
+        ibd = rules.merge_rapid_segments.output['seg'],
+        ersa = rules.ersa.output[0]
     output: "results/relatives.tsv"
     conda: "evaluation"
     log: "logs/merge/postprocess-ersa.log"

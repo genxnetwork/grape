@@ -201,7 +201,57 @@ def get_parser_args():
                 Smaller values of it tend to give more distant matches than default 500 and more false-positives.
             """
     )
-
+    
+    parser.add_argument(
+        '--rapid-error-rate',
+        default=0.0025,
+        type=float,
+        help="""
+                Minimum number of SNPs in IBD segment.
+                Smaller values of it tend to give more distant matches than default 500 and more false-positives.
+            """
+    )
+        
+    parser.add_argument(
+        '--rapid-min-snp',
+        default=500,
+        type=int,
+        help="""
+                Minimum number of SNPs in IBD segment.
+                Smaller values of it tend to give more distant matches than default 500 and more false-positives.
+            """
+    )
+            
+    parser.add_argument(
+        '--rapid-num-runs',
+        default=10,
+        type=int,
+        help="""
+                Minimum number of SNPs in IBD segment.
+                Smaller values of it tend to give more distant matches than default 500 and more false-positives.
+            """
+    )
+                
+    parser.add_argument(
+        '--rapid-num-success',
+        default=2,
+        type=int,
+        help="""
+                Minimum number of SNPs in IBD segment.
+                Smaller values of it tend to give more distant matches than default 500 and more false-positives.
+            """
+    )
+    
+    parser.add_argument(
+        '--rapid-seg-len',
+        default=5.0,
+        type=float,
+        help="""
+                Minimum number of SNPs in IBD segment.
+                Smaller values of it tend to give more distant matches than default 500 and more false-positives.
+            """
+    )
+    
     parser.add_argument(
         '--stat-file',
         default='stat_file.txt',
@@ -407,8 +457,8 @@ if __name__ == '__main__':
         config_dict['ref_dir'] = args.ref_directory
     if args.chip:
         config_dict['chip'] = args.chip
-    if args.flow not in ['ibis', 'ibis-king', 'germline-king']:
-        raise ValueError(f'--flow can be one of the ["ibis", "ibis-king", "germline-king"] and not {args.flow}')
+    if args.flow not in ['ibis', 'ibis-king', 'germline-king', 'rapid']:
+        raise ValueError(f'--flow can be one of the ["ibis", "ibis-king", "germline-king", "rapid"] and not {args.flow}')
     config_dict['flow'] = args.flow
     if args.command in ['preprocess', 'simulate', 'reference', 'bundle', 'simbig', 'remove_relatives']:
         config_dict['remove_imputation'] = args.remove_imputation
@@ -421,6 +471,11 @@ if __name__ == '__main__':
     config_dict['ibis_seg_len'] = args.ibis_seg_len
     config_dict['ibis_min_snp'] = args.ibis_min_snp
 
+    config_dict['rapid_error_rate'] = args.rapid_error_rate
+    config_dict['rapid_min_snp'] = args.rapid_min_snp
+    config_dict['rapid_num_runs'] = args.rapid_num_runs
+    config_dict['rapid_num_success'] = args.rapid_num_success
+    config_dict['rapid_seg_len'] = args.rapid_seg_len
     config_dict['missing_samples'] = args.missing_samples
     config_dict['alt_hom_samples'] = args.alt_hom_samples
     config_dict['het_samples'] = args.het_samples
