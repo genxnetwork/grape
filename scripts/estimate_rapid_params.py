@@ -154,7 +154,6 @@ def compute_w(error_rate,N,L,rho,r,c,max_w=300):
     #print (res)
 
 
-
 if __name__ == '__main__':
 
     try:

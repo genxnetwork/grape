@@ -89,29 +89,14 @@ rule simulate:
         'ped-sim'
     shell:
         """
-            pedsim -d {input._def} -m {input._map} -i {input.bg} \
+            pedsim -d {input._def} -m {input._map} -i {input.bg} --keep_phase \
             -o {params.prefix} --intf {input.intf} --fam --seed {params.seed}
         """
 
 
-rule shuffle_phase:
-        input: vcf=rules.simulate.output.vcf
-        output: vcf='pedsim/simulated/data_shuffled.vcf.gz',
-                plink=temp(expand('plink/data_shuffled.{ext}', ext=PLINK_FORMATS))
-        params:
-            plink='plink/data_shuffled',
-            vcf='pedsim/simulated/data_shuffled'
-        conda: 'plink'
-        shell:
-            """
-                plink --vcf {input.vcf} --make-bed --out {params.plink}
-                plink --bfile {params.plink} --export vcf bgz --out {params.vcf}
-            """
-
-
 rule postprocess:
     input:
-        vcf=rules.shuffle_phase.output.vcf,
+        vcf=rules.simulate.output.vcf,
         fam='pedsim/simulated/data-everyone.fam'
     output:
         kin='pedsim/simulated/reheaded_data.kinship',
@@ -130,6 +115,8 @@ elif flow == 'ibis-king':
     include: '../../rules/relatives_ibis_king.smk'
 elif flow == 'germline-king':
     include: '../../rules/relatives.smk'
+elif flow == 'rapid':
+    include: '../../rules/relatives_rapid.smk'
 
 
 rule evaluate_accuracy:
@@ -144,7 +131,9 @@ rule evaluate_accuracy:
         pedigree_plot = 'results/pedigree_plot.png',
         metrics = 'results/metrics.tsv'
     params:
-        source='both',
+        inferred = 'results/inferred.png',
+        kinship = 'results/kinship.png',
+        source='ersa',
         po_fs_plot='results/po_fs_plot.png' if flow == 'ibis' else None
     log:
         'logs/evaluation/accuracy.log'

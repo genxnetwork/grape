@@ -114,6 +114,8 @@ rule postprocess_ersa:
     input:
         ibd=rules.ibis.output['ibd'],
         ersa=rules.ersa.output[0]
+    params:
+        ibis = True
     output: "results/relatives.tsv"
     conda: "evaluation"
     log: "logs/merge/postprocess-ersa.log"

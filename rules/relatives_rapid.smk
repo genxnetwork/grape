@@ -2,9 +2,27 @@ import os
 import sys
 
 
-rule index_and_split:
+rule index_for_split:
     input: 
         vcf = "preprocessed/data.vcf.gz"
+    output: 
+        vcf = "preprocessed/data.vcf.gz.csi"
+    conda:
+        "bcftools"
+    log:
+        "logs/vcf/index_for_split.log"
+    benchmark:
+        "benchmarks/vcf/index_for_split.txt"
+    shell:
+        """
+        bcftools index {input} | tee {log}
+        """
+
+
+rule index_and_split:
+    input: 
+        vcf = "preprocessed/data.vcf.gz",
+        vcf_index = rules.index_for_split.output['vcf']
     output: 
         vcf = "vcf/for_rapid_{chrom}.vcf.gz"
     conda:
@@ -74,7 +92,7 @@ rule rapid:
         window_size=3,
         output_folder='rapid'
     output:
-        seg = "rapid/results_{chrom}.max.gz"
+        seg = "rapid/chr{chrom}/results.max.gz"
     conda:
         "rapid"
     shell:
@@ -97,9 +115,29 @@ rule merge_rapid_segments:
             done
         """
 
+checkpoint transform_rapid_segments:
+    input:
+        ibd = rules.merge_rapid_segments.output['seg'],
+        fam = "preprocessed/data.fam"
+    output:
+        bucket_dir = directory("ibd")
+    log:
+        "logs/ibis/transform_rapid_segments.log"
+    conda:
+        "evaluation"
+    script:
+        "../scripts/transform_rapid_segments.py"
+
+
+def aggregate_input(wildcards):
+    checkpoints.transform_rapid_segments.get()
+    ids = glob_wildcards(f"ibd/{{id}}.tsv").id
+    return expand(f"ibd/{{id}}.tsv", id=ids)
+
+
 rule ersa:
     input:
-        ibd = rules.merge_rapid_segments.output['seg']
+        ibd = aggregate_input
     output:
         "ersa/relatives.tsv"
     conda:
@@ -139,6 +177,8 @@ rule postprocess_ersa:
     input:
         ibd = rules.merge_rapid_segments.output['seg'],
         ersa = rules.ersa.output[0]
+    params:
+        ibis = False
     output: "results/relatives.tsv"
     conda: "evaluation"
     log: "logs/merge/postprocess-ersa.log"
