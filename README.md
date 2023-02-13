@@ -145,6 +145,8 @@ Workflow selection is made by the `--flow` parameter.
     The workflow uses GERMLINE for IBD segments detection.
     KING is used to identify relationship for the first 3 degrees, and ERSA algorithm is used for higher order degrees.
     This workflow was added to GRAPE mainly for the case, when input data is already phased and accurately preprocessed.
+4. (BETA!) **RaPID + ERSA**, `--flow rapid`
+    This workflow uses RaPID for the IBD segments detection and requires phased and preprocessed data as input. 
 
 ### Usages
 
@@ -181,6 +183,15 @@ docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
     Smaller values tend to give more distant matches and increase the false positive rate (default = 5 cM).
 * **[ERSA]** `--alpha`.
     ERSA significance level (default = 0.01).
+
+## Description of the RaPID Parameters
+
+* **[RaPID]** `--rapid-seg-len`.
+    Minimum length of the IBD segment to be found by RaPID.     Higher values reduce false positive rate and give less distant matches (default = 5 cM).
+* **[RaPID]** `--rapid-num-runs``.
+    Number of random projections for RaPID algorithm
+* **[RaPID]** `--rapid-num-success``. 
+    Number of matches for a segment. Higher values should reduce false positive rate but also reduce recall.
 
 ## Description of the Output Relatives File
 
