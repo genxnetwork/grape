@@ -1,5 +1,3 @@
-.. _sec-installation:
-
 =======================================
 Installation
 =======================================
@@ -10,10 +8,6 @@ Requirements
 **GRAPE** requires a 64-bit version of Linux.
 
 Total amount of required disk space must be at least **50GB**.
-
-Alternativelly you can run **GRAPE** from a pre-packaged docker image
-using ``docker`` or ``singularity`` (see: :ref:`sec-containers`
-section).
 
 Installation
 ----------------------------------
