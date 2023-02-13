@@ -29,3 +29,4 @@ scripts/utils/__pycache__/*
 zarr/*
 /analysis_data/
 .DS_Store
+/docs/_build/
