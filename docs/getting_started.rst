@@ -9,7 +9,6 @@ run **GRAPE** on the simulated dataset at first to confirm you that software
 installed and function correctly.
 
 Install **GRAPE** using one of the methods described in the
-:ref:`sec-installation` section.
 
 After installation return to the `Evaluation on Simulated Data`_ section.
 

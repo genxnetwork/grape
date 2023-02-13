@@ -210,7 +210,7 @@ This mask is used during the relatedness detection by specifying the `--weight-m
 See more information in the `GRAPE paper <https://f1000research.com/articles/11-589>`_.
 
 Computation of the IBD segments weighing mask
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ::
 
     docker run --rm -it -v /media:/media \
