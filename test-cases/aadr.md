@@ -104,7 +104,7 @@ Run preprocessing
 
 ```bash
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
-    genx_relatives:latest launcher.py preprocess \
+    grape:latest launcher.py preprocess \
         --ref-directory /media/ref --cores 8 --directory /media/data/aadr \
         --vcf-file /media/data/aadr/aadr.reheaded.vcf.gz --assembly hg37 \
         --het-samples 0.0 --real-run
@@ -117,7 +117,7 @@ Run relationship inference
 
 ```bash
 docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
-    genx_relatives:latest launcher.py find --ref-directory /media/ref --cores 8 \
+    grape:latest launcher.py find --ref-directory /media/ref --cores 8 \
         --directory /media/runs/aadr --flow ibis --real-run
 ```
 

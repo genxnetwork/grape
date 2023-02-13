@@ -42,7 +42,7 @@ Use the `simulate` command of the GRAPE launcher.
 ::
 
     docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
-        genx_relatives:latest launcher.py simulate --flow ibis-king --ref-directory /media/ref \
+        grape:latest launcher.py simulate --flow ibis-king --ref-directory /media/ref \
             --directory /media/data --sim-params-file params/relatives_average.def \
             --sim-samples-file ceph_unrelated_all.tsv --assembly hg37 --ibis-seg-len 5 \
             --ibis-min-snp 400 --zero-seg-count 0.1 --zero-seg-len 5 --alpha 0.01 --real-run
