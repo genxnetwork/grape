@@ -88,7 +88,7 @@ rule rapid:
     params:
         num_runs = config['rapid_num_runs'],
         num_success = config['rapid_num_success'],
-        min_cm_len=3.0,
+        min_cm_len=config['rapid_seg_len'],
         window_size=3,
         output_folder='rapid'
     output:

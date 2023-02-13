@@ -1,0 +1,3 @@
+#!/bin/bash
+
+docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
