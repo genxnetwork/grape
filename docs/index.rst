@@ -45,7 +45,7 @@ GRAPE is free for both scientific and commercial purposes and licensed under GNU
 Support
 ----------
 Please report any issues or ideas at:
-https://github.com/genxnetwork/grape/ishues
+https://github.com/genxnetwork/grape/issues
 
 Join our `Telegram chat <https://t.me/joinchat/NsX48w4OzcpkNTRi>`_ for the support.
 

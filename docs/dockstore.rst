@@ -29,11 +29,13 @@ There are four available options:
 
 4. Run the preprocessing.
 ::
+
     dockstore tool launch --local-entry workflows/preprocess2/cwl/preprocess.cwl --json workflows/preprocess2/cwl/config.json --script
 
 
 5. Run the relatedness inference workflow.
 ::
+
     dockstore tool launch --local-entry workflows/find/cwl/find.cwl --json workflows/find/cwl/config.json --script
 
 

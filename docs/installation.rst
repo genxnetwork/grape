@@ -12,7 +12,7 @@ Total amount of required disk space must be at least **50GB**.
 Installation
 ----------------------------------
 
-Download the `latest release <https://github.com/genxnetwork/releases>`_ and extract it to your selected
+Download the `latest release <https://github.com/genxnetwork/grape/releases>`_ and extract it to your selected
 directory.
 
 Alternatively, you can clone the most recent (unstable) version from the
