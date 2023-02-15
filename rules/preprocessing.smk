@@ -136,21 +136,21 @@ rule recode_snp_ids:
         '''
 
 
-# TODO: uncomment when rapid testing is done!
-# include: '../rules/filter.smk'
 
-
-rule phase_preserving_filter:
-    input:
-        vcf = temp('vcf/{batch}_merged_lifted_id.vcf.gz')
-    output:
-        vcf = temp('vcf/{batch}_merged_mapped_sorted.vcf.gz')
-    conda:
-        'bcftools'
-    shell:
-        '''
-            bcftools view --min-ac 20 {input.vcf} -O z -o {output.vcf}
-        '''
+if flow == 'rapid' or flow == 'germline':
+    rule phase_preserving_filter:
+        input:
+            vcf = temp('vcf/{batch}_merged_lifted_id.vcf.gz')
+        output:
+            vcf = temp('vcf/{batch}_merged_mapped_sorted.vcf.gz')
+        conda:
+            'bcftools'
+        shell:
+            '''
+                bcftools view --min-ac 5 {input.vcf} -O z -o {output.vcf}
+            '''
+else:
+    include: '../rules/filter.smk'
 
 
 if need_phase:
