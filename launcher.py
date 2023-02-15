@@ -207,8 +207,8 @@ def get_parser_args():
         default=0.0025,
         type=float,
         help="""
-                Minimum number of SNPs in IBD segment.
-                Smaller values of it tend to give more distant matches than default 500 and more false-positives.
+                Estimation of per-SNP genotyping error rate.
+                Smaller values lead to the smaller genotype window size for the RaPID. 
             """
     )
         
@@ -227,8 +227,8 @@ def get_parser_args():
         default=10,
         type=int,
         help="""
-                Minimum number of SNPs in IBD segment.
-                Smaller values of it tend to give more distant matches than default 500 and more false-positives.
+                Number of RaPID random projections.
+                More projections should give better accuracy. 
             """
     )
                 
@@ -237,8 +237,8 @@ def get_parser_args():
         default=2,
         type=int,
         help="""
-                Minimum number of SNPs in IBD segment.
-                Smaller values of it tend to give more distant matches than default 500 and more false-positives.
+                Number of segment matches in the --rapid-num-runs random projections.
+                Larger values should give less false-positives.
             """
     )
     
@@ -247,8 +247,8 @@ def get_parser_args():
         default=5.0,
         type=float,
         help="""
-                Minimum number of SNPs in IBD segment.
-                Smaller values of it tend to give more distant matches than default 500 and more false-positives.
+                Minimum length of found IBD segments.
+                Smaller values of it tend to give more distant matches than default 5.0 and more false-positives.
             """
     )
     
