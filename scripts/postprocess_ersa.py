@@ -116,12 +116,12 @@ if __name__ == '__main__':
         ibd = read_ibis(ibd_path)
     else:
         _columns = [
-            ('id1', pl.Str),
-            ('id2', pl.Str),
+            ('id1', pl.Utf8),
+            ('id2', pl.Utf8),
             ('total_seg_len_ibd2', pl.Float64),
             ('seg_count_ibd2', pl.Float64)
         ]
-        ibd = pl.DataFrame(data=[], columns=_columns)
+        ibd = pl.DataFrame(data=[], columns=_columns).lazy()
         
     ersa = read_ersa(ersa_path)
 
