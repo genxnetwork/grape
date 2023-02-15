@@ -1,6 +1,8 @@
 name: evaluation
 channels:
     - conda-forge
+    - bioconda
+    - defaults
 dependencies:
     - networkx==2.5
     - pip
@@ -10,5 +12,8 @@ dependencies:
     - pydot==1.4.2
     - mmh3==3.0.0
     - numpy==1.20
+    - bcftools==1.9
+    - samtools==1.9
+    - openssl==1.0.2u
     - pip:
           - polars==0.16.4
