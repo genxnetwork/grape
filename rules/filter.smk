@@ -1,33 +1,22 @@
-rule vcf_stats:
+rule select_bad_samples:
     input:
         vcf='vcf/{batch}.vcf.gz'
     output:
-        stats='stats/{batch}_lifted_vcf.txt',
-        psc='stats/{batch}_lifted_vcf.psc'
-    params:
-        samples='vcf/{batch}_merged_lifted.vcf.samples'
-    conda:
-        'bcftools'
-    shell:
-        """
-            bcftools query --list-samples {input.vcf} > {params.samples}
-            bcftools stats -S {params.samples} {input.vcf} > {output.stats}
-            # PSC means per-sample counts
-            cat {output.stats} | grep '^PSC' > {output.psc}
-        """
-
-rule select_bad_samples:
-    input:
-        psc=rules.vcf_stats.output.psc
-    output:
         bad_samples='vcf/{batch}_lifted_vcf.badsamples',
-        report='results/{batch}_bad_samples_report.tsv'
+        report='results/{batch}_bad_samples_report.tsv',
+        outliers='results/{batch}_outliers.list',
+        stats='stats/{batch}_lifted_vcf.txt',
+        no_outliers_vcf=temp('vcf/{batch}_no_outliers.vcf.gz')
     log: 'logs/vcf/{batch}_select_bad_samples.log'
     params:
         samples='vcf/{batch}_merged_lifted.vcf.samples',
         missing_samples = config['missing_samples'],
         alt_hom_samples = config['alt_hom_samples'],
-        het_samples = config['het_samples']
+        het_samples = config['het_samples'],
+        iqr_alpha = config['iqr_alpha'],
+        psc='stats/{batch}_lifted_vcf.psc',
+        keep_samples='stats/{batch}_keep_samples.list',
+
     conda:
         'evaluation'
     script:
