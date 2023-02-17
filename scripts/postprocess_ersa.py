@@ -110,8 +110,17 @@ if __name__ == '__main__':
             print("ersa postprocess input is empty")
             open(output_path, "w").close()  # create empty output to avoid error
             quit()
-
-    ibd = read_ibis(ibd_path)
+    if snakemake.params['ibis']:
+        ibd = read_ibis(ibd_path)
+    else:
+        _columns = [
+            ('id1', pl.Utf8),
+            ('id2', pl.Utf8),
+            ('total_seg_len_ibd2', pl.Float64),
+            ('seg_count_ibd2', pl.Float64)
+        ]
+        ibd = pl.DataFrame(data=[], columns=_columns).lazy()
+        
     ersa = read_ersa(ersa_path)
 
     #logging.info(f'ibd shape: {ibd.shape[0]}, ersa shape: {ersa.shape[0]}')

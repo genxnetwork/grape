@@ -109,7 +109,7 @@ if assembly == 'hg38':
             mem_mb=_mem_gb_for_ram_hungry_jobs() * 1024
         shell:
             '''
-               java -Xmx{params.mem_gb}g -jar /picard/picard.jar LiftoverVcf WARN_ON_MISSING_CONTIG=true MAX_RECORDS_IN_RAM=5000 I={input.vcf} O={output.vcf} CHAIN={LIFT_CHAIN} REJECT=vcf/chr{wildcards.batch}_rejected.vcf.gz R={GRCH37_FASTA} |& tee -a {log}
+               JAVA_OPTS="-Xmx{params.mem_gb}g" picard LiftoverVcf WARN_ON_MISSING_CONTIG=true MAX_RECORDS_IN_RAM=5000 I={input.vcf} O={output.vcf} CHAIN={LIFT_CHAIN} REJECT=vcf/chr{wildcards.batch}_rejected.vcf.gz R={GRCH37_FASTA} |& tee -a {log}
             '''
 else:
     rule copy_liftover:
@@ -136,7 +136,22 @@ rule recode_snp_ids:
         '''
 
 
-include: '../rules/filter.smk'
+
+if flow == 'rapid' or flow == 'germline':
+    rule phase_preserving_filter:
+        input:
+            vcf = temp('vcf/{batch}_merged_lifted_id.vcf.gz')
+        output:
+            vcf = temp('vcf/{batch}_merged_mapped_sorted.vcf.gz')
+        conda:
+            'bcftools'
+        shell:
+            '''
+                bcftools view --min-ac 5 {input.vcf} -O z -o {output.vcf}
+            '''
+else:
+    include: '../rules/filter.smk'
+
 
 if need_phase:
     include: '../rules/phasing.smk'

@@ -1,0 +1,7 @@
+name: rapid_params
+channels:
+    - conda-forge
+dependencies:
+    - scipy
+    - statsmodels
+    - numpy==1.20

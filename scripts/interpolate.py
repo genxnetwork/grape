@@ -7,7 +7,7 @@ def interpolate(vcf_path, cm_path, output_path, chrom):
 
     genetic_map = pandas.read_csv(cm_path, sep=" ")
 
-    pos = list(map(int, bcftools_query(vcf_path, "%POS\n")))
+    pos = list(map(int, bcftools_query(vcf_path, arg="%POS\n", list_samples=False)))
     # interpolate CM from BP
     #chro = genetic_map[genetic_map.chr == int(chrom)]
     # because for chr19 'Genetic_Map(cM)' is 'Genetic_Map.cM.'

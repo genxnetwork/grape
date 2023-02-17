@@ -66,7 +66,9 @@ def plot_confusion_matrix(confusion_matrix, plot_name):
             normed_sizes.append(2500)
         else:
             normed_sizes.append(2000 * size / max_count)
-    sizes[norel_index] = confusion_matrix[-1, -1]
+    
+    if (-1, -1) in confusion_matrix:
+        sizes[norel_index] = confusion_matrix[-1, -1]
     plt.figure(figsize=(15, 15))
     plt.ylim(0, max_degree + 2)
     plt.xlim(0, max_degree + 2)
@@ -199,7 +201,15 @@ def interval_evaluate(
         iterator = itertools.combinations(clients, 2)
     else:
         iterator = itertools.product(clients, iids - clients)
-
+    
+    pos = nx.kamada_kawai_layout(kinship)
+    nx.draw(kinship, pos, with_labels=True)
+    plt.savefig(snakemake.params['kinship'])
+    plt.close()
+    pos = nx.kamada_kawai_layout(inferred)
+    nx.draw(inferred, pos, with_labels=True)
+    plt.savefig(snakemake.params['inferred'])
+    plt.close()
     for i, j in iterator:
         if kinship.has_edge(i, j):
             degree = kinship[i][j]['degree']
