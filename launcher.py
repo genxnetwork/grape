@@ -69,6 +69,11 @@ def get_parser_args():
         "--real-run",
         help="If this argument is present, Snakemake will run the pipeline instead of dry-run, it is False by default",
         action="store_true")
+    
+    parser.add_argument(
+        "--rerun-incomplete",
+        help="If this argument is present, Snakemake will rerun pipeline to regenerate incomplete files, it is False by default",
+        action="store_true")
 
     parser.add_argument(
         "--unlock",
@@ -510,7 +515,8 @@ if __name__ == '__main__':
             use_conda=True,
             conda_prefix=args.conda_prefix,
             envvars=['CONDA_ENVS_PATH', 'CONDA_PKGS_DIRS'],
-            keepgoing=True
+            keepgoing=True,
+            force_incomplete=args.rerun_incomplete
     ):
         raise ValueError("Pipeline failed see Snakemake error message for details")
 

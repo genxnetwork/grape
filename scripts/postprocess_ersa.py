@@ -62,16 +62,17 @@ def read_ersa(ersa_path):
     data = pl.read_csv(ersa_path, has_header=True, sep='\t', null_values="NA",
                              new_columns=['id1', 'id2', 'rel_est1', 'rel_est2',
                                     'ersa_degree', 'ersa_lower_bound', 'ersa_upper_bound', 'seg_count', 'total_seg_len'],
-                             dtypes={'ersa_degree': str, 'ersa_lower_bound': str, 'ersa_upper_bound': str,
-                                    'seg_count': str, 'total_seg_len': str}).lazy()
-
+                             dtypes=[pl.Utf8, pl.Utf8, pl.Utf8, pl.Utf8, pl.Utf8, pl.Utf8, pl.Utf8, pl.Int32, pl.Utf8]).lazy()
+                             #dtypes={'ersa_degree': str, 'ersa_lower_bound': str, 'ersa_upper_bound': str,
+                             #       'seg_count': str, 'total_seg_len': pl.Utf8})
+    print(list(zip(data.columns, data.dtypes)))
     data = data.filter((pl.col('rel_est1').is_null().is_not()) | (pl.col('rel_est2').is_null().is_not()))
     data = data.with_columns([
         pl.col('id1').str.strip(),
         pl.col('id2').str.strip()
     ])
     data = _sort_ids(data)
-
+    print(list(zip(data.columns, data.dtypes)))
     data = data.with_columns([
         pl.col('ersa_degree').str.strip().cast(pl.Int32, strict=False),
         pl.col('ersa_lower_bound').str.strip().cast(pl.Int32, strict=False),
@@ -119,7 +120,7 @@ if __name__ == '__main__':
             ('id1', pl.Utf8),
             ('id2', pl.Utf8),
             ('total_seg_len_ibd2', pl.Float64),
-            ('seg_count_ibd2', pl.Float64)
+            ('seg_count_ibd2', pl.Int32)
         ]
         ibd = pl.DataFrame(data=[], columns=_columns).lazy()
         

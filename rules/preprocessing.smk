@@ -137,7 +137,7 @@ rule recode_snp_ids:
 
 
 
-if flow == 'rapid' or flow == 'germline':
+if flow == 'rapid' or flow == 'germline-king':
     rule phase_preserving_filter:
         input:
             vcf = temp('vcf/{batch}_merged_lifted_id.vcf.gz')
@@ -147,7 +147,7 @@ if flow == 'rapid' or flow == 'germline':
             'bcftools'
         shell:
             '''
-                bcftools view --min-ac 5 {input.vcf} -O z -o {output.vcf}
+                bcftools view --min-af 0.05 {input.vcf} -O z -o {output.vcf}
             '''
 else:
     include: '../rules/filter.smk'
