@@ -23,21 +23,14 @@ def _sort_ids(data):
 def read_ibis(ibd_path):
     # sample1 sample2 chrom phys_start_pos phys_end_pos IBD_type
     # genetic_start_pos genetic_end_pos genetic_seg_length marker_count error_count error_density
-    names = [
-        'id1',
-        'id2',
-        'chrom',
-        'phys_start_pos',
-        'phys_end_pos',
-        'IBD_type',
-        'genetic_start_pos',
-        'genetic_end_pos',
-        'genetic_seg_length',
-        'marker_count',
-        'error_count',
-        'error_density'
-    ]
-    data = pl.read_csv(ibd_path, has_header=False, new_columns=names, sep='\t', null_values="NA").lazy()
+
+    def get_new_col_names(old_names):
+        return ['id1', 'id2', 'chrom', 'phys_start_pos',
+                'phys_end_pos', 'IBD_type', 'genetic_start_pos',
+                'genetic_end_pos', 'genetic_seg_length', 'marker_count',
+                'error_count', 'error_density']
+
+    data = pl.scan_csv(ibd_path, has_header=False, with_column_names=get_new_col_names, sep='\t', null_values="NA").lazy()
     data = data.with_columns([
         pl.col('id1').str.replace(':', '_'),
         pl.col('id2').str.replace(':', '_')
@@ -59,13 +52,17 @@ def read_ibis(ibd_path):
 
 def read_ersa(ersa_path):
     # Indv_1     Indv_2      Rel_est1      Rel_est2      d_est     lower_d  upper_d     N_seg     Tot_cM
-    data = pl.read_csv(ersa_path, has_header=True, sep='\t', null_values="NA",
-                             new_columns=['id1', 'id2', 'rel_est1', 'rel_est2',
-                                    'ersa_degree', 'ersa_lower_bound', 'ersa_upper_bound', 'seg_count', 'total_seg_len'],
-                             dtypes=[pl.Utf8, pl.Utf8, pl.Utf8, pl.Utf8, pl.Utf8, pl.Utf8, pl.Utf8, pl.Int32, pl.Utf8]).lazy()
-                             #dtypes={'ersa_degree': str, 'ersa_lower_bound': str, 'ersa_upper_bound': str,
-                             #       'seg_count': str, 'total_seg_len': pl.Utf8})
-    print(list(zip(data.columns, data.dtypes)))
+
+    def get_new_col_names(old_names):
+        return ['id1', 'id2', 'rel_est1', 'rel_est2',
+               'ersa_degree', 'ersa_lower_bound', 'ersa_upper_bound',
+                'seg_count', 'total_seg_len']
+
+    data = pl.scan_csv(ersa_path, has_header=True, sep='\t', null_values="NA",
+                             with_column_names=get_new_col_names,
+                             dtypes={'ersa_degree': str, 'ersa_lower_bound': str, 'ersa_upper_bound': str,
+                                    'seg_count': str, 'total_seg_len': str})
+
     data = data.filter((pl.col('rel_est1').is_null().is_not()) | (pl.col('rel_est2').is_null().is_not()))
     data = data.with_columns([
         pl.col('id1').str.strip(),
@@ -100,13 +97,13 @@ def read_ersa(ersa_path):
 
 if __name__ == '__main__':
 
-    logging.basicConfig(filename=snakemake.log[0], level=logging.DEBUG, format='%(levelname)s:%(asctime)s %(message)s')
+    logging.basicConfig(filename='log.log', level=logging.DEBUG, format='%(levelname)s:%(asctime)s %(message)s')
 
-    ibd_path = snakemake.input['ibd']
+    ibd_path = 'ibis/merged_ibis.seg'
     # within families
     # across families
-    ersa_path = snakemake.input['ersa']
-    output_path = snakemake.output[0]
+    ersa_path = 'ersa/relatives.tsv'
+    output_path = 'output.tsv'
 
     with open(ersa_path, 'r') as ersa_file, open(ibd_path, 'r') as ibd_file:
         if len(ersa_file.readlines(5000)) < 2 or len(ibd_file.readlines(5000)) < 1:
