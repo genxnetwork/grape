@@ -49,7 +49,7 @@ def split_by_id(input_ibd: str, samples_count: int, dest_dir: str):
         'ending_site'
     ]
     read_chunksize = int(1e+6)
-    samples_chunksize = 2000
+    samples_chunksize = 1000
     denominator = samples_count // samples_chunksize + 1
 
     for i, chunk in enumerate(pandas.read_csv(input_ibd, header=None, names=names, sep='\t', chunksize=read_chunksize)):

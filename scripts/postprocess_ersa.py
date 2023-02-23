@@ -69,7 +69,7 @@ def read_ersa(ersa_path):
         pl.col('id2').str.strip()
     ])
     data = _sort_ids(data)
-
+    print(list(zip(data.columns, data.dtypes)))
     data = data.with_columns([
         pl.col('ersa_degree').str.strip().cast(pl.Int32, strict=False),
         pl.col('ersa_lower_bound').str.strip().cast(pl.Int32, strict=False),
@@ -117,7 +117,7 @@ if __name__ == '__main__':
             ('id1', pl.Utf8),
             ('id2', pl.Utf8),
             ('total_seg_len_ibd2', pl.Float64),
-            ('seg_count_ibd2', pl.Float64)
+            ('seg_count_ibd2', pl.Int32)
         ]
         ibd = pl.DataFrame(data=[], columns=_columns).lazy()
         

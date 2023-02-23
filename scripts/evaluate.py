@@ -202,14 +202,6 @@ def interval_evaluate(
     else:
         iterator = itertools.product(clients, iids - clients)
     
-    pos = nx.kamada_kawai_layout(kinship)
-    nx.draw(kinship, pos, with_labels=True)
-    plt.savefig(snakemake.params['kinship'])
-    plt.close()
-    pos = nx.kamada_kawai_layout(inferred)
-    nx.draw(inferred, pos, with_labels=True)
-    plt.savefig(snakemake.params['inferred'])
-    plt.close()
     for i, j in iterator:
         if kinship.has_edge(i, j):
             degree = kinship[i][j]['degree']
