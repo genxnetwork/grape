@@ -18,6 +18,7 @@ CMMAP              = join(REF_DIR, config["reference"]["cmmap"]["file"])
 SITE_1000GENOME    = join(REF_DIR, config["reference"]["SITE_1000GENOME"]["file"])
 
 assembly = config['assembly']
+flow = config["flow"]
 need_remove_imputation = config['remove_imputation']
 # WARNING: if need_imputation=True, then need_phase should also be true
 need_phase = config['phase']
