@@ -23,7 +23,7 @@ need_remove_imputation = config['remove_imputation']
 # WARNING: if need_imputation=True, then need_phase should also be true
 need_phase = config['phase']
 need_imputation = config['impute']
-
+flow = config['flow']
 
 _IDEAL_LARGE_MEM_GB = 20
 
