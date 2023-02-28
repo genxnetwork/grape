@@ -125,7 +125,7 @@ docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
 docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
     genx_relatives:latest launcher.py preprocess --ref-directory /media/ref \
         --vcf-file /media/input.vcf.gz --directory /media/data \
-        --assembly hg38 --phase --impute --real-run
+        --assembly hg38 --phase --impute --flow germline-king --real-run
 ```
 
 ## GRAPE Relatedness Inference Workflows

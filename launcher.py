@@ -154,7 +154,7 @@ def get_parser_args():
     parser.add_argument(
         '--flow',
         default='ibis',
-        help='How to find ibd segments: values are ibis, ibis-king, germline-king, default is ibis'
+        help='How to find ibd segments: values are ibis, ibis-king, germline-king, rapid, default is ibis'
     )
 
     parser.add_argument(
