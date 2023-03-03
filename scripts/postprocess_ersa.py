@@ -96,14 +96,14 @@ def read_ersa(ersa_path):
 
 
 if __name__ == '__main__':
+    
+    logging.basicConfig(filename=snakemake.log[0], level=logging.DEBUG, format='%(levelname)s:%(asctime)s %(message)s')
 
-    logging.basicConfig(filename='log.log', level=logging.DEBUG, format='%(levelname)s:%(asctime)s %(message)s')
-
-    ibd_path = 'ibis/merged_ibis.seg'
+    ibd_path = snakemake.input['ibd']
     # within families
     # across families
-    ersa_path = 'ersa/relatives.tsv'
-    output_path = 'output.tsv'
+    ersa_path = snakemake.input['ersa']
+    output_path = snakemake.output[0]
 
     with open(ersa_path, 'r') as ersa_file, open(ibd_path, 'r') as ibd_file:
         if len(ersa_file.readlines(5000)) < 2 or len(ibd_file.readlines(5000)) < 1:
