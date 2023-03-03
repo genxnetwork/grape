@@ -165,6 +165,35 @@ def working_directory(request):
 
     # Fixture teardown to remove working directory
     shutil.rmtree(working_directory_path)
+    
+    
+@pytest.mark.parametrize('working_directory', ['rapid'], indirect=True)
+def test_simulation_rapid(docker_client, grape_image, reference_directory, working_directory):
+    volumes = {
+        reference_directory.path: {'bind': CONTAINER_REFERENCE_DIRECTORY, 'mode': 'ro'},
+        working_directory: {'bind': CONTAINER_WORKING_DIRECTORY, 'mode': 'rw'}
+    }
+
+    simulate_command = f'launcher.py simulate --ref-directory {CONTAINER_REFERENCE_DIRECTORY} --cores 8 '\
+                       f'--directory {CONTAINER_WORKING_DIRECTORY} --flow rapid --assembly hg37 --seed 42 --real-run' \
+
+    docker_client.containers.run(GRAPE_IMAGE_TAG, remove=True, command=simulate_command, volumes=volumes)
+
+    # Read file result with simulation metrics
+    metrics = _read_metrics_file(os.path.join(working_directory, METRICS_FILEPATH))
+
+    # Validate simultation metrics
+    assert metrics['1']['Recall'] > 0.99 and metrics['1']['Precision'] > 0.99
+    assert metrics['2']['Recall'] > 0.99 and metrics['2']['Precision'] > 0.99
+    assert metrics['3']['Recall'] > 0.99 and metrics['3']['Precision'] > 0.99
+
+    assert metrics['4']['Recall'] > 0.90 and metrics['4']['Precision'] > 0.95
+    assert metrics['5']['Recall'] > 0.90 and metrics['5']['Precision'] > 0.95
+    assert metrics['6']['Recall'] > 0.80 and metrics['6']['Precision'] > 0.90
+
+    assert metrics['7']['Recall'] > 0 and metrics['1']['Precision'] > 0.9
+    assert metrics['8']['Recall'] > 0 and metrics['1']['Precision'] > 0.9
+    assert metrics['9']['Recall'] > 0 and metrics['1']['Precision'] > 0.9
 
 
 @pytest.mark.parametrize('working_directory', ['ibis'], indirect=True)
