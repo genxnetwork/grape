@@ -137,7 +137,7 @@ rule recode_snp_ids:
 
 
 
-if flow == 'rapid' or flow == 'germline-king':
+if flow == 'rapid':
     rule phase_preserving_filter:
         input:
             vcf = temp('vcf/{batch}_merged_lifted_id.vcf.gz')
