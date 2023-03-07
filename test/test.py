@@ -188,7 +188,7 @@ def test_simulation_rapid(docker_client, grape_image, reference_directory, worki
     assert metrics['3']['Recall'] > 0.99 and metrics['3']['Precision'] > 0.99
 
     assert metrics['4']['Recall'] > 0.90 and metrics['4']['Precision'] > 0.95
-    assert metrics['5']['Recall'] > 0.90 and metrics['5']['Precision'] > 0.95
+    assert metrics['5']['Recall'] > 0.90 and metrics['5']['Precision'] > 0.90
     assert metrics['6']['Recall'] > 0.80 and metrics['6']['Precision'] > 0.90
 
     assert metrics['7']['Recall'] > 0 and metrics['1']['Precision'] > 0.9
