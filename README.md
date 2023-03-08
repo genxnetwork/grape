@@ -15,7 +15,7 @@ GRAPE incorporates comprehensive data preprocessing, quality control (QC), and s
 ## Installation
 
 ```bash
-docker build -t genx_relatives:latest -f containers/snakemake/Dockerfile -m 8GB .
+docker build -t grape:latest -f containers/snakemake/Dockerfile -m 8GB .
 ```
 
 The pipeline has three main steps:
@@ -41,7 +41,7 @@ After that `--ref-directory` argument should be used in all subsequent commands.
 
 ```bash
 docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
-    genx_relatives:latest launcher.py reference --ref-directory /media/ref --real-run
+    grape:latest launcher.py reference --ref-directory /media/ref --real-run
 ```
 
 If phasing and imputation are required (mainly for the GERMLINE workflow) one should specify additional `--phase` and `--impute` flags to previous command to download additional reference datasets.
@@ -50,7 +50,7 @@ Total amount of required disk space must be at least **50GB**.
 
 ```bash
 docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
-    genx_relatives:latest launcher.py reference \
+    grape:latest launcher.py reference \
         --ref-directory /media/ref --phase --impute --real-run
 ```
 
@@ -62,7 +62,7 @@ This way is faster, since all the post-processing procedures have been already p
 
 ```bash
 docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
-    genx_relatives:latest launcher.py reference --use-bundle \
+    grape:latest launcher.py reference --use-bundle \
         --ref-directory /media/ref --phase --impute --real-run
 ```
 
@@ -112,7 +112,7 @@ Along with some necessary technical procedures, preprocessing includes the follo
 
 ```bash
 docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
-    genx_relatives:latest launcher.py preprocess --ref-directory /media/ref \
+    grape:latest launcher.py preprocess --ref-directory /media/ref \
         --vcf-file /media/input.vcf.gz --directory /media/data --assembly hg37 --real-run
 ```
 
@@ -123,7 +123,7 @@ docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
 
 ```bash
 docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
-    genx_relatives:latest launcher.py preprocess --ref-directory /media/ref \
+    grape:latest launcher.py preprocess --ref-directory /media/ref \
         --vcf-file /media/input.vcf.gz --directory /media/data \
         --assembly hg38 --phase --impute --flow germline-king --real-run
 ```
@@ -154,7 +154,7 @@ Workflow selection is made by the `--flow` parameter.
 
 ```bash
 docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
-    genx_relatives:latest launcher.py find --flow ibis-king --ref-directory /media/ref \
+    grape:latest launcher.py find --flow ibis-king --ref-directory /media/ref \
         --directory /media/data --ibis-seg-len 7 --ibis-min-snp 500 \
         --zero-seg-count 0.5 --zero-seg-len 5.0 --alpha 0.01 --real-run
 ```
@@ -163,7 +163,7 @@ docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
 
 ```bash
 docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
-    genx_relatives:latest launcher.py find --flow germline-king --ref-directory /media/ref \
+    grape:latest launcher.py find --flow germline-king --ref-directory /media/ref \
         --directory /media/data --zero-seg-count 0.5 --zero-seg-len 5.0 \
         --alpha 0.01 --real-run
 ```
@@ -263,7 +263,7 @@ See more information in out [GRAPE preprint](https://www.biorxiv.org/content/10.
 
 ```bash
 docker run --rm -it -v /media:/media \
-    genx_relatives:latest launcher.py compute-weight-mask \
+    grape:latest launcher.py compute-weight-mask \
         --directory /media/background --assembly hg37 \
         --real-run --ibis-seg-len 5 --ibis-min-snp 400
 ```
@@ -273,7 +273,7 @@ The resulting files consist of a weight mask file in JSON format and a visualiza
 
 ```bash
 docker run --rm -it -v /media:/media \
-    genx_relatives:latest launcher.py find --flow ibis --ref-directory /media/ref \
+    grape:latest launcher.py find --flow ibis --ref-directory /media/ref \
         --weight-mask /media/background/weight-mask/mask.json \
         --directory /media/data --assembly hg37 \
         --real-run --ibis-seg-len 5 --ibis-min-snp 400
@@ -383,7 +383,7 @@ Use the `simulate` command of the GRAPE launcher.
 
 ```bash
 docker run --rm -it -v /media:/media -v /etc/localtime:/etc/localtime:ro \
-    genx_relatives:latest launcher.py simulate --flow ibis-king --ref-directory /media/ref \
+    grape:latest launcher.py simulate --flow ibis-king --ref-directory /media/ref \
         --directory /media/data --sim-params-file params/relatives_average.def \
         --sim-samples-file ceph_unrelated_all.tsv --assembly hg37 --ibis-seg-len 5 \
         --ibis-min-snp 400 --zero-seg-count 0.1 --zero-seg-len 5 --alpha 0.01 --real-run

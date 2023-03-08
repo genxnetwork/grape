@@ -17,7 +17,7 @@ with open(os.path.join(dirname, 'test_data.json')) as config:
 HOME_DIRECTORY = os.path.expanduser('~')
 
 GRAPE_DOCKERFILE = 'containers/snakemake/Dockerfile'
-GRAPE_IMAGE_TAG = 'genx_relatives:latest'
+GRAPE_IMAGE_TAG = 'grape:latest'
 
 REFERENCE_DIRECTORY = os.path.join(HOME_DIRECTORY, 'ref_test')
 CONTAINER_REFERENCE_DIRECTORY = '/media/ref'
