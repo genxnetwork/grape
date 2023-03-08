@@ -1,5 +1,21 @@
 # Changelog
 
+## [v1.8] - 2023-03-08
+
+### Added
+
+- New relatedness inference workflow was added `--flow rapid`.
+- New configuration flags `--rapid-error-rate`, `--rapid-min-snp`, `--rapid-num-runs`, `--rapid-num-success`, `--rapid-seg-len` for `rapid` were included in launcher.
+- Outlier samples can be filtered out in `preprocess` workflow now, using `--iqr-alpha` for threshold modification.
+
+### Changed
+
+- `rapid` and `germline-king` relatedness workflows now require phase-preserving preprocessing, which can be initiated by adding a corresponding `--flow` flag to `preprocess` workflow.
+
+### Fixed
+
+- Postprocessing step in relatedness workflow is now capable to process large datasets thanks to `polars` python library.
+
 ## [v1.7] - 2023-01-12
 
 ### Added
