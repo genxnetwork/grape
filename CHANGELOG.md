@@ -4,9 +4,9 @@
 
 ### Added
 
-- New relatedness inference workflow was added `--flow rapid`.
+- New relatedness inference workflow was added `--flow rapid`. It requires phased data as input and should process 100K samples in an hour. It cannot reliably distinguish between parent-offspring and full siblings relationships yet, so it should be used only for distant degrees. 
 - New configuration flags `--rapid-error-rate`, `--rapid-min-snp`, `--rapid-num-runs`, `--rapid-num-success`, `--rapid-seg-len` for `rapid` were included in launcher.
-- Outlier samples can be filtered out in `preprocess` workflow now, using `--iqr-alpha` for threshold modification.
+- Outlier samples can be filtered out in `preprocess` workflow now, using `--iqr-alpha` for threshold modification. It should be used when there are a few samples with a lot more genotyped or imputed SNPs than the majority of a dataset. 
 
 ### Changed
 
