@@ -30,8 +30,8 @@ ENV PATH "$PATH:/opt/Minimac3Executable/bin"
 RUN apt-get install -y minimac4
 
 # Install Eagle
-RUN wget "https://data.broadinstitute.org/alkesgroup/Eagle/downloads/dev/eagle_v2.4.1" -O /usr/bin/eagle
-RUN chmod a+x /usr/bin/eagle
+# RUN wget "https://data.broadinstitute.org/alkesgroup/Eagle/downloads/dev/eagle_v2.4.1" -O /usr/bin/eagle
+# RUN chmod a+x /usr/bin/eagle
 
 # Install Germline
 # conda version of germline has a problem with non-zero error code
