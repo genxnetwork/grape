@@ -74,19 +74,21 @@ def read_ersa(ersa_path):
         pl.col('ersa_degree').str.strip().cast(pl.Int32, strict=False),
         pl.col('ersa_lower_bound').str.strip().cast(pl.Int32, strict=False),
         pl.col('ersa_upper_bound').str.strip().cast(pl.Int32, strict=False),
-        pl.col('seg_count').cast(pl.Int32, strict=False),
+        pl.col('seg_count').str.strip().cast(pl.Int32, strict=False),
         pl.col('total_seg_len').str.replace(',', '').str.strip().cast(pl.Float64, strict=False)
     ])
     found = data.select([pl.col('total_seg_len').where(pl.col('total_seg_len') > 1000).sum()])
-    print(f'parsed total_seg_len, found {found} long entries')
-
+    # print(f'parsed total_seg_len, found {found} long entries')
+    # print(f'{data.filter(pl.col("ersa_lower_bound").is_null()).collect(streaming=True)}')
+    # print(data.with_columns(pl.col('ersa_lower_bound') - 1).collect(streaming=True).head(5))
     data = data.with_columns([
         pl.when(pl.col('ersa_lower_bound') != 1)
-        .then(pl.col('ersa_lower_bound') - 1),
+        .then(pl.col('ersa_lower_bound') - 1).otherwise(pl.col('ersa_lower_bound')),
         pl.when(pl.col('ersa_upper_bound') != 1)
-        .then(pl.col('ersa_upper_bound') - 1)
+        .then(pl.col('ersa_upper_bound') - 1).otherwise(pl.col('ersa_upper_bound'))
     ])
-
+    print(data)
+    print(data.collect(streaming=True).head(5))
     #logging.info(f'read {data.shape[0]} pairs from ersa output')
     #logging.info(f'ersa after reading has {len(data) - data["ersa_degree"].null_count()}')
     data = data.select(
@@ -122,7 +124,7 @@ if __name__ == '__main__':
         ibd = pl.DataFrame(data=[], columns=_columns).lazy()
         
     ersa = read_ersa(ersa_path)
-
+    
     #logging.info(f'ibd shape: {ibd.shape[0]}, ersa shape: {ersa.shape[0]}')
     relatives = ibd.join(ersa, how='outer', on=['id1', 'id2'])  # No left_index / right_index input params
 
@@ -176,11 +178,7 @@ if __name__ == '__main__':
         .fill_null(pl.lit(0)),
 
         pl.col('seg_count_ibd2')
-        .fill_null(pl.lit(0)),
-
-        pl.col('ersa_lower_bound')
-        .fill_null(pl.lit(1))
-
+        .fill_null(pl.lit(0))
     ])
     '''
         IBIS and ERSA do not distinguish IBD1 and IBD2 segments
@@ -197,7 +195,8 @@ if __name__ == '__main__':
         .otherwise(shared_genome_formula)
         .alias('shared_genome_proportion')
     )
-    relatives = relatives.filter(pl.col('final_degree').is_null() is False).collect(streaming=True)
+    relatives = relatives.filter(~(pl.col('final_degree').is_null())).collect(streaming=True)
+    
     print(f'We have {len(relatives.filter(dup_mask))} duplicates, '
           f'{len(relatives.filter(fs_mask))} full siblings and '
           f'{len(relatives.filter(po_mask))} parent-offspring relationships')
