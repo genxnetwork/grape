@@ -6,10 +6,12 @@ import json
 
 REF_DIR            = config["ref_dir"]
 CHIP               = config["chip"]
+PHASED_VCF         = join(REF_DIR, config['reference']['phased_ref']['file'])
 REF_VCF            = join(REF_DIR, config["reference"]["vcfRef"]["file"])
 PEDSIM_MAP         = join(REF_DIR, config["reference"]["pedsim_map"]["file"])
 CHROMOSOMES        = [str(i) for i in range(1, 23)]
 DEF_FILE           = config['sim_params_file']
+SIM_SAMPLES_FILE   = config['sim_samples_file']
 
 names = []
 def generate_code():
@@ -21,17 +23,24 @@ def generate_code():
     names.append(code)
     return code
 
+
 def get_num_runs(def_file):
-    with open("list.samples", "r") as f:
+    with open(SIM_SAMPLES_FILE, "r") as f:
         lines = f.readlines()
         samples = [line.rstrip() for line in lines]
         total_founders = len(samples)
 
     with open(f"{def_file}", "r") as f:
         lines = f.readlines()
-        runs = int(lines[0].split(" ")[2])
+        first_line = lines[0].split(" ")
+        runs, generations = int(first_line[2]), int(first_line[3])
+        
         founders = 0
-        for line in lines[1:-1]:
+        for line in lines[1:]:
+            # to properly handle the possible last empty line
+            # also, last generation does not need any founders
+            if len(line) <= 1 or int(line.split(" ")[0]) == generations:
+                continue
             ppl = int(line.split(" ")[2])
             if ppl == 0:
                 ppl = 1
@@ -39,8 +48,9 @@ def get_num_runs(def_file):
         founders += 1
         founders *= runs
         num_chips = int(total_founders / founders)
-    print(f"Number of runs: {num_chips}")
+    print(f"Number of runs: {num_chips} for {founders} founders in each run and {total_founders} total founders in sim-samples-file")
     return num_chips, founders
+
 
 def prepare_folders(num_runs, def_file):
     if not os.path.exists("background"):
@@ -56,7 +66,8 @@ def prepare_folders(num_runs, def_file):
             first[1] = name
             lines[0] = " ".join(first)
         with open(f"gen{i}/params/relatives_big.def", "w") as f:
-            f.write("\n".join(lines))
+            f.write("\n".join(l for l in lines if l != '\n'))
+
 
 NUM_RUNS, NUM_FOUNDERS = get_num_runs(DEF_FILE)
 prepare_folders(NUM_RUNS, DEF_FILE)
@@ -66,25 +77,12 @@ rule all:
         "generated.vcf.gz",
         "generated.vcf.gz.csi"
 
-rule intersect:
-    input:
-        hd_genotype_chip=CHIP,
-        vcfRef=REF_VCF
-    output:
-        temp("pedsim/phased/chr{chrom}.phased.vcf.gz")
-    conda:
-        "bcftools"
-    shell:
-        """
-            bcftools isec -n=2 -w1 -r {wildcards.chrom} -O z -o {output} {input.vcfRef} {input.hd_genotype_chip}
-        """
-
 
 rule merge_background:
     input:
-        data=expand("pedsim/phased/chr{chrom}.phased.vcf.gz", chrom=CHROMOSOMES)
+        data=expand(PHASED_VCF, chrom=CHROMOSOMES)
     output:
-        temp("pedsim/phased/background.vcf.gz")
+        "pedsim/phased/background.bcf.gz"
     params:
         list="pedsim/phased/phased.merge.list"
     conda:
@@ -101,18 +99,19 @@ rule merge_background:
                     continue
                 fi
             done
-            bcftools concat -f {params.list} -O z -o {output}
+            bcftools concat -f {params.list} -O b -o {output}
         """
 
 
 rule split_chip:
     input:
-        back = "pedsim/phased/background.vcf.gz",
-        list = "list.samples",
-        def_file = expand("gen{runs}/params/relatives_big.def", runs = list(range(NUM_RUNS)))
-        num_runs = NUM_RUNS,
-        num_founders = NUM_FOUNDERS
-
+        back = "pedsim/phased/background.bcf.gz",
+        samples = SIM_SAMPLES_FILE
+        # def_file = 
+    params:
+        # def_file = expand("gen{runs}/params/relatives_big.def", runs = list(range(NUM_RUNS))),
+        num_runs = str(NUM_RUNS),
+        num_founders = str(NUM_FOUNDERS)
     output:
         expand("background/segment{runs}.vcf.gz", runs = list(range(NUM_RUNS)))
     conda:
@@ -126,43 +125,49 @@ rule simulate:
         intf='params/nu_p_campbell.tsv',
         seg = "background/segment{runs}.vcf.gz"
     output:
-        temp('gen{runs}/data{runs}.vcf.gz'),
-        temp('gen{runs}/data{runs}.seg')
+        temp('gen{runs}/data{runs}.vcf.gz')
+        # temp('gen{runs}/data{runs}.seg')
     conda:
         "ped-sim"
     shell:
         """
-            pedsim -d gen{wildcards.runs}/params/relatives_big.def -m {input._map} -i segment{wildcards.runs}.vcf.gz -o gen{wildcards.runs}/data{wildcards.runs} --intf {input.intf} --fam
+            pedsim -d gen{wildcards.runs}/params/relatives_big.def \
+                -m {input._map} -i {input.seg} \
+                -o gen{wildcards.runs}/data{wildcards.runs} \
+                --intf {input.intf} --keep_phase
+            rm gen{wildcards.runs}/data{wildcards.runs}.seg
         """
+
 
 rule convert:
     input:
         "gen{runs}/data{runs}.vcf.gz"
     output:
-        temp("gen{runs}/data4merge{runs}.vcf.gz")
+        temp("gen{runs}/data4merge{runs}.bcf.gz")
     conda:
         "bcftools"
     shell:
         """
-            bcftools convert gen{wildcards.runs}/data{wildcards.runs}.vcf.gz -O z -o  gen{wildcards.runs}/data4merge{wildcards.runs}.vcf.gz
+            bcftools convert gen{wildcards.runs}/data{wildcards.runs}.vcf.gz -O b -o  gen{wildcards.runs}/data4merge{wildcards.runs}.bcf.gz
         """
+
 
 rule index:
     input:
-        "gen{runs}/data4merge{runs}.vcf.gz"
+        "gen{runs}/data4merge{runs}.bcf.gz"
     output:
-        temp("gen{runs}/data4merge{runs}.vcf.gz.csi")
+        temp("gen{runs}/data4merge{runs}.bcf.gz.csi")
     conda:
         "bcftools"
     shell:
         """
-            bcftools index -f gen{wildcards.runs}/data4merge{wildcards.runs}.vcf.gz
+            bcftools index -f {input}
         """
 
 rule merge:
     input:
-        index = expand("gen{num_runs}/data4merge{num_runs}.vcf.gz.csi", num_runs=list(range(NUM_RUNS))),
-        samples = expand("gen{num_runs}/data4merge{num_runs}.vcf.gz", num_runs=list(range(NUM_RUNS)))
+        index = expand("gen{num_runs}/data4merge{num_runs}.bcf.gz.csi", num_runs=list(range(NUM_RUNS))),
+        samples = expand("gen{num_runs}/data4merge{num_runs}.bcf.gz", num_runs=list(range(NUM_RUNS)))
     output:
         "generated.vcf.gz",
         "generated.vcf.gz.csi"
