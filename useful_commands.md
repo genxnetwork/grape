@@ -4,7 +4,7 @@
 
 ```text
 
-docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest \
+docker run --rm --privileged -it -v /media:/media -v /etc/localtime:/etc/localtime:ro grape:latest \
 launcher.py find --samples /media/samples.tsv --input /media/input --directory /media/data
 
 ```

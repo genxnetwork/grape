@@ -99,7 +99,7 @@ def read_ersa(ersa_path):
 
 if __name__ == '__main__':
 
-    logging.basicConfig(filename=snakemake.log[0], level=logging.DEBUG, format='%(levelname)s:%(asctime)s %(message)s')
+    logging.basicConfig(filename='log.log', level=logging.DEBUG, format='%(levelname)s:%(asctime)s %(message)s')
 
     ibd_path = snakemake.input['ibd']
     # within families
@@ -169,7 +169,7 @@ if __name__ == '__main__':
         .otherwise(pl.col('ersa_degree'))
         .alias('relation'),
 
-        pl.when((~po_mask) & (pl.col('ersa_degree') == 1))
+        pl.when((po_mask.is_not()) & (pl.col('ersa_degree') == 1))
         .then(2)
         .otherwise(pl.col('ersa_degree'))
         .alias('final_degree'),
@@ -195,8 +195,7 @@ if __name__ == '__main__':
         .otherwise(shared_genome_formula)
         .alias('shared_genome_proportion')
     )
-    relatives = relatives.filter(~(pl.col('final_degree').is_null())).collect(streaming=True)
-    
+    relatives = relatives.filter(pl.col('final_degree').is_null() is False).collect(streaming=True)
     print(f'We have {len(relatives.filter(dup_mask))} duplicates, '
           f'{len(relatives.filter(fs_mask))} full siblings and '
           f'{len(relatives.filter(po_mask))} parent-offspring relationships')
