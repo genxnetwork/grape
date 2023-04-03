@@ -421,7 +421,9 @@ if __name__ == '__main__':
         )
 
     if args.command == 'preprocess':
-        shutil.copy(args.vcf_file, os.path.join(args.directory, 'input.vcf.gz'))
+        # shutil.copy(args.vcf_file, os.path.join(args.directory, 'input.vcf.gz'))
+        if not os.path.exists(os.path.join(args.directory, 'input.vcf.gz')):
+            os.symlink(args.vcf_file, os.path.join(args.directory, 'input.vcf.gz'))
 
     if args.command in ['preprocess', 'find', 'reference', 'bundle', 'remove_relatives', 'compute-weight-mask']:
         if args.directory != '.':
