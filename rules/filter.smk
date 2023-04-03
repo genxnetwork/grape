@@ -107,7 +107,7 @@ rule prepare_vcf:
         bim='plink/{batch}_merged_mapped.bim',
         fam='plink/{batch}_merged_mapped.fam'
     output:
-        vcf=temp('vcf/{batch}_merged_mapped_sorted.vcf.gz'),
+        vcf='vcf/{batch}_merged_mapped_sorted.vcf.gz',
         temp_vcf=temp('vcf/{batch}_merged_mapped_regions.vcf.gz'),
         temp_vcf_csi=temp('vcf/{batch}_merged_mapped_regions.vcf.gz.csi'),
         bed=temp('plink/{batch}_merged_mapped_alleled.bed'),
