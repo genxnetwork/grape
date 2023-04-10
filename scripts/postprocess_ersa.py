@@ -195,7 +195,7 @@ if __name__ == '__main__':
         .otherwise(shared_genome_formula)
         .alias('shared_genome_proportion')
     )
-    relatives = relatives.filter(pl.col('final_degree').is_null() is False).collect(streaming=True)
+    relatives = relatives.filter(~(pl.col('final_degree').is_null())).collect(streaming=True)
     print(f'We have {len(relatives.filter(dup_mask))} duplicates, '
           f'{len(relatives.filter(fs_mask))} full siblings and '
           f'{len(relatives.filter(po_mask))} parent-offspring relationships')
