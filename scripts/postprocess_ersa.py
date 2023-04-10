@@ -112,7 +112,7 @@ if __name__ == '__main__':
             print("ersa postprocess input is empty")
             open(output_path, "w").close()  # create empty output to avoid error
             quit()
-    if snakemake.params['ibis']:
+    if snakemake.params.get('ibis', True):
         ibd = read_ibis(ibd_path)
     else:
         _columns = [
