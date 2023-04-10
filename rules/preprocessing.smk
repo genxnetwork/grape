@@ -104,31 +104,17 @@ else:
                 ln -sr {input.vcf} {output.vcf}
             '''
 
-
-rule recode_snp_ids:
-    input:
-        vcf='vcf/{batch}_merged_lifted.vcf.gz'
-    output:
-        bcf=temp('vcf/{batch}_merged_lifted_id.bcf.gz')
-    conda:
-        'bcftools'
-    shell:
-        '''
-            bcftools annotate --set-id "%CHROM:%POS:%REF:%FIRST_ALT" {input.vcf} -O b -o {output.bcf}
-        '''
-
-
 if flow == 'rapid' or flow == 'germline-king':
     rule phase_preserving_filter:
         input:
-            bcf = 'vcf/{batch}_merged_lifted_id.bcf.gz'
+            vcf = 'vcf/{batch}_imputation_removed.vcf.gz'
         output:
             bcf = 'vcf/{batch}_merged_mapped_sorted.bcf.gz'
         conda:
             'bcftools'
         shell:
             '''
-                bcftools view --min-af 0.05 {input.bcf} -O b -o {output.bcf}
+                bcftools annotate --set-id "%CHROM:%POS:%REF:%FIRST_ALT" {input.vcf} | bcftools view --min-af 0.05 -O b -o {output.bcf}
             '''
 else:
     include: '../rules/filter.smk'
