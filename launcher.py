@@ -420,8 +420,10 @@ if __name__ == '__main__':
             os.path.join(args.directory, 'config.yaml')
         )
 
-    if args.command == 'preprocess':
-        shutil.copy(args.vcf_file, os.path.join(args.directory, 'input.vcf.gz'))
+    if args.command == 'preprocess' or args.command == 'remove_relatives':
+        # shutil.copy(args.vcf_file, os.path.join(args.directory, 'input.vcf.gz'))
+        if not os.path.exists(os.path.join(args.directory, 'input.vcf.gz')):
+            os.symlink(args.vcf_file, os.path.join(args.directory, 'input.vcf.gz'))
 
     if args.command in ['preprocess', 'find', 'reference', 'bundle', 'remove_relatives', 'compute-weight-mask']:
         if args.directory != '.':

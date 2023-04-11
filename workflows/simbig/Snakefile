@@ -125,8 +125,8 @@ rule simulate:
         intf='params/nu_p_campbell.tsv',
         seg = "background/segment{runs}.vcf.gz"
     output:
-        temp('gen{runs}/data{runs}.vcf.gz')
-        # temp('gen{runs}/data{runs}.seg')
+        temp('gen{runs}/data{runs}.vcf.gz'),
+        temp('gen{runs}/data{runs}.seg')
     conda:
         "ped-sim"
     shell:
@@ -135,7 +135,6 @@ rule simulate:
                 -m {input._map} -i {input.seg} \
                 -o gen{wildcards.runs}/data{wildcards.runs} \
                 --intf {input.intf} --keep_phase
-            rm gen{wildcards.runs}/data{wildcards.runs}.seg
         """
 
 

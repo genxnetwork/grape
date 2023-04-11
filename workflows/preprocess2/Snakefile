@@ -32,14 +32,20 @@ def _mem_gb_for_ram_hungry_jobs():
   return min(_IDEAL_LARGE_MEM_GB, config["mem_gb"])
 
 
-rule all:
-    input:
-        vcf="preprocessed/data.vcf.gz",
-        bed="preprocessed/data.bed",
-        fam="preprocessed/data.fam",
-        bim_mapped="preprocessed/data_mapped.bim",
-        bim="preprocessed/data.bim"
-        # rules.report_benchmark_summary.output
+if flow == 'rapid':
+    rule all:
+        input:
+            vcf="preprocessed/data.vcf.gz",
+            fam="preprocessed/data.fam"
+else:
+    rule all:
+        input:
+            vcf="preprocessed/data.vcf.gz",
+            bed="preprocessed/data.bed",
+            fam="preprocessed/data.fam",
+            bim_mapped="preprocessed/data_mapped.bim",
+            bim="preprocessed/data.bim"
+            # rules.report_benchmark_summary.output
 
 
 include: "../../rules/preprocessing.smk"
