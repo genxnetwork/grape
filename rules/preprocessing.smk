@@ -125,12 +125,12 @@ if need_phase:
 else:
     rule copy_phase:
         input:
-            vcf='vcf/{batch}_merged_mapped_sorted.bcf.gz'
+            bcf='vcf/{batch}_merged_mapped_sorted.bcf.gz'
         output:
-            vcf='phase/{batch}_merged_phased.bcf.gz'
+            bcf='phase/{batch}_merged_phased.bcf.gz'
         shell:
             '''
-                ln -sr {input.vcf} {output.vcf}
+                ln -sr {input.bcf} {output.bcf}
             '''
 
 
@@ -148,13 +148,11 @@ else:
         input:
             bcf=bcf_input
         output:
-            vcf=vcf_output,
-            fam='preprocessed/data.fam'
+            vcf=vcf_output
         conda:
             'bcftools'
         shell:
             '''
-                bcftools query --list-samples {input.bcf} >> {output.fam}
                 bcftools view {input.bcf} -O z -o {output.vcf}
             '''
 
@@ -305,3 +303,16 @@ if not flow == 'rapid':
             '''
             (add-map-plink.pl -cm {input.bim} {params.genetic_map_GRCh37}> {output}) |& tee -a {log}
             '''
+else:
+    rule create_samples_list:
+        input:
+            bcf_input = 'phase/batch1_merged_phased.bcf.gz'
+        output:
+            fam='preprocessed/data.fam'
+        conda:
+            'bcftools'
+        shell:
+            '''
+                bcftools query --list-samples {input.bcf} >> {output.fam}
+            '''
+

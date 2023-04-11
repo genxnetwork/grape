@@ -1,6 +1,6 @@
 rule select_bad_samples:
     input:
-        vcf='vcf/{batch}.vcf.gz'
+        vcf='vcf/{batch}_merged_lifted.vcf.gz'
     output:
         bad_samples='vcf/{batch}_lifted_vcf.badsamples',
         report='results/{batch}_bad_samples_report.tsv',
@@ -25,7 +25,7 @@ rule select_bad_samples:
 
 rule plink_filter:
     input:
-        vcf='vcf/{batch}_merged_lifted_id.vcf.gz',
+        vcf='vcf/{batch}_merged_lifted.vcf.gz',
         bad_samples=rules.select_bad_samples.output.bad_samples
     output:
         bed = temp('plink/{batch}_merged_filter.bed'),
@@ -107,7 +107,7 @@ rule prepare_vcf:
         bim='plink/{batch}_merged_mapped.bim',
         fam='plink/{batch}_merged_mapped.fam'
     output:
-        vcf='vcf/{batch}_merged_mapped_sorted.vcf.gz',
+        bcf='vcf/{batch}_merged_mapped_sorted.bcf.gz',
         temp_vcf=temp('vcf/{batch}_merged_mapped_regions.vcf.gz'),
         temp_vcf_csi=temp('vcf/{batch}_merged_mapped_regions.vcf.gz.csi'),
         bed=temp('plink/{batch}_merged_mapped_alleled.bed'),
@@ -131,7 +131,7 @@ rule prepare_vcf:
         bcftools sort -T vcf/temp_{wildcards.batch} vcf/{wildcards.batch}_merged_mapped_clean.vcf.gz -O z -o {output.temp_vcf} |& tee -a {log.vcf}
         bcftools index -f {output.temp_vcf} |& tee -a {log.vcf}
         # need to check output for the potential issues
-        bcftools view {output.temp_vcf} --regions 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 -O z -o {output.vcf}
-        bcftools norm --check-ref e -f {GRCH37_FASTA} vcf/{wildcards.batch}_merged_mapped_sorted.vcf.gz -O u -o /dev/null |& tee -a {log.vcf}
-        bcftools index -f {output.vcf} | tee -a {log.vcf}
+        bcftools view {output.temp_vcf} --regions 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 -O b -o {output.bcf}
+        bcftools norm --check-ref e -f {GRCH37_FASTA} vcf/{wildcards.batch}_merged_mapped_sorted.bcf.gz -O u -o /dev/null |& tee -a {log.vcf}
+        bcftools index -f {output.bcf} | tee -a {log.vcf}
         """
