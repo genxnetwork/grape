@@ -53,7 +53,7 @@ if __name__ == '__main__':
     input150_samples_path = 'workdir/input150.samples'    
     input18_samples_path = 'workdir/input18.samples'
     local_matches_path = 'workdir/relatives_ibis168.tsv'
-    cb_matches_path = 'workdir/relatives_cb_input18_150.tsv'
+    cb_matches_path = 'workdir/relatives_cb_input18_150_2.tsv'
     
     local_cb_matches_path = 'workdir/relatives_18_150_2.tsv'
     
