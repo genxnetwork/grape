@@ -120,6 +120,8 @@ def pre_imputation_check(params, reference):
                     elif matching == 3:
                         flip_file.write(id_ + "\n")
                         flip_swap += 1
+            else:
+                print(id_)
 
     logging.info("Exclude: {} Keep: {}".format(exclude, in_ref - exclude))
     logging.info("Total flip: {}.".format(strand_flip))

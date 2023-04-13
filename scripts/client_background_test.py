@@ -52,7 +52,7 @@ def extract_cb_matches_from_local(input150_path: str, input18_path: str, local_m
 if __name__ == '__main__':
     input150_samples_path = 'workdir/input150.samples'    
     input18_samples_path = 'workdir/input18.samples'
-    local_matches_path = 'workdir/relatives_ibis168.tsv'
+    local_matches_path = 'workdir/relatives_ibis168_3.tsv'
     cb_matches_path = 'workdir/relatives_cb_input18_150_2.tsv'
     
     local_cb_matches_path = 'workdir/relatives_18_150_2.tsv'

@@ -96,7 +96,7 @@ rule ersa:
         TEMPFILE=ersa/temp_relatives.tsv
         rm -f $TEMPFILE
         rm -f {output}
-
+        echo "ersa --avuncular-adj -ci -a {params.a} --dmax 14 -t {params.t} -l {params.l} {params.r} -th {params.th}"
         for input_file in $FILES; do
             ersa --avuncular-adj -ci -a {params.a} --dmax 14 -t {params.t} -l {params.l} \
                 {params.r} -th {params.th} $input_file -o $TEMPFILE |& tee {log}
