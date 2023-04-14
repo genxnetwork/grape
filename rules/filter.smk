@@ -1,6 +1,18 @@
+rule annotate_snp_ids:
+    input:
+        vcf = 'vcf/{batch}_merged_lifted.vcf.gz'
+    output:
+        vcf = 'vcf/{batch}_merged_annotated.vcf.gz'
+    conda:
+        'bcftools'
+    shell:
+        '''
+            bcftools annotate --set-id "%CHROM:%POS:%REF:%FIRST_ALT" {input.vcf} -O z -o {output.vcf}
+        '''
+
 rule select_bad_samples:
     input:
-        vcf='vcf/{batch}_merged_lifted.vcf.gz'
+        vcf='vcf/{batch}_merged_annotated.vcf.gz'
     output:
         bad_samples='vcf/{batch}_lifted_vcf.badsamples',
         report='results/{batch}_bad_samples_report.tsv',
@@ -25,7 +37,7 @@ rule select_bad_samples:
 
 rule plink_filter:
     input:
-        vcf='vcf/{batch}_merged_lifted.vcf.gz',
+        vcf='vcf/{batch}_merged_annotated.vcf.gz',
         bad_samples=rules.select_bad_samples.output.bad_samples
     output:
         bed = temp('plink/{batch}_merged_filter.bed'),

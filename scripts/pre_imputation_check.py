@@ -70,7 +70,7 @@ def pre_imputation_check(params, reference):
         items = i.split()
         # id: (ref, alt)
         # %CHROM:%POS:%REF:%FIRST_ALT
-        a1_a2[f'{items[0]}:{items[3]}:{items[-2]}:{items[-1]}'] = (items[-2], items[-1])
+        a1_a2[items[1]] = (items[-2], items[-1])
 
     # files to update bim
     chr_path = prefix + '.chr'
@@ -120,8 +120,6 @@ def pre_imputation_check(params, reference):
                     elif matching == 3:
                         flip_file.write(id_ + "\n")
                         flip_swap += 1
-            else:
-                print(id_)
 
     logging.info("Exclude: {} Keep: {}".format(exclude, in_ref - exclude))
     logging.info("Total flip: {}.".format(strand_flip))
