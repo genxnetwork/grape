@@ -306,7 +306,7 @@ if not flow == 'rapid':
 else:
     rule create_samples_list:
         input:
-            bcf_input = 'phase/batch1_merged_phased.bcf.gz'
+            bcf = 'phase/batch1_merged_phased.bcf.gz'
         output:
             fam='preprocessed/data.fam'
         conda:
