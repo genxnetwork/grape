@@ -31,3 +31,4 @@ zarr/*
 .DS_Store
 test_data
 workdir
+/docs/_build/
