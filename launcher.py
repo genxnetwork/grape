@@ -328,6 +328,20 @@ def get_parser_args():
         type=int,
         help='Random seed for Ped-sim pedigree simulation. The default value is randomly generated.')
 
+    parser.add_argument(
+        '--sim_samples_number',
+        default=1000,
+        type=int,
+        help='Number of samples to simulate in Ped-sim pedigree simulation using simbig workflow.'
+    )
+    
+    parser.add_argument(
+        '--background',
+        default='1kg',
+        type=str,
+        help='Founders for simulation. The default value is 1kg. In this case, it will use 1000 genomes founders'
+    )
+    
     args = parser.parse_args()
 
     valid_commands = [
@@ -493,8 +507,9 @@ if __name__ == '__main__':
     config_dict['alt_hom_samples'] = args.alt_hom_samples
     config_dict['het_samples'] = args.het_samples
     config_dict['iqr_alpha'] = args.iqr_alpha
-
+    config_dict['sim_samples_number'] = args.sim_samples_number
     config_dict['seed'] = args.seed
+    config_dict['background'] = args.background
 
     if args.weight_mask:
         config_dict['weight_mask'] = os.path.join(args.directory, args.weight_mask)
