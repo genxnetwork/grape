@@ -33,9 +33,9 @@ rule ibis:
     output:
         ibd = "ibis/merged_ibis_{chr}.seg"
     log:
-        "logs/ibis/run_ibis.log"
+        "logs/ibis/run_ibis_{chr}.log"
     benchmark:
-        "benchmarks/ibis/run_ibis.txt"
+        "benchmarks/ibis/run_ibis_{chr}.txt"
     threads: workflow.cores
     params:
         mL = config['ibis_seg_len'],
@@ -107,15 +107,15 @@ def aggregate_input(wildcards):
 
 rule ersa:
     input:
-        ibd = aggregate_input
+        ibd = "ibd/{id}.tsv"
     output:
-        "ersa/relatives.tsv"
+        relatives="ersa/relatives_{id}.tsv"
     conda:
         "ersa"
     log:
-        "logs/ersa/ersa.log"
+        "logs/ersa/ersa_{id}.log"
     benchmark:
-        "benchmarks/ersa/ersa.txt"
+        "benchmarks/ersa/ersa_{id}.txt"
     params:
         l = config['zero_seg_count'],
         th = config['zero_seg_len'],
@@ -124,20 +124,24 @@ rule ersa:
         r = '--nomask ' + '-r ' + str(config['ersa_r']) if config.get('weight_mask') else ''
     shell:
         """
-        touch {output}
-        FILES="{input.ibd}"
-        TEMPFILE=ersa/temp_relatives.tsv
-        rm -f $TEMPFILE
-        rm -f {output}
-        echo "ersa --avuncular-adj -ci -a {params.a} --dmax 14 -t {params.t} -l {params.l} {params.r} -th {params.th}"
-        for input_file in $FILES; do
-            ersa --avuncular-adj -ci -a {params.a} --dmax 14 -t {params.t} -l {params.l} \
-                {params.r} -th {params.th} $input_file -o $TEMPFILE |& tee {log}
+        ersa --avuncular-adj -ci -a {params.a} --dmax 14 -t {params.t} -l {params.l} \
+                {params.r} -th {params.th} {input.ibd} -o {output.relatives} |& tee {log}
+        """
 
+
+rule merge_ersa:
+    input:
+        expand("ersa/relatives_{id}.tsv", id=glob_wildcards("ibd/{id}.tsv").id)
+    output:
+        "ersa/relatives.tsv"
+    shell:
+        """
+        FILES="{input}"
+        for input_file in $FILES; do
             if [[ "$input_file" == "${{FILES[0]}}" ]]; then
-                cat $TEMPFILE >> {output}
+                cat $input_file >> {output}
             else
-                sed 1d $TEMPFILE >> {output}
+                sed 1d $input_file >> {output}
             fi
         done
         """
@@ -145,8 +149,8 @@ rule ersa:
 
 rule postprocess_ersa:
     input:
-        ibd=rules.ibis.output['ibd'],
-        ersa=rules.ersa.output[0]
+        ibd=rules.merge_ibis_segments.output[0],
+        ersa=rules.merge_ersa.output[0]
     params:
         ibis = True
     output: "results/relatives.tsv"
