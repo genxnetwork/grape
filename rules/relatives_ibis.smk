@@ -2,15 +2,36 @@ import os
 import sys
 
 
-rule ibis:
+rule split_for_ibis:
     input:
         bed = "preprocessed/data.bed",
         fam = "preprocessed/data.fam",
         bim = "preprocessed/data_mapped.bim"
     conda:
+        "plink"
+    output:
+        bed = "ibis/{chr}.bed",
+        fam = "ibis/{chr}.fam",
+        bim = "ibis/{chr}.bim"
+    threads: 1
+    params:
+        bfile = "preprocessed/data",
+        chr = lambda wildcards: wildcards.chr
+    shell:
+        """
+            plink --bfile {params.bfile} --chr {params.chr} --make-bed --out ibis/{params.chr} --threads {threads}
+        """
+
+
+rule ibis:
+    input:
+        bed = "ibis/{chr}.bed",
+        fam = "ibis/{chr}.fam",
+        bim = "ibis/{chr}.bim"
+    conda:
         "ibis"
     output:
-        ibd = "ibis/merged_ibis.seg"
+        ibd = "ibis/merged_ibis_{chr}.seg"
     log:
         "logs/ibis/run_ibis.log"
     benchmark:
@@ -18,10 +39,22 @@ rule ibis:
     threads: workflow.cores
     params:
         mL = config['ibis_seg_len'],
-        mT = config['ibis_min_snp']
+        mT = config['ibis_min_snp'],
+        chr = lambda wildcards: wildcards.chr
     shell:
         """
-        ibis {input.bed} {input.bim} {input.fam} -t {threads} -mt {params.mT} -mL {params.mL} -ibd2 -mL2 3 -hbd -f ibis/merged_ibis |& tee -a {log}
+            ibis {input.bed} {input.bim} {input.fam} -t {threads} -mt {params.mT} -mL {params.mL} -ibd2 -mL2 3 -hbd -f ibis/merged_ibis_{params.chr} |& tee -a {log}
+        """
+
+
+rule merge_ibis_segments:
+    input: 
+        expand("ibis/merged_ibis_{chr}.seg", chr=CHROMOSOMES)
+    output:
+        "ibis/merged_ibis.seg"
+    shell:
+        """
+            cat {input} >> {output}
         """
 
 
