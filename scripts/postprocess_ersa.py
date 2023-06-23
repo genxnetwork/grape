@@ -107,7 +107,7 @@ if __name__ == '__main__':
     ersa_path = snakemake.input['ersa']
     output_path = snakemake.output[0]
 
-    with open(ersa_path, 'r') as ersa_file, open(ibd_path, 'r') as ibd_file:
+    with open(ersa_path, 'r') as ersa_file, open(ibd_path, 'rb') as ibd_file:
         if len(ersa_file.readlines(5000)) < 2 or len(ibd_file.readlines(5000)) < 1:
             print("ersa postprocess input is empty")
             open(output_path, "w").close()  # create empty output to avoid error
