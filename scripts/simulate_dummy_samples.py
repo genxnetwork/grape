@@ -2,7 +2,6 @@ import logging
 from collections import namedtuple
 import allel
 import numpy
-import tqdm
 import gzip
 
 
@@ -10,7 +9,7 @@ def write_vcf_file(file_name, headers, calldata, variant_names, sample_names, sa
     with gzip.open(file_name, 'wt') as vcf_file:
         # Writing metadata headers (e.g., file format, reference, etc.)
         for header in headers:
-            vcf_file.write("##" + header + "\n")
+            vcf_file.write(header + "\n")
         
         # Writing column header
         columns = ['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT']
@@ -19,7 +18,8 @@ def write_vcf_file(file_name, headers, calldata, variant_names, sample_names, sa
         
         # Writing variant data
         variant_count = len(variant_names)
-        for tqdm_idx in tqdm.tqdm(range(variant_count)):
+        # for tqdm_idx in tqdm.tqdm(range(variant_count)):
+        for tqdm_idx in range(variant_count):
             var_name, calldata_item, sample_genotype = variant_names[tqdm_idx], calldata[tqdm_idx], sample_genotypes[tqdm_idx, :]
             chrom, pos, id, ref, alt = var_name
             qual, filter, format = calldata_item
@@ -51,7 +51,7 @@ if __name__ == '__main__':
         snakemake = Snakemake(
             input={'background': 'test_data/vcf/background_20.vcf.gz'},
             output=['test_data/vcf/augmentated_background_20.vcf.gz'],
-            params={'samples_count': 100},
+            params={'sample_count': 100},
             log=['test_data/merge_king_ersa.log']
         )
 
@@ -72,6 +72,8 @@ if __name__ == '__main__':
     new_samples = []
     new_gt = []
     for i in range(0, len(samples), 2):
+        if len(new_samples) >= snakemake.params['sample_count']:
+            break
         for j in range(1, len(samples), 2):
             sample_gt_i = gt[:, i, :]
             sample_gg_j = gt[:, j, :]
@@ -80,17 +82,25 @@ if __name__ == '__main__':
             sample_gt_i[change_indices, :] = sample_gg_j[change_indices, :]
             new_samples.append(samples[i] + '_' + samples[j])
             new_gt.append(numpy.expand_dims(sample_gt_i, axis=1))
-            if len(new_samples) >= snakemake.params['samples_count']:
+            if len(new_samples) >= snakemake.params['sample_count']:
                 break        
     
     print(f'generated {len(new_samples)} samples')
     new_samples = numpy.array(new_samples)
     new_gt = numpy.concatenate(new_gt, axis=1)
     
-    headers = ["fileformat=VCFv4.2", "reference=file:///path_to_reference_genome"]
+    # headers = ["fileformat=VCFv4.2", "reference=file:///path_to_reference_genome"]
+    with gzip.open(snakemake.input['background'], 'rt') as vcf_file:
+        headers = []
+        for i, line in enumerate(vcf_file):
+            if line.startswith('##'):
+                headers.append(line.strip())
+            if i > 2 and not line.startswith('##'):
+                break
     # qual, filter, format
-    calldata = [(qual, fp, 'GT') for qual, fp in zip(vcf['variants/QUAL'], vcf['variants/FILTER_PASS'])]
-    variants = [(chrom, pos, _id, ref, alt) for chrom, pos, _id, ref, alt in zip(vcf['variants/CHROM'], 
+    calldata = [(qual, 'PASS', 'GT') for qual, fp in zip(vcf['variants/QUAL'], vcf['variants/FILTER_PASS'])]
+    print(f'calldata {calldata[:10]}')
+    variants = [(chrom, pos, _id, ref, alt[0]) for chrom, pos, _id, ref, alt in zip(vcf['variants/CHROM'], 
                                                                                  vcf['variants/POS'], 
                                                                                  vcf['variants/ID'], 
                                                                                  vcf['variants/REF'], 

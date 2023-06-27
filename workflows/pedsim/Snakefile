@@ -72,9 +72,24 @@ rule merge_background:
         """
 
 
+rule augment_background:
+    input:
+        background=rules.merge_background.output[0],
+    output:
+        'pedsim/phased/background.augmented.vcf.gz'
+    params:
+        sample_count=100
+    log:
+        "logs/augment_background.log"
+    conda:
+        "vcf_to_ped"
+    script:
+        "../../scripts/simulate_dummy_samples.py"
+
+
 rule simulate:
     input:
-        bg=rules.merge_background.output,
+        bg=rules.augment_background.output,
         _map=PEDSIM_MAP,
         _def=config['sim_params_file'],
         intf='params/nu_p_campbell.tsv'

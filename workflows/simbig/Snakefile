@@ -162,6 +162,7 @@ else:
                 bcftools convert {input.data} -O b -o {output}
             """
 
+
 rule split_chip:
     input:
         back = "pedsim/phased/background.bcf.gz",
@@ -179,11 +180,27 @@ rule split_chip:
         "../../scripts/split_chip.py"
 
 
+rule augment_background:
+    input:
+        background="background/segment{runs}.vcf.gz",
+    output:
+        "background/segment{runs}.augmented.vcf.gz"
+    params:
+        sample_count=1000
+    log:
+        "logs/augment_background.log"
+    conda:
+        "vcf_to_ped"
+    script:
+        "../../scripts/simulate_dummy_samples.py"
+
+
+
 rule simulate:
     input:
         _map=PEDSIM_MAP,
         intf='params/nu_p_campbell.tsv',
-        seg = "background/segment{runs}.vcf.gz"
+        seg = "background/segment{runs}.augmented.vcf.gz"
     output:
         temp('gen{runs}/data{runs}.vcf.gz'),
         temp('gen{runs}/data{runs}.seg')
