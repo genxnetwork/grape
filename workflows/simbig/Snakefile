@@ -83,8 +83,9 @@ def generate_def_file(def_file: str):
     # variables are number of runs (num_runs) and number of branches in each generation
     max_number_of_samples_per_run = 3000
     num_founders_per_run = 14
-    num_founders = get_num_founders(SIM_SAMPLES_FILE)
+    num_true_founders = get_num_founders(SIM_SAMPLES_FILE)
     num_runs = int(num_founders / num_founders_per_run)
+    num_founders = num_true_founders + num_founders_per_run * num_runs * 2
     if max_number_of_samples_per_run * num_runs < SIM_SAMPLES_NUMBER:
         raise ValueError(f'Number of samples in sim-samples-file is too small for the total number of samples requested. Max number of samples per run is {max_number_of_samples_per_run}, number of runs is {num_runs}, total number of samples is {SIM_SAMPLES_NUMBER}')
 
@@ -98,7 +99,7 @@ def generate_def_file(def_file: str):
     num_samples_per_run = int(SIM_SAMPLES_NUMBER / num_runs)
     siblings_scaling_factor = num_samples_per_run / 88
     siblings = [1, 1, 2, 2, 2, 4, 4]
-    branches = [2, 2, 2, 2, 2, 2, 16]
+    branches = [2, 2, 2, 2, 2, 2, 2]
     siblings = [int(s * siblings_scaling_factor) for s in siblings]
     siblings[-1] += 2
     actual_samples_per_run = sum([s*b for s, b in zip(siblings, branches)]) + num_founders_per_run
@@ -107,7 +108,9 @@ def generate_def_file(def_file: str):
     with open(f'{def_file}.adjusted', 'w') as f:
         f.write(f'def first 1 8\n')
         f.write(f'1 1 1\n')
+    
         for i, (s, b) in enumerate(zip(siblings, branches)):
+            # def file format is generation, samples to print for each branch, number of branches
             f.write(f'{i+2} {s} {b}\n')
             print(f'for generation {i+2} we have {s} siblings and {b} branches')
 
@@ -186,14 +189,13 @@ rule augment_background:
     output:
         "background/segment{runs}.augmented.vcf.gz"
     params:
-        sample_count=1000
+        sample_count=28
     log:
-        "logs/augment_background.log"
+        "logs/augment_background/segment{runs}.log"
     conda:
         "vcf_to_ped"
     script:
         "../../scripts/simulate_dummy_samples.py"
-
 
 
 rule simulate:
@@ -210,6 +212,7 @@ rule simulate:
         """
             pedsim -d gen{wildcards.runs}/params/relatives_big.def \
                 -m {input._map} -i {input.seg} \
+                 --err_hom_rate 0.05 --err_rate 0.01 --miss_rate 0.0 \
                 -o gen{wildcards.runs}/data{wildcards.runs} \
                 --intf {input.intf} --keep_phase
         """

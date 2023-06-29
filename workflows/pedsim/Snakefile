@@ -28,6 +28,7 @@ need_phase = config['phase']
 need_imputation = config['impute']
 need_remove_imputation = config['remove_imputation']
 simulation_seed = config['seed']
+augment_background = config['augment_background']
 
 _IDEAL_LARGE_MEM_GB = 20
 
@@ -71,25 +72,35 @@ rule merge_background:
             bcftools view --force-samples --samples-file {input.eu} -O z -o {output}
         """
 
-
-rule augment_background:
-    input:
-        background=rules.merge_background.output[0],
-    output:
-        'pedsim/phased/background.augmented.vcf.gz'
-    params:
-        sample_count=100
-    log:
-        "logs/augment_background.log"
-    conda:
-        "vcf_to_ped"
-    script:
-        "../../scripts/simulate_dummy_samples.py"
+if augment_background:
+    rule augment_background:
+        input:
+            background=rules.merge_background.output[0],
+        output:
+            'pedsim/phased/background.augmented.vcf.gz'
+        params:
+            sample_count=100
+        log:
+            "logs/augment_background.log"
+        conda:
+            "vcf_to_ped"
+        script:
+            "../../scripts/simulate_dummy_samples.py"
+else:
+    rule link_background:
+        input:
+            background=rules.merge_background.output[0]
+        output:
+            'pedsim/phased/background.augmented.vcf.gz'
+        shell:
+            """
+                ln -s {input.background} {output}
+            """ 
 
 
 rule simulate:
     input:
-        bg=rules.augment_background.output,
+        bg=rules.merge_background.output[0],
         _map=PEDSIM_MAP,
         _def=config['sim_params_file'],
         intf='params/nu_p_campbell.tsv'
@@ -105,6 +116,7 @@ rule simulate:
     shell:
         """
             pedsim -d {input._def} -m {input._map} -i {input.bg} --keep_phase \
+            --err_hom_rate 0.05 --err_rate 0.001 --miss_rate 0.0 \
             -o {params.prefix} --intf {input.intf} --fam --seed {params.seed}
         """
 
