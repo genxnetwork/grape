@@ -18,11 +18,12 @@ CMMAP              = join(REF_DIR, config["reference"]["cmmap"]["file"])
 SITE_1000GENOME    = join(REF_DIR, config["reference"]["SITE_1000GENOME"]["file"])
 
 assembly = config['assembly']
+flow = config["flow"]
 need_remove_imputation = config['remove_imputation']
 # WARNING: if need_imputation=True, then need_phase should also be true
 need_phase = config['phase']
 need_imputation = config['impute']
-
+flow = config['flow']
 
 _IDEAL_LARGE_MEM_GB = 20
 
@@ -31,14 +32,20 @@ def _mem_gb_for_ram_hungry_jobs():
   return min(_IDEAL_LARGE_MEM_GB, config["mem_gb"])
 
 
-rule all:
-    input:
-        vcf="preprocessed/data.vcf.gz",
-        bed="preprocessed/data.bed",
-        fam="preprocessed/data.fam",
-        bim_mapped="preprocessed/data_mapped.bim",
-        bim="preprocessed/data.bim"
-        # rules.report_benchmark_summary.output
+if flow == 'rapid':
+    rule all:
+        input:
+            vcf="preprocessed/data.vcf.gz",
+            fam="preprocessed/data.fam"
+else:
+    rule all:
+        input:
+            vcf="preprocessed/data.vcf.gz",
+            bed="preprocessed/data.bed",
+            fam="preprocessed/data.fam",
+            bim_mapped="preprocessed/data_mapped.bim",
+            bim="preprocessed/data.bim"
+            # rules.report_benchmark_summary.output
 
 
 include: "../../rules/preprocessing.smk"

@@ -1,33 +1,22 @@
-rule vcf_stats:
-    input:
-        vcf='vcf/{batch}.vcf.gz'
-    output:
-        stats='stats/{batch}_lifted_vcf.txt',
-        psc='stats/{batch}_lifted_vcf.psc'
-    params:
-        samples='vcf/{batch}_merged_lifted.vcf.samples'
-    conda:
-        'bcftools'
-    shell:
-        """
-            bcftools query --list-samples {input.vcf} > {params.samples}
-            bcftools stats -S {params.samples} {input.vcf} > {output.stats}
-            # PSC means per-sample counts
-            cat {output.stats} | grep '^PSC' > {output.psc}
-        """
-
 rule select_bad_samples:
     input:
-        psc=rules.vcf_stats.output.psc
+        vcf='vcf/{batch}_merged_lifted.vcf.gz'
     output:
         bad_samples='vcf/{batch}_lifted_vcf.badsamples',
-        report='results/{batch}_bad_samples_report.tsv'
+        report='results/{batch}_bad_samples_report.tsv',
+        outliers='results/{batch}_outliers.list',
+        stats='stats/{batch}_lifted_vcf.txt',
+        no_outliers_vcf=temp('vcf/{batch}_no_outliers.vcf.gz')
     log: 'logs/vcf/{batch}_select_bad_samples.log'
     params:
         samples='vcf/{batch}_merged_lifted.vcf.samples',
         missing_samples = config['missing_samples'],
         alt_hom_samples = config['alt_hom_samples'],
-        het_samples = config['het_samples']
+        het_samples = config['het_samples'],
+        iqr_alpha = config['iqr_alpha'],
+        psc='stats/{batch}_lifted_vcf.psc',
+        keep_samples='stats/{batch}_keep_samples.list',
+
     conda:
         'evaluation'
     script:
@@ -36,7 +25,7 @@ rule select_bad_samples:
 
 rule plink_filter:
     input:
-        vcf='vcf/{batch}_merged_lifted_id.vcf.gz',
+        vcf='vcf/{batch}_merged_lifted.vcf.gz',
         bad_samples=rules.select_bad_samples.output.bad_samples
     output:
         bed = temp('plink/{batch}_merged_filter.bed'),
@@ -118,7 +107,7 @@ rule prepare_vcf:
         bim='plink/{batch}_merged_mapped.bim',
         fam='plink/{batch}_merged_mapped.fam'
     output:
-        vcf=temp('vcf/{batch}_merged_mapped_sorted.vcf.gz'),
+        bcf='vcf/{batch}_merged_mapped_sorted.bcf.gz',
         temp_vcf=temp('vcf/{batch}_merged_mapped_regions.vcf.gz'),
         temp_vcf_csi=temp('vcf/{batch}_merged_mapped_regions.vcf.gz.csi'),
         bed=temp('plink/{batch}_merged_mapped_alleled.bed'),
@@ -142,7 +131,7 @@ rule prepare_vcf:
         bcftools sort -T vcf/temp_{wildcards.batch} vcf/{wildcards.batch}_merged_mapped_clean.vcf.gz -O z -o {output.temp_vcf} |& tee -a {log.vcf}
         bcftools index -f {output.temp_vcf} |& tee -a {log.vcf}
         # need to check output for the potential issues
-        bcftools view {output.temp_vcf} --regions 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 -O z -o {output.vcf}
-        bcftools norm --check-ref e -f {GRCH37_FASTA} vcf/{wildcards.batch}_merged_mapped_sorted.vcf.gz -O u -o /dev/null |& tee -a {log.vcf}
-        bcftools index -f {output.vcf} | tee -a {log.vcf}
+        bcftools view {output.temp_vcf} --regions 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 -O b -o {output.bcf}
+        bcftools norm --check-ref e -f {GRCH37_FASTA} vcf/{wildcards.batch}_merged_mapped_sorted.bcf.gz -O u -o /dev/null |& tee -a {log.vcf}
+        bcftools index -f {output.bcf} | tee -a {log.vcf}
         """

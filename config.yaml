@@ -11,7 +11,7 @@ vcf_file: vcf/merged.vcf.gz
 use_simulated_ibd: False
 use_ibis: False
 ref_dir: /media/ref
-azure_public_key: "?sv=2021-06-08&ss=f&srt=o&sp=r&se=2023-10-24T18:24:45Z&st=2022-10-24T10:24:45Z&spr=https&sig=xcNx9PyZpj5aF2Xi9573oQ5qYq7VqCIlZdayVtq5NOk%3D"
+azure_public_key: "?sv=2021-12-02&ss=bf&srt=co&sp=rwdlaciytfx&se=2025-03-04T20:35:01Z&st=2023-03-14T12:35:01Z&spr=https&sig=5%2Bg%2BX3wzykLLbDHuBsSdOiLoRo78C0v2ahzGUPIh1iU%3D"
 1000g_public_key: "?sv=2019-10-10&si=prod&sr=c&sig=9nzcxaQn0NprMPlSh4RhFQHcXedLQIcFgbERiooHEqM%3D"
 reference:
   GRCh37_fasta:

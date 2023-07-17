@@ -69,6 +69,11 @@ def get_parser_args():
         "--real-run",
         help="If this argument is present, Snakemake will run the pipeline instead of dry-run, it is False by default",
         action="store_true")
+    
+    parser.add_argument(
+        "--rerun-incomplete",
+        help="If this argument is present, Snakemake will rerun pipeline to regenerate incomplete files, it is False by default",
+        action="store_true")
 
     parser.add_argument(
         "--unlock",
@@ -149,7 +154,7 @@ def get_parser_args():
     parser.add_argument(
         '--flow',
         default='ibis',
-        help='How to find ibd segments: values are ibis, ibis-king, germline-king, default is ibis'
+        help='How to find ibd segments: values are ibis, ibis-king, germline-king, rapid, default is ibis'
     )
 
     parser.add_argument(
@@ -201,7 +206,57 @@ def get_parser_args():
                 Smaller values of it tend to give more distant matches than default 500 and more false-positives.
             """
     )
-
+    
+    parser.add_argument(
+        '--rapid-error-rate',
+        default=0.0025,
+        type=float,
+        help="""
+                Estimation of per-SNP genotyping error rate.
+                Smaller values lead to the smaller genotype window size for the RaPID. 
+            """
+    )
+        
+    parser.add_argument(
+        '--rapid-min-snp',
+        default=500,
+        type=int,
+        help="""
+                Minimum number of SNPs in IBD segment.
+                Smaller values of it tend to give more distant matches than default 500 and more false-positives.
+            """
+    )
+            
+    parser.add_argument(
+        '--rapid-num-runs',
+        default=10,
+        type=int,
+        help="""
+                Number of RaPID random projections.
+                More projections should give better accuracy. 
+            """
+    )
+                
+    parser.add_argument(
+        '--rapid-num-success',
+        default=2,
+        type=int,
+        help="""
+                Number of segment matches in the --rapid-num-runs random projections.
+                Larger values should give less false-positives.
+            """
+    )
+    
+    parser.add_argument(
+        '--rapid-seg-len',
+        default=5.0,
+        type=float,
+        help="""
+                Minimum length of found IBD segments.
+                Smaller values of it tend to give more distant matches than default 5.0 and more false-positives.
+            """
+    )
+    
     parser.add_argument(
         '--stat-file',
         default='stat_file.txt',
@@ -260,6 +315,12 @@ def get_parser_args():
         default=5.0,
         type=float,
         help='Lower bound of heterozygous SNPs (%). Samples with lower values are removed from the relatedness detection analysis.')
+
+    parser.add_argument(
+        '--iqr-alpha',
+        default=float("inf"),
+        type=float,
+        help='IQR multiplier for outliers detection by amount of missing samples. Samples below 1st quantile - IQR*alpha and above 3rd quantile + IQR*alpha are removed from the relatedness detection analysis.')
 
     parser.add_argument(
         '--seed',
@@ -359,8 +420,10 @@ if __name__ == '__main__':
             os.path.join(args.directory, 'config.yaml')
         )
 
-    if args.command == 'preprocess':
-        shutil.copy(args.vcf_file, os.path.join(args.directory, 'input.vcf.gz'))
+    if args.command == 'preprocess' or args.command == 'remove_relatives':
+        # shutil.copy(args.vcf_file, os.path.join(args.directory, 'input.vcf.gz'))
+        if not os.path.exists(os.path.join(args.directory, 'input.vcf.gz')):
+            os.symlink(args.vcf_file, os.path.join(args.directory, 'input.vcf.gz'))
 
     if args.command in ['preprocess', 'find', 'reference', 'bundle', 'remove_relatives', 'compute-weight-mask']:
         if args.directory != '.':
@@ -407,8 +470,8 @@ if __name__ == '__main__':
         config_dict['ref_dir'] = args.ref_directory
     if args.chip:
         config_dict['chip'] = args.chip
-    if args.flow not in ['ibis', 'ibis-king', 'germline-king']:
-        raise ValueError(f'--flow can be one of the ["ibis", "ibis-king", "germline-king"] and not {args.flow}')
+    if args.flow not in ['ibis', 'ibis-king', 'germline-king', 'rapid']:
+        raise ValueError(f'--flow can be one of the ["ibis", "ibis-king", "germline-king", "rapid"] and not {args.flow}')
     config_dict['flow'] = args.flow
     if args.command in ['preprocess', 'simulate', 'reference', 'bundle', 'simbig', 'remove_relatives']:
         config_dict['remove_imputation'] = args.remove_imputation
@@ -421,9 +484,15 @@ if __name__ == '__main__':
     config_dict['ibis_seg_len'] = args.ibis_seg_len
     config_dict['ibis_min_snp'] = args.ibis_min_snp
 
+    config_dict['rapid_error_rate'] = args.rapid_error_rate
+    config_dict['rapid_min_snp'] = args.rapid_min_snp
+    config_dict['rapid_num_runs'] = args.rapid_num_runs
+    config_dict['rapid_num_success'] = args.rapid_num_success
+    config_dict['rapid_seg_len'] = args.rapid_seg_len
     config_dict['missing_samples'] = args.missing_samples
     config_dict['alt_hom_samples'] = args.alt_hom_samples
     config_dict['het_samples'] = args.het_samples
+    config_dict['iqr_alpha'] = args.iqr_alpha
 
     config_dict['seed'] = args.seed
 
@@ -448,7 +517,8 @@ if __name__ == '__main__':
             use_conda=True,
             conda_prefix=args.conda_prefix,
             envvars=['CONDA_ENVS_PATH', 'CONDA_PKGS_DIRS'],
-            keepgoing=True
+            keepgoing=True,
+            force_incomplete=args.rerun_incomplete
     ):
         raise ValueError("Pipeline failed see Snakemake error message for details")
 

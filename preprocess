@@ -1,0 +1,4 @@
+#!/bin/bash
+
+pwd
+docker run --rm -it -v `pwd`/workdir:/media -v /etc/localtime:/etc/localtime:ro genx_relatives:latest launcher.py preprocess "$@"
