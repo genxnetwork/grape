@@ -17,9 +17,9 @@ def compare(total, correct, plot_name=None, cutoff=1):
     ds = []
     cs = []
     for i in sorted(total):
-        if i >= cutoff:
+        if i >= cutoff and i <= 12:
             c = correct.get(i, 0)
-            cs.append((c / total[i]) * 100)
+            cs.append(int((c / total[i]) * 100))
             ds.append(i)
     df = pd.DataFrame(columns=['Degree of Relatedness', '% of true degree in predicted interval'])
     df.iloc[:, 0] = ds
@@ -155,7 +155,7 @@ def get_interval_precision_recall_metrics(kinship, inferred, clients, source):
             false_positives[pred_degree] += 1
 
     data = {'True Degree': [], 'Precision': [], 'Recall': []}
-    for degree in range(1, 14):
+    for degree in range(1, 12):
         tp, fp, fn = true_positives[degree], false_positives[degree], false_negatives[degree]
         if tp + fp > 0:
             precision = tp / (tp + fp)

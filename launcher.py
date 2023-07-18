@@ -329,7 +329,7 @@ def get_parser_args():
         help='Random seed for Ped-sim pedigree simulation. The default value is randomly generated.')
 
     parser.add_argument(
-        '--sim_samples_number',
+        '--sim-samples-number',
         default=1000,
         type=int,
         help='Number of samples to simulate in Ped-sim pedigree simulation using simbig workflow.'
@@ -531,7 +531,7 @@ if __name__ == '__main__':
             workdir=args.directory if args.command != 'reference' else args.ref_directory,
             cores=args.cores,
             unlock=args.unlock,
-            printshellcmds=True,
+            printshellcmds=False,
             dryrun=(not args.real_run),
             targets=args.target,
             stats=args.stat_file,

@@ -10,6 +10,7 @@ def write_vcf_file(file_name, headers, calldata, variant_names, sample_names, sa
         # Writing metadata headers (e.g., file format, reference, etc.)
         for header in headers:
             vcf_file.write(header + "\n")
+            
         
         # Writing column header
         columns = ['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT']
@@ -60,8 +61,8 @@ if __name__ == '__main__':
     # We read background.vcf.gz file
     
     vcf = allel.read_vcf(snakemake.input['background'])
-    print(f'We read vcf with {len(vcf["samples"])} samples from {snakemake.input["background"]}')
     print(f'vcf has {vcf.keys()} fields')
+    print(f'We read vcf with {len(vcf["samples"])} samples from {snakemake.input["background"]}')
     # the first dimension corresponds to the variants genotyped
     # the second dimension corresponds to the samples genotyped
     # the third dimension corresponds to the ploidy of the samples.
@@ -71,10 +72,13 @@ if __name__ == '__main__':
     indices = numpy.arange(gt.shape[0]) # number of variants
     new_samples = []
     new_gt = []
-    for i in range(0, len(samples), 2):
+    # ugly hack because bcftools somehow cannot divide multiallelic sites to biallelic ones
+    # and we need data to be biallelic only
+    gt[gt >= 2] = 0
+    for i in range(0, len(samples)):
         if len(new_samples) >= snakemake.params['sample_count']:
             break
-        for j in range(1, len(samples), 2):
+        for j in range(i + 1, len(samples)):
             sample_gt_i = gt[:, i, :]
             sample_gg_j = gt[:, j, :]
             # We generate a mix of these two samples
@@ -97,6 +101,7 @@ if __name__ == '__main__':
                 headers.append(line.strip())
             if i > 2 and not line.startswith('##'):
                 break
+    headers.append('##INFO=<ID=AF,Number=A,Type=Float,Description="Allele Frequency">')
     # qual, filter, format
     calldata = [(qual, 'PASS', 'GT') for qual, fp in zip(vcf['variants/QUAL'], vcf['variants/FILTER_PASS'])]
     print(f'calldata {calldata[:10]}')

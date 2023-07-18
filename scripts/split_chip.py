@@ -9,7 +9,7 @@ def split_chip():
         lines = f.readlines()
         samples_list = [line.rstrip() for line in lines]
         
-    for i in range(0, (num_runs)*(num_founders), num_founders):
+    for i in range(0, num_runs*num_founders, num_founders):
         sample = samples_list[i:i + num_founders]
         with open("sample.txt", "w") as s:
             s.write("\n".join(sample))
