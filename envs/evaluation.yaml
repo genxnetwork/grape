@@ -5,15 +5,15 @@ channels:
     - defaults
 dependencies:
     - networkx==2.5
+    - seaborn
     - pip
-    - seaborn==0.10.1
-    - matplotlib==3.3.1
-    - pandas==1.1.1
+    - matplotlib
+    - pandas
     - pydot==1.4.2
     - mmh3==3.0.0
-    - numpy==1.20
+    - numpy
     - bcftools==1.9
     - samtools==1.9
     - openssl==1.0.2u
     - pip:
-          - polars==0.16.4
+        - polars==0.16.4

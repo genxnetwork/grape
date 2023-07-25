@@ -72,7 +72,8 @@ if __name__ == '__main__':
             output={'bucket_dir': '/media/data1/relatives/test100koutput.txt'},
             log=['/media/data1/relatives/test100koutput.log']
         )
-
+    import sys
+    print(f'sys.path is {sys.path}')
     ibd = snakemake.input['ibd']
     bucket_dir = snakemake.output['bucket_dir']
     if not os.path.exists(bucket_dir):

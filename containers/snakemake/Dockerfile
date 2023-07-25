@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y wget bzip2 gnupg2 git libgomp1 libarchi
     rm Miniconda3-latest-Linux-x86_64.sh && \
     conda install -c conda-forge mamba
     
-RUN for e in envs/*; do mamba env create -f $e ; done && \
+RUN set -e && for e in envs/*; do mamba env create -f $e ; done && \
     conda clean --all -y
 
 # Intall Minimac3
@@ -57,7 +57,8 @@ RUN mkdir -p /root/.conda/pkgs && touch /root/.conda/pkgs/urls.txt
 ADD . /src/repo
 WORKDIR /src/repo
 
+RUN conda config --add envs_dirs /opt/conda/envs
+
 RUN echo "source activate snakemake" > ~/.bashrc
 ENV PATH /opt/conda/envs/snakemake/bin:${PATH}
-
 ENTRYPOINT ["python"]

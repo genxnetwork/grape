@@ -4,6 +4,7 @@ import mmh3
 from typing import List
 import os
 from collections import namedtuple
+import subprocess
 
 
 def process_chunk_with_hash(data: pandas.DataFrame, denominator: int, dest_dir: str):
@@ -67,6 +68,10 @@ if __name__ == '__main__':
             output={'bucket_dir': '/media/data1/relatives/test100koutput.txt'},
             log=['/media/data1/relatives/test100koutput.log']
         )
+
+    print(subprocess.check_output('which python', shell=True).decode('utf-8'))
+    print(subprocess.check_output('conda info', shell=True).decode('utf-8'))
+    print(subprocess.check_output('conda list', shell=True).decode('utf-8'))
 
     ibd = snakemake.input['ibd']
     bucket_dir = snakemake.output['bucket_dir']

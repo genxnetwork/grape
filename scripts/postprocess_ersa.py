@@ -1,5 +1,6 @@
-import polars as pl
 import logging
+import subprocess
+import os
 
 
 def _sort_ids(data):
@@ -101,17 +102,34 @@ if __name__ == '__main__':
 
     logging.basicConfig(filename='log.log', level=logging.DEBUG, format='%(levelname)s:%(asctime)s %(message)s')
 
+    # print(f'Location of the script is {__file__}')
+    # print(subprocess.check_output(['cat', __file__]).decode('utf-8'))
+    import sys
+    print(f'sys.pat is : {sys.path}')
+    for path in os.listdir('.snakemake/scripts'):
+        print(path)
+        print(subprocess.check_output(['cat', os.path.join('.snakemake/scripts', path)]).decode('utf-8'))
+        print('*'*100)
+        print()
+        print()
+    
     ibd_path = snakemake.input['ibd']
     # within families
     # across families
     ersa_path = snakemake.input['ersa']
     output_path = snakemake.output[0]
 
+    print(subprocess.check_output('which python', shell=True).decode('utf-8'))
+    print(subprocess.check_output('conda info', shell=True).decode('utf-8'))
+    print(subprocess.check_output('conda list', shell=True).decode('utf-8'))
+    
     with open(ersa_path, 'r') as ersa_file, open(ibd_path, 'r') as ibd_file:
         if len(ersa_file.readlines(5000)) < 2 or len(ibd_file.readlines(5000)) < 1:
             print("ersa postprocess input is empty")
             open(output_path, "w").close()  # create empty output to avoid error
             quit()
+            
+
     if snakemake.params.get('ibis', True):
         ibd = read_ibis(ibd_path)
     else:
