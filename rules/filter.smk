@@ -3,8 +3,6 @@ rule annotate_snp_ids:
         vcf = 'vcf/{batch}_merged_lifted.vcf.gz'
     output:
         vcf = 'vcf/{batch}_merged_annotated.vcf.gz'
-    conda:
-        'bcftools'
     shell:
         '''
             bcftools annotate --set-id "%CHROM:%POS:%REF:%FIRST_ALT" {input.vcf} -O z -o {output.vcf}
@@ -29,8 +27,6 @@ rule select_bad_samples:
         psc='stats/{batch}_lifted_vcf.psc',
         keep_samples='stats/{batch}_keep_samples.list',
 
-    conda:
-        'evaluation'
     script:
         '../scripts/select_bad_samples.py'
 
@@ -43,8 +39,6 @@ rule plink_filter:
         bed = temp('plink/{batch}_merged_filter.bed'),
         bim = temp('plink/{batch}_merged_filter.bim'),
         fam = temp('plink/{batch}_merged_filter.fam')
-    conda:
-        'plink'
     params:
         input   = '{batch}_merged',
         out     = '{batch}_merged_filter',
