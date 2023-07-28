@@ -14,10 +14,15 @@ ENV SHELL /bin/bash
 RUN apt-get update && apt-get install -y wget bzip2 gnupg2 git libgomp1 && \
     wget -nv https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
     bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda && \
-    rm Miniconda3-latest-Linux-x86_64.sh && \
-    conda install -c conda-forge mamba
+    rm Miniconda3-latest-Linux-x86_64.sh 
+    # conda install -n base --override-channels -c conda-forge mamba==1.4.5 'python_abi=*=*cp*'
     
-RUN for e in envs/*; do mamba env create -f $e ; done && \
+# RUN for e in envs/*; do mamba env create -f $e ; done && \
+#    conda clean --all -y
+
+RUN conda install -n base conda-libmamba-solver && \
+    conda config --set solver libmamba && \
+    conda env create -f envs/big_env.yaml && \
     conda clean --all -y
 
 # Intall Minimac3

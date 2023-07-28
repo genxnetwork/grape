@@ -14,8 +14,6 @@ if NUM_BATCHES > 1:
             temp(expand('vcf/batch{i}.txt',i=BATCHES))
         params:
             num_batches=NUM_BATCHES
-        conda:
-            'bcftools'
         shell:
             '''
             bcftools query --list-samples input.vcf.gz >> vcf/samples.txt
@@ -37,8 +35,6 @@ if NUM_BATCHES > 1:
             samples='vcf/{batch}.txt'
         output:
             vcf='vcf/{batch}.vcf.gz'
-        conda:
-            'bcftools'
         shell:
             '''
             bcftools view -S {input.samples} {input.vcf} -O z -o {output.vcf} --force-samples
@@ -81,8 +77,6 @@ if assembly == 'hg38':
             vcf='vcf/{batch}_imputation_removed.vcf.gz'
         output:
             vcf=temp('vcf/{batch}_merged_lifted.vcf.gz')
-        conda:
-            'liftover'
         log:
             'logs/liftover/liftover{batch}.log'
         params:
@@ -91,7 +85,7 @@ if assembly == 'hg38':
             mem_mb=_mem_gb_for_ram_hungry_jobs() * 1024
         shell:
             '''
-               JAVA_OPTS="-Xmx{params.mem_gb}g" picard LiftoverVcf WARN_ON_MISSING_CONTIG=true MAX_RECORDS_IN_RAM=5000 I={input.vcf} O={output.vcf} CHAIN={LIFT_CHAIN} REJECT=vcf/chr{wildcards.batch}_rejected.vcf.gz R={GRCH37_FASTA} |& tee -a {log}
+               JAVA_OPTS="-Xmx{params.mem_gb}g" picard -Xmx12g LiftoverVcf WARN_ON_MISSING_CONTIG=true MAX_RECORDS_IN_RAM=5000 I={input.vcf} O={output.vcf} CHAIN={LIFT_CHAIN} REJECT=vcf/chr{wildcards.batch}_rejected.vcf.gz R={GRCH37_FASTA} |& tee -a {log}
             '''
 else:
     rule copy_liftover:
@@ -110,11 +104,11 @@ if flow == 'rapid' or flow == 'germline-king':
             vcf = 'vcf/{batch}_imputation_removed.vcf.gz'
         output:
             bcf = 'vcf/{batch}_merged_mapped_sorted.bcf.gz'
-        conda:
-            'bcftools'
         shell:
             '''
-                bcftools annotate --set-id "%CHROM:%POS:%REF:%FIRST_ALT" {input.vcf} | bcftools view --min-af 0.05 -O b -o {output.bcf}
+                bcftools annotate --set-id "%CHROM:%POS:%REF:%FIRST_ALT" {input.vcf} | \
+                bcftools view -t ^8:10428647-13469693,21:16344186-19375168,10:44555093-53240188,22:16051881-25095451,2:85304243-99558013,1:118434520-153401108,15:20060673-25145260,17:77186666-78417478,15:27115823-30295750,17:59518083-64970531,2:132695025-141442636,16:19393068-24031556,2:192352906-198110229 | \
+                bcftools view --min-af 0.05 --types snps -O b -o {output.bcf}
             '''
 else:
     include: '../rules/filter.smk'
@@ -149,8 +143,6 @@ else:
             bcf=bcf_input
         output:
             vcf=vcf_output
-        conda:
-            'bcftools'
         shell:
             '''
                 bcftools view {input.bcf} -O z -o {output.vcf}
@@ -168,8 +160,6 @@ if not flow == 'rapid':
                 bim='preprocessed/{batch}_data.bim'
             params:
                 out='preprocessed/{batch}_data'
-            conda:
-                'plink'
             log:
                 'logs/plink/convert_mapped_to_plink{batch}.log'
             benchmark:
@@ -199,8 +189,6 @@ if not flow == 'rapid':
                 bim='preprocessed/data.bim'
             threads:
                 workflow.cores
-            conda:
-                'plink'
             shell:
                 '''
                 rm files_list.txt || true
@@ -222,8 +210,6 @@ if not flow == 'rapid':
                 batches_vcf='preprocessed/{batch}_data.vcf.gz'
             output:
                 batches_vcf_index=temp('preprocessed/{batch}_data.vcf.gz.csi')
-            conda:
-                'bcftools'
             shell:
                 '''
                 bcftools index -f {input.batches_vcf}
@@ -248,8 +234,6 @@ if not flow == 'rapid':
             params:
                 batches_vcf=expand('batch{s}_data.vcf.gz',s=BATCHES),
                 vcf='data.vcf.gz'
-            conda:
-                'bcftools'
             shell:
                 '''
                 rm complete_vcf_list.txt || true
@@ -274,8 +258,6 @@ if not flow == 'rapid':
                 bim='preprocessed/data.bim'
             params:
                 out='preprocessed/data'
-            conda:
-                'plink'
             log:
                 'logs/plink/convert_mapped_to_plink_batch1.log'
             benchmark:
@@ -291,8 +273,6 @@ if not flow == 'rapid':
             bim='preprocessed/data.bim'
         params:
             genetic_map_GRCh37=expand(GENETIC_MAP_GRCH37,chrom=CHROMOSOMES)
-        conda:
-            'ibis'
         output:
             'preprocessed/data_mapped.bim'
         log:
@@ -309,8 +289,6 @@ else:
             bcf = 'phase/batch1_merged_phased.bcf.gz'
         output:
             fam='preprocessed/data.fam'
-        conda:
-            'bcftools'
         shell:
             '''
                 bcftools query --list-samples {input.bcf} >> {output.fam}

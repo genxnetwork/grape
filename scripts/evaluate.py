@@ -7,7 +7,6 @@ from matplotlib import pyplot as plt
 import logging
 import math
 import networkx as nx
-import pydot
 from networkx.drawing.nx_pydot import graphviz_layout
 
 from utils.relatives import get_kinship, read_pedigree, relatives_to_graph
@@ -105,16 +104,6 @@ def kinship_to_dataframe(kinship: nx.Graph):
     return data.set_index(['id1', 'id2'])
 
 
-def draw_pedigree(pedigree: nx.DiGraph, pedigree_plot_name: str):
-
-    plt.figure(figsize=(20, 20))
-    first1 = pedigree.subgraph([n for n in pedigree.nodes if n.startswith('first1')])
-    pos = graphviz_layout(first1, prog="dot")
-    nx.draw(first1, pos, with_labels=True)
-    plt.savefig(pedigree_plot_name)
-    plt.close()
-
-
 def get_interval_precision_recall_metrics(kinship, inferred, clients, source):
     iterator = itertools.combinations(clients, 2)
 
@@ -190,8 +179,6 @@ def interval_evaluate(
     po_fs_plot_name=None
 ):
     iids, pedigree = read_pedigree(fn=fam)
-    if pedigree_plot_name is not None:
-        draw_pedigree(pedigree, pedigree_plot_name)
     kinship = get_kinship(pedigree)
     inferred, clients = relatives_to_graph(result, only_client)
     confusion_matrix = {}
@@ -362,5 +349,4 @@ if __name__ == '__main__':
              snakemake.output['metrics'],
              only_client=True,
              source=source,
-             pedigree_plot_name=snakemake.output['pedigree_plot'],
              po_fs_plot_name=po_fs_plot_name)

@@ -54,8 +54,6 @@ rule merge_background:
         'pedsim/phased/background.vcf.gz'
     params:
         list='pedsim/phased/phased.merge.list'
-    conda:
-        'bcftools'
     shell:
         """
             # for now just skip empty files
@@ -82,8 +80,6 @@ if augment_background:
             sample_count=100
         log:
             "logs/augment_background.log"
-        conda:
-            "vcf_to_ped"
         script:
             "../../scripts/simulate_dummy_samples.py"
 else:
@@ -111,8 +107,6 @@ rule simulate:
     params:
         prefix='pedsim/simulated/data',
         seed=simulation_seed
-    conda:
-        'ped-sim'
     shell:
         """
             pedsim -d {input._def} -m {input._map} -i {input.bg} --keep_phase \
@@ -129,8 +123,6 @@ rule postprocess:
         kin='pedsim/simulated/reheaded_data.kinship',
         vcf='input.vcf.gz',
         fam='pedsim/simulated/reheaded_data.fam'
-    conda:
-        'postprocess'
     script:
         '../../scripts/postprocess.py'
 
@@ -155,7 +147,6 @@ rule evaluate_accuracy:
         pr = 'results/precision_recall.png',
         conf_matrix = 'results/confusion_matrix.png',
         updated_rel = 'results/updated_relatives.tsv',
-        pedigree_plot = 'results/pedigree_plot.png',
         metrics = 'results/metrics.tsv'
     params:
         inferred = 'results/inferred.png',
@@ -164,7 +155,5 @@ rule evaluate_accuracy:
         po_fs_plot='results/po_fs_plot.png' if flow == 'ibis' else None
     log:
         'logs/evaluation/accuracy.log'
-    conda:
-        'evaluation'
     script:
          '../../scripts/evaluate.py'

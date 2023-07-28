@@ -90,8 +90,6 @@ rule plink_clean_up:
     params:
         input = 'plink/{batch}_merged_filter',
         out = 'plink/{batch}_merged_mapped'
-    conda:
-        'plink'
     log:
         'logs/plink/{batch}_plink_clean_up.log'
     benchmark:
@@ -128,8 +126,6 @@ rule prepare_vcf:
     params:
         input   = 'plink/{batch}_merged_mapped',
         vcf     = 'vcf/{batch}_merged_mapped_sorted.vcf.gz'
-    conda:
-         'bcf_plink'
     log:
         plink='logs/plink/{batch}_prepare_vcf.log',
         vcf='logs/vcf/{batch}_prepare_vcf.log'

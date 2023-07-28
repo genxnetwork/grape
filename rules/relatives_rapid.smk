@@ -7,8 +7,8 @@ rule index_for_split:
         vcf = "preprocessed/data.vcf.gz"
     output: 
         vcf = "preprocessed/data.vcf.gz.csi"
-    conda:
-        "bcftools"
+    # conda:
+        # "snakemake"
     log:
         "logs/vcf/index_for_split.log"
     benchmark:
@@ -25,8 +25,8 @@ rule index_and_split:
         vcf_index = rules.index_for_split.output['vcf']
     output: 
         vcf = "vcf/for_rapid_{chrom}.vcf.gz"
-    conda:
-        "bcftools"
+    # conda:
+    #     "bcftools"
     log:
         "logs/vcf/index_and_split-{chrom}.log"
     benchmark:
@@ -40,8 +40,8 @@ rule index_and_split:
 rule estimate_rapid_params:
     input: 
         vcf = rules.index_and_split.output['vcf']
-    conda:
-        "rapid_params"
+    # conda:
+    #     "rapid_params"
     log:
         "logs/rapid/estimate_rapid_params-{chrom}.log"
     output:
@@ -60,8 +60,8 @@ rule interpolate:
         vcf = rules.index_and_split.output['vcf'],
         cmmap=CMMAP
     output: "cm/chr{chrom}.cm.g"
-    conda:
-        "interpolation"
+    # conda:
+    #     "interpolation"
     log:
         "logs/cm/interpolate-{chrom}.log"
     script:
@@ -89,12 +89,12 @@ rule rapid:
         num_runs = config['rapid_num_runs'],
         num_success = config['rapid_num_success'],
         min_cm_len=config['rapid_seg_len'],
-        window_size=3,
+        window_size=10,
         output_folder='rapid'
     output:
         seg = "rapid/chr{chrom}/results.max.gz"
-    conda:
-        "rapid"
+    # conda:
+    #     "rapid"
     shell:
         """
             rapidibd -i {input.vcf} -g {input.g} -d {params.min_cm_len} -o {params.output_folder}/chr{wildcards.chrom} \
@@ -123,8 +123,8 @@ checkpoint transform_rapid_segments:
         bucket_dir = directory("ibd")
     log:
         "logs/ibis/transform_rapid_segments.log"
-    conda:
-        "evaluation"
+    # conda:
+    #     "evaluation"
     script:
         "../scripts/transform_rapid_segments.py"
 
@@ -140,8 +140,8 @@ rule ersa:
         ibd = aggregate_input
     output:
         "ersa/relatives.tsv"
-    conda:
-        "ersa"
+    # conda:
+    #     "ersa"
     log:
         "logs/ersa/ersa.log"
     benchmark:
@@ -180,6 +180,6 @@ rule postprocess_ersa:
     params:
         ibis = False
     output: "results/relatives.tsv"
-    conda: "evaluation"
+    # conda: "evaluation"
     log: "logs/merge/postprocess-ersa.log"
     script: "../scripts/postprocess_ersa.py"

@@ -30,7 +30,7 @@ def read_ibis(ibd_path):
                 'genetic_end_pos', 'genetic_seg_length', 'marker_count',
                 'error_count', 'error_density']
 
-    data = pl.scan_csv(ibd_path, has_header=False, with_column_names=get_new_col_names, sep='\t', null_values="NA").lazy()
+    data = pl.scan_csv(ibd_path, has_header=False, with_column_names=get_new_col_names, separator='\t', null_values="NA").lazy()
     data = data.with_columns([
         pl.col('id1').str.replace(':', '_'),
         pl.col('id2').str.replace(':', '_')
@@ -58,7 +58,7 @@ def read_ersa(ersa_path):
                'ersa_degree', 'ersa_lower_bound', 'ersa_upper_bound',
                 'seg_count', 'total_seg_len']
 
-    data = pl.scan_csv(ersa_path, has_header=True, sep='\t', null_values="NA",
+    data = pl.scan_csv(ersa_path, has_header=True, separator='\t', null_values="NA",
                              with_column_names=get_new_col_names,
                              dtypes={'ersa_degree': str, 'ersa_lower_bound': str, 'ersa_upper_bound': str,
                                     'seg_count': str, 'total_seg_len': str})
@@ -121,7 +121,7 @@ if __name__ == '__main__':
             ('total_seg_len_ibd2', pl.Float64),
             ('seg_count_ibd2', pl.Int32)
         ]
-        ibd = pl.DataFrame(data=[], columns=_columns).lazy()
+        ibd = pl.DataFrame(data=[], schema=_columns).lazy()
         
     ersa = read_ersa(ersa_path)
     
@@ -129,50 +129,37 @@ if __name__ == '__main__':
     relatives = ibd.join(ersa, how='outer', on=['id1', 'id2'])  # No left_index / right_index input params
 
     # It is impossible to have more than 50% of ibd2 segments unless you are monozygotic twins or duplicates.
-    GENOME_CM_LEN = 3440
+    GENOME_CM_LEN = 3400
     DUPLICATES_THRESHOLD = 1750
     FS_TOTAL_THRESHOLD = 2100
     FS_IBD2_THRESHOLD = 450
     dup_mask = pl.col('total_seg_len_ibd2') > DUPLICATES_THRESHOLD
     fs_mask = (pl.col('total_seg_len') > FS_TOTAL_THRESHOLD) & (pl.col('total_seg_len_ibd2') > FS_IBD2_THRESHOLD) & (
         dup_mask.is_not())
-    po_mask = (pl.col('total_seg_len') / GENOME_CM_LEN > 0.8) & (fs_mask.is_not()) & (dup_mask.is_not())
+    po_mask = (pl.col('total_seg_len') / GENOME_CM_LEN > 0.77) & (fs_mask.is_not()) & (dup_mask.is_not())
 
     relatives = relatives.with_columns([
         pl.when(dup_mask)
         .then(0)
+        .when(fs_mask)
+        .then(2)
+        .when(po_mask)
+        .then(1)
+        #.when((pl.col('ersa_degree') == 1)) # when ersa_degree is 1 but PO mask does not tell us that it is PO
+        #.then(2)
         .otherwise(pl.col('ersa_degree'))
         .alias('final_degree'),
 
         pl.when(dup_mask)
         .then('MZ/Dup')
-        .otherwise(pl.col('ersa_degree'))
-        .alias('relation'),
-
-        pl.when(fs_mask)
-        .then(2)
-        .otherwise(pl.col('ersa_degree'))
-        .alias('final_degree'),
-
-        pl.when(fs_mask)
+        .when(fs_mask)
         .then('FS')
-        .otherwise(pl.col('ersa_degree'))
-        .alias('relation'),
-
-        pl.when(po_mask)
-        .then(1)
-        .otherwise(pl.col('ersa_degree'))
-        .alias('final_degree'),
-
-        pl.when(po_mask)
+        .when(po_mask)
         .then('PO')
+        #.when((pl.col('ersa_degree') == 1)) # when ersa_degree is 1 but PO mask does not tell us that it is PO
+        #.then('FS')
         .otherwise(pl.col('ersa_degree'))
         .alias('relation'),
-
-        pl.when((po_mask.is_not()) & (pl.col('ersa_degree') == 1))
-        .then(2)
-        .otherwise(pl.col('ersa_degree'))
-        .alias('final_degree'),
 
         pl.col('total_seg_len_ibd2')
         .fill_null(pl.lit(0)),
@@ -180,6 +167,8 @@ if __name__ == '__main__':
         pl.col('seg_count_ibd2')
         .fill_null(pl.lit(0))
     ])
+    
+
     '''
         IBIS and ERSA do not distinguish IBD1 and IBD2 segments
         shared_genome_proportion is a proportion of identical alleles
@@ -200,4 +189,4 @@ if __name__ == '__main__':
           f'{len(relatives.filter(fs_mask))} full siblings and '
           f'{len(relatives.filter(po_mask))} parent-offspring relationships')
     logging.info(f'final degree not null: {len(relatives["final_degree"]) - relatives["final_degree"].null_count()}')
-    relatives.write_csv(output_path, sep='\t')
+    relatives.write_csv(output_path, separator='\t')

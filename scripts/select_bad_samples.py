@@ -117,7 +117,7 @@ if __name__ == '__main__':
     psc.loc[bad_missing_samples_mask, 'exclusion_reason'] = f'Sample has >= {missing_samples}% missing SNPs'
     bad_samples = psc.loc[(bad_alt_hom_samples_mask | bad_het_samples_mask | bad_missing_samples_mask),
                           ['sample_id', 'missing_share', 'alt_hom_share', 'het_samples_share', 'exclusion_reason']]
-    psc = psc.append(outliers[['sample_id', 'missing_share', 'alt_hom_share', 'het_samples_share', 'exclusion_reason']], ignore_index=True)
+    psc = pandas.concat([psc, outliers[['sample_id', 'missing_share', 'alt_hom_share', 'het_samples_share', 'exclusion_reason']]], ignore_index=True)
 
     samples_only = bad_samples.loc[:, ['sample_id']].copy()
     # if input vcf file has iids in form fid_iid we split it, else we just assign fid equal to iid

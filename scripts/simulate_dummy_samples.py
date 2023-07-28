@@ -84,7 +84,7 @@ if __name__ == '__main__':
             # We generate a mix of these two samples
             change_indices = numpy.random.choice(indices, size=gt.shape[1] // 2, replace=False)
             sample_gt_i[change_indices, :] = sample_gg_j[change_indices, :]
-            new_samples.append(samples[i] + '_' + samples[j])
+            new_samples.append(samples[i].replace('_', '-') + '_' + samples[j].replace('_', '-'))
             new_gt.append(numpy.expand_dims(sample_gt_i, axis=1))
             if len(new_samples) >= snakemake.params['sample_count']:
                 break        

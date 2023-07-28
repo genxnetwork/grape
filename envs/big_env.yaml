@@ -1,0 +1,46 @@
+name: snakemake
+channels:
+  - conda-forge
+  - bioconda
+  - biocore
+  - b3bg
+  - alex_genxt
+  - defaults
+dependencies:
+  - python>=3.9
+  - matplotlib
+  - pandas
+  - numpy
+  - seaborn
+  - biom-format
+  - scikit-bio
+  - docutils
+  - mmh3
+  - bcftools
+  - samtools
+  - plink
+  - unzip
+  - wget
+  - openssl
+  - parallel
+  - ibis
+  - openjdk
+  - picard-slim
+  - ped-sim
+  - networkx
+  - scipy
+  - statsmodels
+  - rapid-ibd
+  - scikit-allel
+  - scikit-learn
+  - snakemake
+  - pip
+  - pip:
+    - polars
+    - pydot
+    - "--editable=git+https://github.com/alex-medvedev-msc/ersa.git#egg=ersa"
+  # - pip:
+  #   - "--editable=git+https://github.com/Jahysama/snakemake.git#egg=snakemake"
+    #Fork of a snakemake is used here because of not working conda envs inside python scripts
+    #Please check out https://github.com/snakemake/snakemake/pull/1812 for more info
+

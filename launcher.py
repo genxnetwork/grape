@@ -531,7 +531,7 @@ if __name__ == '__main__':
             workdir=args.directory if args.command != 'reference' else args.ref_directory,
             cores=args.cores,
             unlock=args.unlock,
-            printshellcmds=False,
+            printshellcmds=True,
             dryrun=(not args.real_run),
             targets=args.target,
             stats=args.stat_file,

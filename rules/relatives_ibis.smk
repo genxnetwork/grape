@@ -7,8 +7,6 @@ rule split_for_ibis:
         bed = "preprocessed/data.bed",
         fam = "preprocessed/data.fam",
         bim = "preprocessed/data_mapped.bim"
-    conda:
-        "plink"
     output:
         bed = "ibis_data/{chrom}.bed",
         fam = "ibis_data/{chrom}.fam",
@@ -28,8 +26,6 @@ rule ibis_chrom_mapping:
         bim = "ibis_data/{chrom}.bim"
     params:
         genetic_map_GRCh37=GENETIC_MAP_GRCH37
-    conda:
-        'ibis'
     output:
         'ibis_mapped/mapped_{chrom}.bim'
     log:
@@ -46,8 +42,6 @@ rule ibis:
         bed = "ibis_data/{chrom}.bed",
         fam = "ibis_data/{chrom}.fam",
         bim = "ibis_mapped/mapped_{chrom}.bim"
-    conda:
-        "ibis"
     output:
         ibd = "ibis/merged_ibis_{chrom}.seg.gz"
     log:
@@ -85,8 +79,6 @@ if config.get('weight_mask'):
         input:
             ibd = rules.ibis.output.ibd,
             script = os.path.join(SNAKEFILE_FOLDER, '../weight/apply_weight_mask.py')
-        conda:
-            'weight-mask'
         output:
             ibd = os.path.join(WEIGHTED_IBD_SEGMENTS_FOLDER, 'ibis_weighted.seg'),
         params:
@@ -111,8 +103,6 @@ checkpoint transform_ibis_segments:
         bucket_dir = directory("ibd")
     log:
         "logs/ibis/transform_ibis_segments.log"
-    conda:
-        "evaluation"
     script:
         "../scripts/transform_ibis_segments.py"
 
@@ -128,8 +118,6 @@ rule ersa:
     output:
         ibd = temp('temp_ibd/{id}.tsv'),
         relatives="ersa/relatives_{id}.tsv"
-    conda:
-        "ersa"
     log:
         "logs/ersa/ersa_{id}.log"
     benchmark:
@@ -179,6 +167,5 @@ rule postprocess_ersa:
     params:
         ibis = True
     output: "results/relatives.tsv"
-    conda: "evaluation"
     log: "logs/merge/postprocess-ersa.log"
     script: "../scripts/postprocess_ersa.py"
