@@ -33,6 +33,7 @@ dependencies:
   - rapid-ibd
   - scikit-allel
   - scikit-learn
+  - king
   - snakemake
   - pip
   - pip:
