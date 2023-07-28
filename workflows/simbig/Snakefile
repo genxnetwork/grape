@@ -12,6 +12,8 @@ PEDSIM_MAP         = join(REF_DIR, config["reference"]["pedsim_map"]["file"])
 CHROMOSOMES        = [str(i) for i in range(1, 23)]
 DEF_FILE           = config['sim_params_file']
 SIM_SAMPLES_FILE   = config['sim_samples_file']
+SIM_SAMPLES_NUMBER = config['sim_samples_number']
+AUGMENT_SAMPLES_NUMBER = config['augment_background']
 
 names = []
 def generate_code():
@@ -24,11 +26,16 @@ def generate_code():
     return code
 
 
-def get_num_runs(def_file):
+def get_num_founders(samples_file):
     with open(SIM_SAMPLES_FILE, "r") as f:
         lines = f.readlines()
         samples = [line.rstrip() for line in lines]
         total_founders = len(samples)
+        return total_founders
+
+
+def get_num_runs(def_file):
+    total_founders = get_num_founders(SIM_SAMPLES_FILE)
 
     with open(f"{def_file}", "r") as f:
         lines = f.readlines()
@@ -66,41 +73,105 @@ def prepare_folders(num_runs, def_file):
             first[1] = name
             lines[0] = " ".join(first)
         with open(f"gen{i}/params/relatives_big.def", "w") as f:
-            f.write("\n".join(l for l in lines if l != '\n'))
+            f.write("\n".join(l.strip() for l in lines if l != '\n'))
 
 
-NUM_RUNS, NUM_FOUNDERS = get_num_runs(DEF_FILE)
-prepare_folders(NUM_RUNS, DEF_FILE)
+def generate_def_file(def_file: str):
+    # we have number of founders fixed (14) + (14*3) from background augmentation, 
+    # number of total simulated samples fixed (SIM_SAMPLES_NUMBER), 
+    # and number of founders in the background (num_founders) fixed
+    # variables are number of runs (num_runs) and number of branches in each generation
+    max_number_of_samples_per_run = 3000
+    num_founders_per_run = 14 + AUGMENT_SAMPLES_NUMBER
+    num_true_founders = get_num_founders(SIM_SAMPLES_FILE)
+    num_runs = int(num_true_founders / 14)
+    num_founders = num_true_founders + AUGMENT_SAMPLES_NUMBER * num_runs
+
+    if max_number_of_samples_per_run * num_runs < SIM_SAMPLES_NUMBER:
+        raise ValueError(f'''Number of samples in sim-samples-file is too small 
+                             for the total number of samples requested. 
+                             Max number of samples per run is {max_number_of_samples_per_run}, 
+                             number of runs is {num_runs}, total number of samples is {SIM_SAMPLES_NUMBER}''')
+
+    # SIM_SAMPLES_NUMBER = num_samples_per_run * num_runs
+    # num_samples_per_run = num_founders_per_run + \sum_{i=1}^{num_generations} num_branches_per_generation * num_siblings_per_branch
+    # we should make sure that num_branches_per_generation * num_siblings_per_branch is as small as possible
+    # nfpr + 2 + 1*4 + 2*16 + 2*16 + 2*16 + 4*24 + ??? = num_samples_per_run
+    # nfpr + 198x = num_samples_per_run
+    # x = (num_samples_per_run - nfpr) / 198
+    num_samples_per_run = int(SIM_SAMPLES_NUMBER / num_runs)
+    siblings_scaling_factor = num_samples_per_run / 198
+    print(f'Number of runs is {num_runs}, number of founders is {num_founders}, number of true founders is {num_true_founders}')
+    print(f'Number of samples to simulate is {SIM_SAMPLES_NUMBER}, number of samples per run is {num_samples_per_run}')
+    print(f'Number of founders per run is {num_founders_per_run}')
+    print(f'Siblings scaling factor is {siblings_scaling_factor}')
+
+    siblings = [1, 1, 2, 2, 2, 4, 4]
+    branches = [2, 4, 16, 16, 16, 24, 2]
+    siblings = [max(1, int(s * siblings_scaling_factor)) for s in siblings]
+    # siblings[-1] += 2
+    actual_samples_per_run = sum([s*b for s, b in zip(siblings, branches)]) + num_founders_per_run
+    print(f'Actual number of samples per run is {actual_samples_per_run}')
+
+    with open(f'{def_file}.adjusted', 'w') as f:
+        f.write(f'def first 1 8\n')
+        f.write(f'1 1 1\n')
+    
+        for i, (s, b) in enumerate(zip(siblings, branches)):
+            # def file format is generation, samples to print for each branch, number of branches
+            f.write(f'{i+2} {s} {b}\n')
+            print(f'for generation {i+2} we have {s} siblings and {b} branches')
+
+    return f'{def_file}.adjusted', num_runs, num_founders
+
+
+adjusted_def_file, NUM_RUNS, NUM_FOUNDERS = generate_def_file(DEF_FILE)
+# NUM_RUNS, NUM_FOUNDERS = get_num_runs(adjusted_def_file)
+prepare_folders(NUM_RUNS, adjusted_def_file)
+
 
 rule all:
     input:
         "generated.vcf.gz",
         "generated.vcf.gz.csi"
 
+if config['background'] == '1kg':
 
-rule merge_background:
-    input:
-        data=expand(PHASED_VCF, chrom=CHROMOSOMES)
-    output:
-        "pedsim/phased/background.bcf.gz"
-    params:
-        list="pedsim/phased/phased.merge.list"
-    conda:
-        "bcftools"
-    shell:
-        """
-            # for now just skip empty files
-            true > {params.list} && \
-            for i in {input.data}; do
-                if [ -s $i ]
-                then
-                    echo $i >> {params.list}
-                else
-                    continue
-                fi
-            done
-            bcftools concat -f {params.list} -O b -o {output}
-        """
+    rule merge_background:
+        input:
+            data=expand(PHASED_VCF, chrom=CHROMOSOMES)
+        output:
+            "pedsim/phased/background.bcf.gz"
+        params:
+            list="pedsim/phased/phased.merge.list"
+        conda:
+            "bcftools"
+        shell:
+            """
+                # for now just skip empty files
+                true > {params.list} && \
+                for i in {input.data}; do
+                    if [ -s $i ]
+                    then
+                        echo $i >> {params.list}
+                    else
+                        continue
+                    fi
+                done
+                bcftools concat -f {params.list} -O b -o {output}
+            """
+else:
+    rule convert_background:
+        input:
+            data=config['background']
+        output:
+            "pedsim/phased/background.bcf.gz"
+        conda:
+            "bcftools"
+        shell:
+            """
+                bcftools convert {input.data} -O b -o {output}
+            """
 
 
 rule split_chip:
@@ -111,7 +182,7 @@ rule split_chip:
     params:
         # def_file = expand("gen{runs}/params/relatives_big.def", runs = list(range(NUM_RUNS))),
         num_runs = str(NUM_RUNS),
-        num_founders = str(NUM_FOUNDERS)
+        num_founders = 14
     output:
         expand("background/segment{runs}.vcf.gz", runs = list(range(NUM_RUNS)))
     conda:
@@ -119,11 +190,27 @@ rule split_chip:
     script:
         "../../scripts/split_chip.py"
 
+
+rule augment_background:
+    input:
+        background="background/segment{runs}.vcf.gz",
+    output:
+        "background/segment{runs}.augmented.vcf.gz"
+    params:
+        sample_count=AUGMENT_SAMPLES_NUMBER
+    log:
+        "logs/augment_background/segment{runs}.log"
+    conda:
+        "vcf_to_ped"
+    script:
+        "../../scripts/simulate_dummy_samples.py"
+
+
 rule simulate:
     input:
         _map=PEDSIM_MAP,
         intf='params/nu_p_campbell.tsv',
-        seg = "background/segment{runs}.vcf.gz"
+        seg = "background/segment{runs}.augmented.vcf.gz"
     output:
         temp('gen{runs}/data{runs}.vcf.gz'),
         temp('gen{runs}/data{runs}.seg')
@@ -133,8 +220,9 @@ rule simulate:
         """
             pedsim -d gen{wildcards.runs}/params/relatives_big.def \
                 -m {input._map} -i {input.seg} \
+                 --err_hom_rate 0.05 --err_rate 0.01 --miss_rate 0.0 \
                 -o gen{wildcards.runs}/data{wildcards.runs} \
-                --intf {input.intf} --keep_phase
+                --intf {input.intf} --retain_extra -1 --keep_phase 
         """
 
 
@@ -147,7 +235,7 @@ rule convert:
         "bcftools"
     shell:
         """
-            bcftools convert gen{wildcards.runs}/data{wildcards.runs}.vcf.gz -O b -o  gen{wildcards.runs}/data4merge{wildcards.runs}.bcf.gz
+            bcftools norm -m-any {input} | bcftools convert -O b -o gen{wildcards.runs}/data4merge{wildcards.runs}.bcf.gz
         """
 
 

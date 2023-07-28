@@ -69,6 +69,7 @@ def pre_imputation_check(params, reference):
     for i in open(fn_new):
         items = i.split()
         # id: (ref, alt)
+        # %CHROM:%POS:%REF:%FIRST_ALT
         a1_a2[items[1]] = (items[-2], items[-1])
 
     # files to update bim

@@ -1,8 +1,23 @@
+rule index_for_eagle:
+    input:
+        bcf='vcf/{batch}_merged_mapped_sorted.bcf.gz'
+    output:
+        idx='vcf/{batch}_merged_mapped_sorted.bcf.gz.tbi'
+    log:
+        'logs/vcf/{batch}_merged_mapped_sorted.bcf.gz.tbi.log'
+    conda:
+        'bcftools'
+    shell:
+        '''
+            bcftools index -f -t {input.bcf} |& tee {log}
+        '''
+
 rule phase:
         input:
-            vcf='vcf/{batch}_merged_mapped_sorted.vcf.gz',
+            vcf='vcf/{batch}_merged_mapped_sorted.bcf.gz',
+            idx='vcf/{batch}_merged_mapped_sorted.bcf.gz.tbi',
             vcfRef=REF_VCF
-        output: temp('phase/{batch}_chr{chrom}.phased.vcf.gz')
+        output: temp('phase/{batch}_chr{chrom}.phased.bcf.gz')
         log:
             'logs/phase/{batch}_eagle-{chrom}.log'
         benchmark:
@@ -13,20 +28,20 @@ rule phase:
             --vcfTarget {input.vcf}  \
             --geneticMapFile {GENETIC_MAP} \
             --chrom {wildcards.chrom} \
-            --vcfOutFormat z \
+            --vcfOutFormat b \
             --pbwtIters 2 \
             --Kpbwt 20000 \
             --outPrefix phase/{wildcards.batch}_chr{wildcards.chrom}.phased |& tee {log}
             '''
 
 
-phase = ['chr{i}.phased.vcf.gz'.format(i=chr) for chr in CHROMOSOMES]
+phase = ['chr{i}.phased.bcf.gz'.format(i=chr) for chr in CHROMOSOMES]
 phase_batch = [ 'phase/{batch}_' + line for line in phase]
 rule merge_phased:
     input:
         phase_batch
     output:
-        'phase/{batch}_merged_phased.vcf.gz'
+        'phase/{batch}_merged_phased.bcf.gz'
     params:
         list='vcf/{batch}_phased.merge.list',
         mode=config['mode']
@@ -55,7 +70,7 @@ rule merge_phased:
         # check if there is a background data and merge it
         if [ -f "background/{wildcards.batch}_merged_imputed.vcf.gz" && {params.mode} = "client" ]; then
             mv {output} {output}.client
-            bcftools merge --force-samples background/{wildcards.batch}_merged_imputed.vcf.gz {output}.client -O z -o {output} |& tee -a {log}
+            bcftools merge --force-samples background/{wildcards.batch}_merged_imputed.vcf.gz {output}.client -O b -o {output} |& tee -a {log}
             bcftools index -f {output} |& tee -a {log}
         fi
         '''

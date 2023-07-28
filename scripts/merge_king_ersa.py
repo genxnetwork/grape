@@ -135,12 +135,16 @@ def read_king_segments_chunked(king_segments_path, map_dir):
             segments = interpolate_all(segments, map_dir)
             data = pandas.DataFrame(columns=['id1', 'id2', 'total_seg_len_king', 'seg_count_king'])
             logging.info(f'loaded and interpolated segments from chunk {i} for {len(segments)} pairs')
+            rows = []
             for key, segs in segments.items():
                 row = {'id1': key[0],
                     'id2': key[1],
                     'total_seg_len_king': sum([s.cm_len for s in segs]),
                     'seg_count_king': len(segs)}
-                data = data.append(row, ignore_index=True)
+                rows.append(row)
+            
+            rows_frame = pandas.DataFrame.from_records(rows, columns=['id1', 'id2', 'total_seg_len_king', 'seg_count_king'])
+            data = pandas.concat([data, rows_frame], ignore_index=True)
 
             _sort_ids(data)
             data = data.set_index(['id1', 'id2'])

@@ -23,9 +23,9 @@ def process_chunk_with_hash(data: pandas.DataFrame, denominator: int, dest_dir: 
                 'ibd21', 'ibd22']]
 
     for bucket_id, group in to_write.groupby('bucket_id'):
-        dest_file = os.path.join(dest_dir, f'{bucket_id}.tsv')
+        dest_file = os.path.join(dest_dir, f'{bucket_id}.tsv.gz')
         group.drop('bucket_id', inplace=True, axis='columns')
-        group.to_csv(dest_file, index=False, header=None, sep='\t', mode='a')
+        group.to_csv(dest_file, index=False, header=None, sep='\t', mode='a', compression='gzip')
 
 
 def split_by_id(input_ibd: str, samples_count: int, dest_dir: str):

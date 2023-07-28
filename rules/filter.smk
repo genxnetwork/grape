@@ -1,6 +1,16 @@
+rule annotate_snp_ids:
+    input:
+        vcf = 'vcf/{batch}_merged_lifted.vcf.gz'
+    output:
+        vcf = 'vcf/{batch}_merged_annotated.vcf.gz'
+    shell:
+        '''
+            bcftools annotate --set-id "%CHROM:%POS:%REF:%FIRST_ALT" {input.vcf} -O z -o {output.vcf}
+        '''
+
 rule select_bad_samples:
     input:
-        vcf='vcf/{batch}_merged_lifted.vcf.gz'
+        vcf='vcf/{batch}_merged_annotated.vcf.gz'
     output:
         bad_samples='vcf/{batch}_lifted_vcf.badsamples',
         report='results/{batch}_bad_samples_report.tsv',
@@ -17,22 +27,18 @@ rule select_bad_samples:
         psc='stats/{batch}_lifted_vcf.psc',
         keep_samples='stats/{batch}_keep_samples.list',
 
-    conda:
-        'evaluation'
     script:
         '../scripts/select_bad_samples.py'
 
 
 rule plink_filter:
     input:
-        vcf='vcf/{batch}_merged_lifted.vcf.gz',
+        vcf='vcf/{batch}_merged_annotated.vcf.gz',
         bad_samples=rules.select_bad_samples.output.bad_samples
     output:
         bed = temp('plink/{batch}_merged_filter.bed'),
         bim = temp('plink/{batch}_merged_filter.bim'),
         fam = temp('plink/{batch}_merged_filter.fam')
-    conda:
-        'plink'
     params:
         input   = '{batch}_merged',
         out     = '{batch}_merged_filter',
@@ -78,8 +84,6 @@ rule plink_clean_up:
     params:
         input = 'plink/{batch}_merged_filter',
         out = 'plink/{batch}_merged_mapped'
-    conda:
-        'plink'
     log:
         'logs/plink/{batch}_plink_clean_up.log'
     benchmark:
@@ -116,8 +120,6 @@ rule prepare_vcf:
     params:
         input   = 'plink/{batch}_merged_mapped',
         vcf     = 'vcf/{batch}_merged_mapped_sorted.vcf.gz'
-    conda:
-         'bcf_plink'
     log:
         plink='logs/plink/{batch}_prepare_vcf.log',
         vcf='logs/vcf/{batch}_prepare_vcf.log'

@@ -25,9 +25,6 @@ def interpolate(vcf_path, cm_path, output_path, chrom):
         else:
             new_cms.append(cms[i])
 
-    print(f'cms of len {len(cms)} after:')
-
-    print(new_cms[-10:])
     with open(output_path, 'w') as w_map:
         for i, cm in enumerate(new_cms):
             if i > 0 and cm <= new_cms[i-1]:
@@ -42,5 +39,4 @@ if __name__ == '__main__':
     chrom = snakemake.wildcards['chrom']
 
     output_path = snakemake.output[0]
-    print(vcf_path)
     interpolate(vcf_path, cm_path, output_path, chrom)

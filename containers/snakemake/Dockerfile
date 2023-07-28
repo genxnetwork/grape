@@ -14,10 +14,15 @@ ENV SHELL /bin/bash
 RUN apt-get update && apt-get install -y wget bzip2 gnupg2 git libgomp1 libarchive13 && \
     wget -nv https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
     bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda && \
-    rm Miniconda3-latest-Linux-x86_64.sh && \
-    conda install -c conda-forge mamba
+    rm Miniconda3-latest-Linux-x86_64.sh 
+    # conda install -n base --override-channels -c conda-forge mamba==1.4.5 'python_abi=*=*cp*'
     
-RUN for e in envs/*; do mamba env create -f $e ; done && \
+# RUN for e in envs/*; do mamba env create -f $e ; done && \
+#    conda clean --all -y
+
+RUN conda install -n base conda-libmamba-solver && \
+    conda config --set solver libmamba && \
+    conda env create -f envs/big_env.yaml && \
     conda clean --all -y
 
 # Intall Minimac3
@@ -28,10 +33,6 @@ ENV PATH "$PATH:/opt/Minimac3Executable/bin"
 
 # Install Minimac4
 RUN apt-get install -y minimac4
-
-# Install Eagle
-# RUN wget "https://data.broadinstitute.org/alkesgroup/Eagle/downloads/dev/eagle_v2.4.1" -O /usr/bin/eagle
-# RUN chmod a+x /usr/bin/eagle
 
 # Install Germline
 # conda version of germline has a problem with non-zero error code
@@ -47,6 +48,10 @@ RUN apt-get install -y make g++ git && \
     apt-get -y autoremove
 ENV PATH "$PATH:/opt/germline/bin"
 WORKDIR /
+
+# Install Eagle
+RUN wget "https://data.broadinstitute.org/alkesgroup/Eagle/downloads/dev/eagle_v2.4.1" -O /usr/bin/eagle
+RUN chmod a+x /usr/bin/eagle
 
 # Workaround of NonWritableError when conda tries to create environments for the first time
 # funnel launches docker containers with --read-only and snakemake cannot create conda envs
