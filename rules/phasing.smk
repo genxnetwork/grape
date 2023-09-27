@@ -2,20 +2,20 @@ rule index_for_eagle:
     input:
         bcf='vcf/{batch}_merged_mapped_sorted.bcf.gz'
     output:
-        idx='vcf/{batch}_merged_mapped_sorted.bcf.gz.tbi'
+        idx='vcf/{batch}_merged_mapped_sorted.bcf.gz.csi'
     log:
-        'logs/vcf/{batch}_merged_mapped_sorted.bcf.gz.tbi.log'
+        'logs/vcf/{batch}_merged_mapped_sorted.bcf.gz.csi.log'
     conda:
         'bcftools'
     shell:
         '''
-            bcftools index -f -t {input.bcf} |& tee {log}
+            bcftools index -f {input.bcf} |& tee {log}
         '''
 
 rule phase:
         input:
             vcf='vcf/{batch}_merged_mapped_sorted.bcf.gz',
-            idx='vcf/{batch}_merged_mapped_sorted.bcf.gz.tbi',
+            idx='vcf/{batch}_merged_mapped_sorted.bcf.gz.csi',
             vcfRef=REF_VCF
         output: temp('phase/{batch}_chr{chrom}.phased.bcf.gz')
         log:
