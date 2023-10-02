@@ -2,29 +2,29 @@ rule index_for_eagle:
     input:
         bcf='vcf/{batch}_merged_mapped_sorted.bcf.gz'
     output:
-        idx='vcf/{batch}_merged_mapped_sorted.bcf.gz.tbi'
+        idx='vcf/{batch}_merged_mapped_sorted.bcf.gz.csi'
     log:
-        'logs/vcf/{batch}_merged_mapped_sorted.bcf.gz.tbi.log'
+        'logs/vcf/{batch}_merged_mapped_sorted.bcf.gz.csi.log'
     conda:
         'bcftools'
     shell:
         '''
-            bcftools index -f -t {input.bcf} |& tee {log}
+            bcftools index -f {input.bcf} |& tee {log}
         '''
 
 rule phase:
         input:
             vcf='vcf/{batch}_merged_mapped_sorted.bcf.gz',
-            idx='vcf/{batch}_merged_mapped_sorted.bcf.gz.tbi',
+            idx='vcf/{batch}_merged_mapped_sorted.bcf.gz.csi',
             vcfRef=REF_VCF
-        output: temp('phase/{batch}_chr{chrom}.phased.bcf.gz')
+        output: temp('phase/{batch}_chr{chrom}.phased.bcf')
         log:
             'logs/phase/{batch}_eagle-{chrom}.log'
         benchmark:
             'benchmarks/phase/{batch}_eagle-{chrom}.txt'
         shell:
             '''
-            eagle --vcfRef {input.vcfRef} \
+            eagle --vcfRef={input.vcfRef} \
             --vcfTarget {input.vcf}  \
             --geneticMapFile {GENETIC_MAP} \
             --chrom {wildcards.chrom} \
@@ -35,7 +35,7 @@ rule phase:
             '''
 
 
-phase = ['chr{i}.phased.bcf.gz'.format(i=chr) for chr in CHROMOSOMES]
+phase = ['chr{i}.phased.bcf'.format(i=chr) for chr in CHROMOSOMES]
 phase_batch = [ 'phase/{batch}_' + line for line in phase]
 rule merge_phased:
     input:
