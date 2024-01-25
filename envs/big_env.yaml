@@ -34,7 +34,7 @@ dependencies:
   - scikit-allel
   - scikit-learn
   - king
-  - snakemake
+  - snakemake==7.31.0
   - pip
   - pip:
     - polars
