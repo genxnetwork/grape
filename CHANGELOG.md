@@ -1,5 +1,11 @@
 # Changelog
 
+## [v1.8.3] - 2024-01-25
+
+### Fixed
+
+Snakemake version freezed
+
 ## [v1.8.2] - 2024-01-25
 
 ### Fixed
