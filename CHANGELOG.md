@@ -1,5 +1,11 @@
 # Changelog
 
+## [v1.8.2] - 2024-01-25
+
+### Fixed
+
+Updated the public key for GEXNT Azure storage
+
 ## [v1.8.1] - 2024-01-25
 
 ### Fixed
