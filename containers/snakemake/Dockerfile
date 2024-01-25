@@ -26,7 +26,7 @@ RUN conda install -n base conda-libmamba-solver && \
     conda clean --all -y
 
 # Intall Minimac3
-RUN wget "https://bioinformatics.file.core.windows.net/bundles/Minimac3Executable.tar.gz?sv=2021-06-08&ss=f&srt=o&sp=r&se=2023-10-24T18:24:45Z&st=2022-10-24T10:24:45Z&spr=https&sig=xcNx9PyZpj5aF2Xi9573oQ5qYq7VqCIlZdayVtq5NOk%3D" -O /opt/Minimac3Executable.tar.gz
+RUN wget "https://bioinformatics.file.core.windows.net/bundles/Minimac3Executable.tar.gz?sv=2022-11-02&ss=f&srt=o&sp=r&se=2026-01-24T00:45:07Z&st=2024-01-16T17:45:07Z&spr=https&sig=1M3m%2BnsAujxopJDwgEB%2FIGRMBWLxFS0WvXr0SqAbBTc%3D" -O /opt/Minimac3Executable.tar.gz
 RUN tar -xzvf /opt/Minimac3Executable.tar.gz -C /opt/
 RUN rm /opt/Minimac3Executable.tar.gz
 ENV PATH "$PATH:/opt/Minimac3Executable/bin"
