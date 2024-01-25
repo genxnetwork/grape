@@ -1,5 +1,11 @@
 # Changelog
 
+## [v1.8.1] - 2024-01-25
+
+### Fixed
+
+- Updated the public key for GEXNT Azure storage, where the bundle reference file is stored.
+
 ## [v1.8] - 2023-03-08
 
 ### Added
