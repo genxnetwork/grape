@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Getting Started &mdash; GRAPE 1.7 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=392da36c"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation" href="installation.html" />
+    <link rel="prev" title="GRAPE Overview" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            GRAPE
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#evaluation-on-simulated-data">Evaluation on Simulated Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-to-run-simulation">How to Run Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#precision-recall-analysis">Precision / Recall Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#known-limitations">Known Limitations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="howto.html">How to Use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dockstore.html">Dockstore</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">GRAPE</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Getting Started</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/getting_started.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="getting-started">
+<span id="sec-getting-started"></span><h1>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading"></a></h1>
+<p>This section describes testing pipeline on simulated data. We recommend to
+run <strong>GRAPE</strong> on the simulated dataset at first to confirm you that software
+installed and function correctly.</p>
+<p>Install <strong>GRAPE</strong> using one of the methods described in the</p>
+<p>After installation return to the <a class="reference internal" href="#evaluation-on-simulated-data">Evaluation on Simulated Data</a> section.</p>
+<section id="evaluation-on-simulated-data">
+<h2>Evaluation on Simulated Data<a class="headerlink" href="#evaluation-on-simulated-data" title="Link to this heading"></a></h2>
+<p>We added a simulation workflow into GRAPE to perform a precision / recall analysis of the pipeline.</p>
+<p>It’s accessible by <cite>simulate</cite> command of the pipeline launcher and incorporates the following steps:</p>
+<ol class="arabic simple">
+<li><p>Pedigree simulation with unrelated founders using the <a class="reference external" href="https://github.com/williamslab/ped-sim">ped-sim</a> simulation package.</p>
+<ol class="arabic simple">
+<li><p>The source dataset for the simulation is taken from CEU population data of 1000 Genomes Project. As CEU data consists of trios, we picked no more than one member of each trio as a founder.</p></li>
+<li><p>All cryptic relationships up to the 6th degree is removed from selected samples using GRAPE.</p></li>
+<li><p>Sex of each sample is randomly assigned using sex-specific genetic maps to take into account the differences in recombination rates between men and women.</p></li>
+</ol>
+</li>
+<li><p>Relatedness degrees estimation;</p></li>
+<li><p>Comparison between true and estimated degrees.</p></li>
+</ol>
+<p>A visualization of simulated pedigree structure is given below:</p>
+<a class="reference internal image-reference" href="_images/grape.simulated.pedigree.structure.png"><img alt="simulated pedigree structure" class="align-center" src="_images/grape.simulated.pedigree.structure.png" style="width: 100%;" /></a>
+</section>
+<section id="how-to-run-simulation">
+<h2>How to Run Simulation<a class="headerlink" href="#how-to-run-simulation" title="Link to this heading"></a></h2>
+<p>Use the <cite>simulate</cite> command of the GRAPE launcher.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">docker</span> <span class="n">run</span> <span class="o">--</span><span class="n">rm</span> <span class="o">-</span><span class="n">it</span> <span class="o">-</span><span class="n">v</span> <span class="o">/</span><span class="n">media</span><span class="p">:</span><span class="o">/</span><span class="n">media</span> <span class="o">-</span><span class="n">v</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">localtime</span><span class="p">:</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">localtime</span><span class="p">:</span><span class="n">ro</span> \
+    <span class="n">grape</span><span class="p">:</span><span class="n">latest</span> <span class="n">launcher</span><span class="o">.</span><span class="n">py</span> <span class="n">simulate</span> <span class="o">--</span><span class="n">flow</span> <span class="n">ibis</span><span class="o">-</span><span class="n">king</span> <span class="o">--</span><span class="n">ref</span><span class="o">-</span><span class="n">directory</span> <span class="o">/</span><span class="n">media</span><span class="o">/</span><span class="n">ref</span> \
+        <span class="o">--</span><span class="n">directory</span> <span class="o">/</span><span class="n">media</span><span class="o">/</span><span class="n">data</span> <span class="o">--</span><span class="n">sim</span><span class="o">-</span><span class="n">params</span><span class="o">-</span><span class="n">file</span> <span class="n">params</span><span class="o">/</span><span class="n">relatives_average</span><span class="o">.</span><span class="k">def</span> \
+        <span class="o">--</span><span class="n">sim</span><span class="o">-</span><span class="n">samples</span><span class="o">-</span><span class="n">file</span> <span class="n">ceph_unrelated_all</span><span class="o">.</span><span class="n">tsv</span> <span class="o">--</span><span class="n">assembly</span> <span class="n">hg37</span> <span class="o">--</span><span class="n">ibis</span><span class="o">-</span><span class="n">seg</span><span class="o">-</span><span class="nb">len</span> <span class="mi">5</span> \
+        <span class="o">--</span><span class="n">ibis</span><span class="o">-</span><span class="nb">min</span><span class="o">-</span><span class="n">snp</span> <span class="mi">400</span> <span class="o">--</span><span class="n">zero</span><span class="o">-</span><span class="n">seg</span><span class="o">-</span><span class="n">count</span> <span class="mf">0.1</span> <span class="o">--</span><span class="n">zero</span><span class="o">-</span><span class="n">seg</span><span class="o">-</span><span class="nb">len</span> <span class="mi">5</span> <span class="o">--</span><span class="n">alpha</span> <span class="mf">0.01</span> <span class="o">--</span><span class="n">real</span><span class="o">-</span><span class="n">run</span>
+</pre></div>
+</div>
+</section>
+<section id="precision-recall-analysis">
+<h2>Precision / Recall Analysis<a class="headerlink" href="#precision-recall-analysis" title="Link to this heading"></a></h2>
+<p>For each <cite>i</cite> degree of relationships we computed precision and recall metrics:</p>
+<div class="math notranslate nohighlight">
+\[![\mathrm{Precision}(i) = \frac{\mathrm{TP}(i)}{\mathrm{TP}(i) + \mathrm{FP}(i)}; \quad \mathrm{Recall}(i) = \frac{\mathrm{TP}(i)}{\mathrm{TP}(i) + \mathrm{FN}(i)}]\]</div>
+<p>Here TP(i), FP(i), FN(i) are the numbers of true positive, false positive, and false negative relationship matches predicted for the degree <cite>i</cite>.</p>
+<p>In our analysis we used non-exact (fuzzy) interval metrics.</p>
+<ul class="simple">
+<li><p>For the 1st degree, we require an exact match.</p></li>
+<li><p>For the 2nd, 3rd, and 4th degrees, we allow a degree interval of ±1. For example, for the 2nd true degree we consider a predicted 3rd degree as a true positive match.</p></li>
+<li><p>For the 5th+ degrees, we use the ERSA confidence intervals which are typically 3-4 degrees wide.</p></li>
+<li><p>For 10th+ degrees, these intervals are 6-7 degrees wide.</p></li>
+</ul>
+<a class="reference internal image-reference" href="_images/grape.precision_and_recall.png"><img alt="precision &amp; recall" class="align-center" src="_images/grape.precision_and_recall.png" style="width: 100%;" /></a>
+</section>
+<section id="known-limitations">
+<h2>Known Limitations<a class="headerlink" href="#known-limitations" title="Link to this heading"></a></h2>
+<p>It is known that for some small isolated populations IBD sharing is very high.
+Therefore, our pipeline overestimates the relationship degree for them.</p>
+<p>It is not recommended to mix standard populations like CEU and the small populations like isolated native ones.</p>
+<p>This problem is discussed in article <a class="reference external" href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0034267">“Cryptic Distant Relatives Are Common
+in Both Isolated and Cosmopolitan Genetic Samples”</a>
+by Brenna M. Henn et al.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="GRAPE Overview" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="installation.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-2023, GENXT.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
